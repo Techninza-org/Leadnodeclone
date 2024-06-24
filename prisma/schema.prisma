@@ -1,14 +1,163 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mongodb"
   url      = env("DATABASE_URL")
+}
+
+model Lead {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  // Customer Info
+  name    String
+  email   String
+  phone   String
+  address String?
+  city    String?
+  state   String?
+  zip     String?
+
+  // Lead Info
+  vehicleDate  DateTime?
+  vehicleName  String?
+  vehicleModel String?
+
+  leadStatusId String?     @db.ObjectId
+  LeadStatus   LeadStatus? @relation(fields: [leadStatusId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([leadStatusId])
+}
+
+enum CallStatus {
+  BUSY
+  PENDING
+  SUCCESS
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+}
+
+model LeadStatus {
+  id          String  @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  description String?
+
+  callStatus    CallStatus
+  paymentStatus PaymentStatus
+
+  Lead Lead[]
+  Dept Dept[]
+
+  assignedToId String? @db.ObjectId
+  assignedTo   Member? @relation(fields: [assignedToId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([assignedToId])
+}
+
+model Dept {
+  id     String  @id @default(auto()) @map("_id") @db.ObjectId
+  name   String
+  imgURL String?
+
+  companyId String?  @db.ObjectId
+  Company   Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  leadStatusId String?     @db.ObjectId
+  LeadStatus   LeadStatus? @relation(fields: [leadStatusId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  members    Member[]
+  deptFields DeptField[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([companyId])
+  @@index([leadStatusId])
+}
+
+model DeptField {
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  fieldType FieldType
+  value     Json?
+
+  deptId String @db.ObjectId
+  Dept   Dept   @relation(fields: [deptId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([deptId])
+}
+
+enum FieldType {
+  INPUT
+  TEXTAREA
+  RADIO
+  CHECKBOX
+  SELECT
+}
+
+model Company {
+  id     String  @id @default(auto()) @map("_id") @db.ObjectId
+  userId String
+  name   String
+  imgURL String?
+  email  String
+  phone  String
+
+  members Member[]
+  Depts   Dept[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([email])
+}
+
+model Role {
+  id   String @id @default(auto()) @map("_id") @db.ObjectId
+  name String
+
+  Member Member[]
+}
+
+model Member {
+  id       String  @id @default(auto()) @map("_id") @db.ObjectId
+  email    String
+  password String
+  name     String
+  imgURL   String?
+  phone    String
+
+  deptId String? @db.ObjectId
+  Dept   Dept?   @relation(fields: [deptId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  roleId String @db.ObjectId
+  role   Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  companyId String?  @db.ObjectId
+  Company   Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  LeadStatus LeadStatus[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+  @@index([deptId])
+  @@index([roleId])
+  @@index([companyId])
 }
