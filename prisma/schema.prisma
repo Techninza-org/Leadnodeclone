@@ -18,6 +18,7 @@ model Lead {
   city    String?
   state   String?
   zip     String?
+  rating  Int?
 
   // Lead Info
   vehicleDate  DateTime?
@@ -155,6 +156,8 @@ model Member {
   Company   Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   LeadStatus LeadStatus[]
+
+  sessionToken String? // Device Login Token at a time
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
