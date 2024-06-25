@@ -2,26 +2,20 @@ import express from 'express';
 import cors from 'cors';
 import { createHandler } from 'graphql-http/lib/use/express';
 import { middleware } from './middleware';
-// import { schema } from './schema';
-// import { root } from './resolvers';
+import logger from './utils/logger';
+import config from './config';
+import resolvers from './resolvers'
+import schema from './schema';
 
 const app = express();
-const corsOptions = {
-    origin: ['http://localhost:3000', 'https://your-mobile-app-domain.com'], // replace with your mobile app domain
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true // if your frontend sends cookies or needs to access protected routes
-};
+const PORT = config.envProvider.PORT;
 
-app.use(cors(corsOptions));
+app.use(cors({ origin: '*' }));
 app.use(middleware.loggerMiddleware);
-// app.use('/graphql', createHandler({
-//   schema,
-//   rootValue: root,
-//   graphiql: true,
-// }));
 
-const PORT = process.env.PORT || 4000;
+app.all('/auth', createHandler({ schema: schema.authSchema, rootValue: resolvers.authResolvers }));
+app.all('/admin', createHandler({ schema: schema.adminSchema, rootValue: resolvers.adminResolvers }));
+
 app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}/graphql`);
+    logger.info(`Server is running on http://localhost:${PORT}`);
 });
