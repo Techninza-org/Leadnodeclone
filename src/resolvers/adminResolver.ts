@@ -2,6 +2,7 @@
 import { z, ZodIssue } from 'zod';
 import adminWorker from '../workers/adminWorker';
 import { createRoleSchema } from '../types/admin';
+import { createAdminDeptSchema } from '../types/dept';
 
 export const adminResolvers = {
   getAllUsers: async () => {
@@ -23,6 +24,19 @@ export const adminResolvers = {
       return { user: null, errors };
     }
 
-    return adminWorker.createRole(parsedData.data);
+    return await adminWorker.createRole(parsedData.data);
+  },
+  createDept: async ({input}: {input: z.infer<typeof createAdminDeptSchema>}) => {
+    const parsedData = createAdminDeptSchema.safeParse(input);
+
+    if (!parsedData.success) {
+      const errors = parsedData.error.errors.map((err: ZodIssue) => ({
+        message: err.message,
+        path: err.path,
+      }));
+      return { user: null, errors };
+    }
+
+    return await adminWorker.createDept(parsedData.data);
   },
 }

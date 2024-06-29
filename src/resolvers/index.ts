@@ -1,7 +1,11 @@
 import { adminResolvers } from "./adminResolver";
-import { authResolvers } from "./authResolvers";
+import { authResolvers } from "./authResolver";
+import { leadResolvers } from "./leadResolver";
+import { userResolvers } from "./userResovler";
 
 export default {
     authResolvers,
-    adminResolvers
+    adminResolvers,
+    leadResolvers,
+    userResolvers
 }

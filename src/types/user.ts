@@ -6,6 +6,8 @@ export const signupSchema = z.object({
     password: z.string().min(3, 'Please enter your password.').min(8, 'Your password must have 8 characters or more.'),
     phone: z.string().length(10, 'Please enter a valid phone number.'),
     roleId: z.string().optional(),
+    deptId: z.string().optional(),
+
     companyId: z.string().optional(),
     companyName: z.string().optional(),
     companyAddress: z.string().optional(),
@@ -35,12 +37,51 @@ export const loginSchema = z.object({
     password: z.string().min(3, 'Please enter your password.').optional(),
     phone: z.string().length(10, 'Please enter a valid phone number.').optional(),
     otp: z.string().length(6, 'Please enter a valid OTP.').optional(),
+
 }).refine(data => {
     if ((data.email && data.password) || data.phone) {
         return true;
     }
+    
     return false;
 }, {
     message: 'Please provide either email and password, or phone number.',
     path: ['email', 'password', 'phone'],
+});
+
+export const CreateOrUpdateManagerSchema = z.object({
+    companyId: z.string().min(3, 'Please enter your companyId.'),
+
+    memberId: z.string().min(3, 'Please enter your memberId.').optional(),
+    name: z.string().min(3, 'Please enter your name.').optional(),
+    email: z.string().min(3, 'Please enter your email.').email('The email address is badly formatted.').optional(),
+    password: z.string().min(3, 'Please enter your password.').min(8, 'Your password must have 8 characters or more.').optional(),
+    phone: z.string().length(10, 'Please enter a valid phone number.').optional(),
+    
+    deptId: z.string().min(3, 'Please enter your deptId.').optional(),
+    type: z.enum(['COMPANY', 'DEPARTMENT', 'BOTH']),
+
+}).refine(data => {
+    if ((data.companyId || data.deptId) && data.type === 'BOTH') {
+        return true;
+    }
+
+    if (data.companyId && data.type === 'COMPANY') {
+        return true;
+    }
+
+    if (data.deptId && data.type === 'DEPARTMENT') {
+        return true;
+    }
+    if (!data.memberId && (!data.name || !data.email || !data.password || !data.phone)){
+        
+        return {
+            message: 'Please provide either memberId, or name, email, password, phone.',
+        };
+    }
+    
+    return false;
+}, {
+    message: 'Please provide either companyId, or deptId, or both companyId and deptId.',
+    path: ['companyId', 'deptId', 'type'],
 });

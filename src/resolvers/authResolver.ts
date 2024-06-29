@@ -10,6 +10,7 @@ export const authResolvers = {
     phone,
     password,
     roleId,
+    deptId,
     companyId,
     companyName,
     companyAddress,
@@ -18,7 +19,7 @@ export const authResolvers = {
   }: z.infer<typeof signupSchema>) => {
 
     const parsedData = signupSchema.safeParse({
-      name, email, phone, password, roleId, companyId, companyName, companyAddress, companyPhone, companyEmail,
+      name, email, phone, password, roleId, deptId, companyId, companyName, companyAddress, companyPhone, companyEmail,
     });
 
     if (!parsedData.success) {

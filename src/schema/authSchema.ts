@@ -40,6 +40,7 @@ export const authSchema = buildSchema(`
       phone: String!,
       password: String!,
       roleId: String,
+      deptId: String,
       companyId: String,
       companyName: String,
       companyAddress: String,

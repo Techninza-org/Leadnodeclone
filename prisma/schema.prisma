@@ -11,27 +11,31 @@ model Lead {
   id String @id @default(auto()) @map("_id") @db.ObjectId
 
   // Customer Info
-  name    String
-  email   String
-  phone   String
-  address String?
-  city    String?
-  state   String?
-  zip     String?
-  rating  Int?
+  name           String
+  email          String
+  phone          String
+  alternatePhone String?
+  address        String?
+  city           String?
+  state          String?
+  zip            String?
+  rating         Int?
 
   // Lead Info
   vehicleDate  DateTime?
   vehicleName  String?
   vehicleModel String?
 
-  leadStatusId String?     @db.ObjectId
-  LeadStatus   LeadStatus? @relation(fields: [leadStatusId], references: [id], onDelete: Cascade)
+  LeadStatus LeadStatus[]
+  LeadFeedback LeadFeedback[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  companyId String?  @db.ObjectId
+  Company   Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
-  @@index([leadStatusId])
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  @@index([companyId])
 }
 
 enum CallStatus {
@@ -54,8 +58,11 @@ model LeadStatus {
   callStatus    CallStatus
   paymentStatus PaymentStatus
 
-  Lead Lead[]
-  Dept Dept[]
+  leadId String? @db.ObjectId
+  Lead   Lead?   @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  deptId String? @db.ObjectId
+  Dept   Dept?   @relation(fields: [deptId], references: [id])
 
   assignedToId String? @db.ObjectId
   assignedTo   Member? @relation(fields: [assignedToId], references: [id], onDelete: Cascade, onUpdate: NoAction)
@@ -66,25 +73,53 @@ model LeadStatus {
   @@index([assignedToId])
 }
 
-model Dept {
-  id     String  @id @default(auto()) @map("_id") @db.ObjectId
+model LeadFeedback {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  deptId String? @db.ObjectId
+  dept   Dept?   @relation(fields: [deptId], references: [id])
+
+  leadId String? @db.ObjectId @unique
+  lead   Lead?   @relation(fields: [leadId], references: [id])
+
+  feedback Json[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AdminDept {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
   name   String
   imgURL String?
 
-  companyId String?  @db.ObjectId
-  Company   Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
-
-  leadStatusId String?     @db.ObjectId
-  LeadStatus   LeadStatus? @relation(fields: [leadStatusId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-
-  members    Member[]
+  Dept       Dept[]
   deptFields DeptField[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model Dept {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  deptFieldId String    @db.ObjectId
+  deptField   AdminDept @relation(fields: [deptFieldId], references: [id], onDelete: Cascade)
+
+  deptManagerId String
+
+  companyId String?  @db.ObjectId
+  Company   Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  leadStatus LeadStatus[]
+  members    Member[]
+
+  LeadFeedback LeadFeedback[] // All Lead Feedbacks
+
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
 
   @@index([companyId])
-  @@index([leadStatusId])
 }
 
 model DeptField {
@@ -93,13 +128,13 @@ model DeptField {
   fieldType FieldType
   value     Json?
 
-  deptId String @db.ObjectId
-  Dept   Dept   @relation(fields: [deptId], references: [id], onDelete: Cascade)
+  adminDeptId String?    @db.ObjectId
+  AdminDept   AdminDept? @relation(fields: [adminDeptId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([deptId])
+  @@index([adminDeptId])
 }
 
 enum FieldType {
@@ -111,20 +146,23 @@ enum FieldType {
 }
 
 model Company {
-  id     String  @id @default(auto()) @map("_id") @db.ObjectId
-  userId String
-  name   String
-  imgURL String?
-  email  String
-  phone  String
+  id               String  @id @default(auto()) @map("_id") @db.ObjectId
+  rootId           String
+  companyManagerId String
+  name             String
+  imgURL           String?
+  email            String
+  phone            String
 
-  members Member[]
+  members Member[] @relation("CompanyMembers")
   Depts   Dept[]
+  Leads   Lead[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([userId])
+  @@index([rootId])
+  @@index([companyManagerId])
   @@index([email])
 }
 
@@ -132,7 +170,7 @@ model Role {
   id   String @id @default(auto()) @map("_id") @db.ObjectId
   name String
 
-  Member Member[]
+  Members Member[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -140,29 +178,28 @@ model Role {
 
 model Member {
   id       String  @id @default(auto()) @map("_id") @db.ObjectId
-  email    String
+  email    String  @unique
   password String
   name     String
   imgURL   String?
   phone    String
 
   deptId String? @db.ObjectId
-  Dept   Dept?   @relation(fields: [deptId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  Dept   Dept?   @relation(fields: [deptId], references: [id], onDelete: Cascade)
 
   roleId String @db.ObjectId
   role   Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
   companyId String?  @db.ObjectId
-  Company   Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  Company   Company? @relation(fields: [companyId], references: [id], name: "CompanyMembers", onDelete: Cascade)
 
-  LeadStatus LeadStatus[]
+  LeadStatuses LeadStatus[] // Assigned Lead Statuses
 
   sessionToken String? // Device Login Token at a time
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([email])
   @@index([deptId])
   @@index([roleId])
   @@index([companyId])
