@@ -4,34 +4,20 @@ import { z } from 'zod';
 import { v4 as uuidv4 } from 'uuid';
 
 import { loginSchema, signupSchema, CreateOrUpdateManagerSchema } from '../types/user';
-import { verifyOtp } from '../utils/user-worker-utils';
+import { generateHash, generateToken, getUserByIdEmailPhone, verifyHash, verifyOtp } from '../utils/user-worker-utils';
 
 /*
 User: [Root, Telecaller, Exchanger, Financer, Manager]
 */
-
 const createUser = async (user: z.infer<typeof signupSchema>) => {
     try {
 
         let newUser = null;
 
-        const existingUser = await prisma.member.findFirst({
-            where: {
-                OR: [
-                    { email: user.email },
-                    { phone: user.phone },
-                ],
-            },
-        });
+        const existingUser = await getUserByIdEmailPhone({ email: user.email, phone: user.phone })
 
         if (existingUser) {
-            return {
-                user: null,
-                errors: [{
-                    message: 'User with this email or phone already exists.',
-                    path: [],
-                }],
-            };
+            throw new Error('User with this email or phone already exists.');
         }
 
         const role = await prisma.role.findFirst({
@@ -39,14 +25,10 @@ const createUser = async (user: z.infer<typeof signupSchema>) => {
         });
 
         if (!role) {
-            return {
-                user: null,
-                errors: [{
-                    message: 'Role not found.',
-                    path: [],
-                }],
-            };
+            throw new Error('Role not found.');
         }
+
+        const hashedPassword = await generateHash(user.password);
 
         // Root user can create company and manager, Return !
         if (role.name === "Root") {
@@ -54,20 +36,36 @@ const createUser = async (user: z.infer<typeof signupSchema>) => {
                 const newUser = await prisma.member.create({
                     data: {
                         email: user.email,
-                        password: user.password,
+                        password: hashedPassword,
                         name: user.name,
                         phone: user.phone,
                         roleId: role.id,
                     },
                 });
 
-                const existingDepts = await prisma.adminDept.findMany();
+                const existingDepts = await prisma.adminDept.findMany({
+                    include: {
+                        deptFields: {
+                            include: {
+                                SubDeptField: true
+                            }
+                        },
+                    }
+                });
                 const deptsArray = existingDepts.map(dept => ({
-                    deptField: {
-                        connect: { id: dept.id }
-                    },
+                    name: dept.name,
                     deptManagerId: newUser.id,
-
+                    companyDeptForms: {
+                        create: dept.deptFields.map(field => ({
+                            name: field.name,
+                            subDeptFields: {
+                                create: field.SubDeptField.map(subField => ({
+                                    name: subField.name,
+                                    fieldType: subField.fieldType,
+                                })),
+                            },
+                        })),
+                    },
                 }));
 
                 const newCompany = await prisma.company.create({
@@ -103,52 +101,29 @@ const createUser = async (user: z.infer<typeof signupSchema>) => {
         });
 
         if (!isCompanyValid) {
-            return {
-                user: null,
-                errors: [{
-                    message: 'Company not found.',
-                    path: [],
-                }]
-            };
+            throw new Error('Company not found.');
         }
 
         if (!user.deptId) {
-            return {
-                user: null,
-                errors: [{
-                    message: 'deptId is required!',
-                }],
-            };
+            throw new Error('deptId is required!');
         }
 
-        const dept = await prisma.dept.findFirst({
+        const dept = await prisma.companyDept.findFirst({
             where: { id: user.deptId },
         })
 
         if (!dept) {
-            return {
-                user: null,
-                errors: [{
-                    message: 'Department not found.',
-                }],
-            };
+            throw new Error('Department not found.');
         }
 
         if (role.name === "Manager" && dept.deptManagerId) {
-            return {
-                user: null,
-                errors: [{
-                    message: 'Department already have a manager. It can only update!',
-                }],
-            };
+            throw new Error('Department already have a manager. It can only update!');
         }
-
-        // TODO: dept manager update API
 
         newUser = await prisma.member.create({
             data: {
                 email: user.email,
-                password: user.password,
+                password: hashedPassword,
                 name: user.name,
                 phone: user.phone,
                 Dept: {
@@ -164,9 +139,9 @@ const createUser = async (user: z.infer<typeof signupSchema>) => {
         });
 
         return { user: newUser, errors: [] };
-    } catch (error) {
+    } catch (error: any) {
         logger.error('Error creating user:', error);
-        return { user: null, errors: [{ message: 'Error creating user', path: [] }] };
+        throw new Error(error.message);
     }
 }
 
@@ -175,17 +150,21 @@ const loginUser = async (loginInfo: z.infer<typeof loginSchema>) => {
         let user = null;
 
         if (loginInfo.email && loginInfo.password) {
-            user = await prisma.member.findFirst({
-                where: {
-                    email: loginInfo.email,
-                    password: loginInfo.password,
-                },
-            });
+            user = await getUserByIdEmailPhone({ email: loginInfo.email });
+            if (!user) {
+                throw new Error('Invalid email or password');
+            }
+
+            const isPasswordValid = await verifyHash(user.password, loginInfo.password);
+            if (!isPasswordValid) {
+                throw new Error('Invalid email or password');
+            }
+
         } else if (loginInfo.phone && loginInfo.otp) {
 
             const isOtpValid = await verifyOtp(loginInfo.phone, loginInfo.otp);
             if (!isOtpValid) {
-                return { user: null, errors: [{ message: 'Invalid OTP', path: [] }] };
+                throw new Error('Invalid OTP');
             }
 
             user = await prisma.member.findFirst({
@@ -194,11 +173,11 @@ const loginUser = async (loginInfo: z.infer<typeof loginSchema>) => {
                 },
             });
         } else {
-            return { user: null, errors: [{ message: 'Invalid login information', path: [] }] };
+            throw new Error("Invalid login information");
         }
 
         if (!user) {
-            return { user: null, errors: [{ message: 'Invalid login credentials', path: [] }] };
+            throw new Error("Invalid login credentials");
         }
 
         const sessionToken = uuidv4();
@@ -209,10 +188,12 @@ const loginUser = async (loginInfo: z.infer<typeof loginSchema>) => {
             include: { role: true },
         });
 
-        return { user: { ...user, sessionToken }, errors: [] };
-    } catch (error) {
+        const token = await generateToken({ id: user.id, sessionToken });
+
+        return { user: { ...user, sessionToken, token }, errors: [] };
+    } catch (error: any) {
         logger.error('Error logging in user:', error);
-        return { user: null, errors: [{ message: 'Error logging in user', path: [] }] };
+        throw new Error(error.message);
     }
 };
 
@@ -233,10 +214,7 @@ const createOrUpdateManager = async ({
         });
 
         if (!managerRole) {
-            return {
-                user: null,
-                errors: [{ message: 'Manager role not found.' }],
-            };
+            throw new Error('Manager role not found.');
         }
 
         const result = await prisma.$transaction(async (tx) => {
@@ -271,10 +249,7 @@ const createOrUpdateManager = async ({
             });
 
             if (!company) {
-                return {
-                    user: null,
-                    errors: [{ message: 'Company not found.' }],
-                };
+                throw new Error('Company not found.');
             }
 
             let user = null;
@@ -299,19 +274,16 @@ const createOrUpdateManager = async ({
             }
 
             if (type === 'DEPARTMENT' || type === 'BOTH') {
-                const dept = await tx.dept.findFirst({
+                const dept = await tx.companyDept.findFirst({
                     where: { id: deptId },
                 });
 
                 if (!dept) {
-                    return {
-                        user: null,
-                        errors: [{ message: 'Department not found.' }],
-                    };
+                    throw new Error('Department not found.');
                 }
 
                 // Update department with manager
-                await tx.dept.update({
+                await tx.companyDept.update({
                     where: { id: deptId },
                     data: {
                         deptManagerId: manager.id,
@@ -336,11 +308,46 @@ const createOrUpdateManager = async ({
             user: result.user,
             errors: result.errors
         };
-    } catch (error) {
+    } catch (error: any) {
         logger.error('Error updating manager:', error);
-        return { user: null, errors: [{ message: 'Error updating manager', path: [] }] };
+        throw new Error(error.message);
     }
 };
+
+const getCompanyDeptMembers = async (companyId: string, deptId: string) => {
+    try {
+        let members;
+        if (deptId) {
+            members = await prisma.member.findMany({
+                where: {
+                    companyId: companyId,
+                    deptId: deptId,
+                },
+                include: {
+                    role: true,
+                    Company: true,
+                    Dept: true,
+                },
+            });
+        } else {
+            members = await prisma.member.findMany({
+                where: {
+                    companyId: companyId,
+                },
+                include: {
+                    role: true,
+                    Company: true,
+                    Dept: true,
+                },
+            });
+        }
+
+        return members;
+    } catch (error: any) {
+        logger.error('Error fetching company dept members:', error);
+        throw new Error(error.message);
+    }
+}
 
 
 export default {
@@ -349,5 +356,6 @@ export default {
     createUser,
     // updateUser,
     loginUser,
-    createOrUpdateManager
+    createOrUpdateManager,
+    getCompanyDeptMembers
 };

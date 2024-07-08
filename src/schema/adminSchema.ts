@@ -1,77 +1,54 @@
-import { buildSchema } from 'graphql';
+export const adminSchema = `
+type SubDeptField {
+  id: ID!
+  name: String!
+  fieldType: FieldType!
+  value: String
+  createdAt: String!
+  updatedAt: String!
 
-export const adminSchema = buildSchema(`
-  type Role {
-    id: ID!
-    name: String!
-  }
+}
+type CompanyDeptForm {
+  id: ID!
+  name: String!
+  subDeptFields: [SubDeptField!]
+  createdAt: String!
+  updatedAt: String!
+}
 
-   type Member {
-    id: ID!
-    name: String!
-    email: String!
-    phone: String!
-    role: Role
-    sessionToken: String
-  }
-    
-  type DeptField {
-    id: ID!
-    name: String
-    fieldType: String!
-    value: String!
-    dept: Dept!
-    createdAt: String!
-    updatedAt: String!
-  }
-    
-  type Dept {
-    id: ID!
-    name: String!
-    members: [Member!]
-    deptFields: [DeptField]
-    createdAt: String!
-    updatedAt: String!
-  }
+type Dept {
+  id: ID!
+  name: String!
+  members: [Member!]
+  companyDeptForms: [CompanyDeptForm!]
+  leadStatuses: [leadStatus!]
+  createdAt: String!
+  updatedAt: String!
+}
 
-  type Error {
-    message: String!
-    path: [String!]
-  }
+type CreateDeptResponse {
+  dept: Dept
+}
 
-  type CreateRoleResponse {
-    role: Role
-    errors: [Error!]
-  }
+enum FieldType {
+  INPUT
+  TEXTAREA
+  IMAGE
+  SELECT
+  RADIO
+  CHECKBOX
+}
 
-  type CreateDeptResponse {
-    dept: Dept
-    errors: [Error!]
-  }
+input DeptFieldsInput {
+  name: String!
+  fieldType: FieldType!
+  value: String
+}
 
-  enum FieldType {
-    INPUT
-    SELECT
-    RADIO
-    CHECKBOX
-  }
-  input DeptFields {
-    name: String!
-    fieldType: FieldType!
-    value: String
-  }
+input CreateDeptInput {
+  name: String!
+  subDeptName: String!
+  deptFields: [DeptFieldsInput!]
+}
 
-  input CreateDeptInput {
-    name: String!
-    deptFields: [DeptFields!]
-  }
-
-  type Query {
-    getAllRoles: [Role]
-  }
-
-  type Mutation {
-    createUserRole(name: String!): CreateRoleResponse
-    createDept(input: CreateDeptInput!): CreateDeptResponse
-  }
-`);
+`;

@@ -25,6 +25,56 @@ const getAllLeads = async () => {
     }
 }
 
+const getAssignedLeads = async (userId: string, companyId: string) => {
+    try {
+        let leads;
+        if (!!companyId) {
+            leads = await prisma.lead.findMany({
+                where: {
+                    companyId,
+                    LeadStatus: {
+                        every: {
+                            assignedToId: userId,
+                        }
+                    },
+                },
+                include: {
+                    Company: true,
+                    LeadStatus: {
+                        include: {
+                            Dept: true,
+                        },
+                    },
+                },
+            });
+        } else {
+            leads = await prisma.lead.findMany({
+                where: {
+                    LeadStatus: {
+                        every: {
+                            assignedToId: userId,
+                        }
+                    },
+                },
+                include: {
+                    Company: true,
+                    LeadStatus: {
+                        include: {
+                            Dept: true,
+                        },
+                    },
+                },
+            });
+        }
+
+        return leads;
+    } catch (error) {
+        logger.error('Error fetching Leads:', error);
+        return [];
+    }
+}
+
+
 const getCompanyLeads = async (companyId: string) => {
     try {
         const leads = await prisma.lead.findMany({
@@ -36,9 +86,13 @@ const getCompanyLeads = async (companyId: string) => {
                 LeadStatus: {
                     include: {
                         Dept: true,
+                        assignedTo: true
                     },
                 },
             },
+            orderBy: {
+                createdAt: 'desc',
+            }
         });
 
         return leads;
@@ -83,7 +137,7 @@ const createLead = async (lead: z.infer<typeof createLeadSchema>) => {
         });
 
         if (!company) {
-            return { lead: null, errors: [{ message: 'Company not found', path: [] }] };
+            throw new Error("Company not found")
         }
 
         const companyManager = await prisma.member.findFirst({
@@ -93,11 +147,9 @@ const createLead = async (lead: z.infer<typeof createLeadSchema>) => {
             },
         });
 
-        console.log(companyManager, "companyManager")
-
 
         if (!companyManager) {
-            return { lead: null, errors: [{ message: 'Company manager not found', path: [] }] };
+            throw new Error("Company manager not found")
         }
 
         let newLead = null;
@@ -120,21 +172,22 @@ const createLead = async (lead: z.infer<typeof createLeadSchema>) => {
                 vehicleDate: formatISO(parse(lead.vehicleDate || "", 'dd/MM/yyyy', new Date())),
                 vehicleName: lead.vehicleName,
                 vehicleModel: lead.vehicleModel,
+                callStatus: CallStatus.PENDING,
+                paymentStatus: PaymentStatus.PENDING,
                 LeadStatus: {
                     create: {
                         name: "New Lead",
                         description: "description",
-                        callStatus: CallStatus.PENDING,
-                        paymentStatus: PaymentStatus.PENDING,
+
                     },
                 },
             },
         });
 
         return { lead: newLead, errors: [] };
-    } catch (error) {
+    } catch (error: any) {
         logger.error('Error creating Lead:', error);
-        return { lead: null, errors: [{ message: 'Error creating lead', path: [] }] };
+        throw new Error(`Error creating lead: ${error.message}`)
     }
 }
 
@@ -161,23 +214,29 @@ const updateLead = async (lead: z.infer<typeof createLeadSchema>) => {
         });
 
         return updatedLead;
-    } catch (error) {
+    } catch (error: any) {
         logger.error('Error updating Lead:', error);
-        return { lead: null, errors: [{ message: 'Error updating lead', path: [] }] };
+        throw new Error(`Error updating Lead: ${error.message}`);
     }
 }
 
-const leadAssignTo = async ({ companyId, leadId, deptId, userId, description }: z.infer<typeof leadAssignToSchema>) => {
+const leadAssignTo = async ({ companyId, leadIds, deptId, userId, description }: z.infer<typeof leadAssignToSchema>) => {
     try {
-        const lead = await prisma.lead.findFirst({
+        if (!Array.isArray(leadIds)) {
+            throw new Error("leadIds must be an array of lead IDs");
+        }
+
+        const leads = await prisma.lead.findMany({
             where: {
                 companyId,
-                id: leadId,
+                id: {
+                    in: leadIds,
+                },
             },
         });
 
-        if (!lead) {
-            return { lead: null, errors: [{ message: 'Lead not found', path: [] }] };
+        if (leads.length !== leadIds.length) {
+            throw new Error("Some leads not found or not part of the company");
         }
 
         const member = await prisma.member.findFirst({
@@ -189,48 +248,57 @@ const leadAssignTo = async ({ companyId, leadId, deptId, userId, description }: 
         });
 
         if (!member) {
-            return { lead: null, errors: [{ message: 'Member not found, Member must the part of Company and respective Department!', path: [] }] };
+            throw new Error("Member not found, Member must be part of the Company and respective Department");
         }
 
-
-        const updatedLeadStatus = await prisma.leadStatus.updateMany({
+        const updatedLeads = await prisma.leadStatus.updateMany({
             where: {
-                leadId,
+                leadId: {
+                    in: leadIds,
+                },
             },
             data: {
                 name: `Assigned to ${member.name}`,
                 description,
                 deptId: member.deptId,
                 assignedToId: userId,
-                callStatus: CallStatus.PENDING,
-                paymentStatus: PaymentStatus.PENDING,
             },
         });
 
-        if (updatedLeadStatus.count === 0) {
-            return { lead: null, errors: [{ message: 'LeadStatus not found or not updated', path: [] }] };
-        }
+        const updatedLeadsWithRelations = await prisma.lead.findMany({
+            where: {
+                id: {
+                    in: leadIds,
+                },
+            },
+            include: {
+                LeadStatus: {
+                    include: {
+                        assignedTo: true,
+                        Dept: true,
+                    },
+                },
+            },
+        });
 
-        console.log(updatedLeadStatus, "updatedLeadStatus")
-
-        return { lead: updatedLeadStatus, error: [] };
-    } catch (error) {
-        logger.error('Error assigning Lead:', error);
-        return { lead: null, errors: [{ message: 'Error assigning lead', path: [] }] };
+        return updatedLeadsWithRelations;
+    } catch (error: any) {
+        logger.error('Error assigning Leads:', error);
+        throw new Error(`Error Assigning Leads: ${error.message}`);
     }
 }
 
-const submitFeedback = async ({ deptId, leadId, feedback }: z.infer<typeof submitFeedbackSchema>) => {
+const submitFeedback = async ({ deptId, leadId, callStatus, paymentStatus, feedback }: z.infer<typeof submitFeedbackSchema>, userId: string) => {
     try {
 
-        const dept = await prisma.dept.findFirst({
+        const dept = await prisma.companyDept.findFirst({
             where: {
                 id: deptId,
             },
         });
 
         if (!dept) {
-            return { lead: null, errors: [{ message: 'Department not found', path: [] }] };
+            throw new Error("Department not found")
         }
 
         const company = await prisma.company.findFirst({
@@ -240,60 +308,81 @@ const submitFeedback = async ({ deptId, leadId, feedback }: z.infer<typeof submi
         });
 
         if (!company) {
-            return { lead: null, errors: [{ message: 'Company not found', path: [] }] };
+            throw new Error("Company not found")
         }
 
-        const lead = await prisma.lead.findFirst({
+        const lead = await prisma.lead.update({
             where: {
                 id: leadId,
             },
+            data: {
+                callStatus,
+                paymentStatus
+            }
+
         });
 
         if (!lead) {
-            return { lead: null, errors: [{ message: 'Lead not found', path: [] }] };
+            throw new Error("Lead not found")
         }
 
+        const feedbackData = feedback.map(fb => ({
+            name: fb.name,
+            value: fb.value,
+            fieldType: fb.fieldType,
+            leadId: leadId,
+        }));
+
+        // Upsert lead feedback
         const newFeedback = await prisma.leadFeedback.upsert({
             where: {
-                leadId: leadId,
+                leadId_memberId: {
+                    leadId: leadId,
+                    memberId: userId,
+                },
             },
             update: {
-                feedback,
+                feedback: {
+                    deleteMany: {}, // Clear existing feedbacks to avoid duplicates
+                    createMany: {
+                        data: feedbackData,
+                    },
+                },
             },
             create: {
-                feedback,
-                dept: {
-                    connect: {
-                        id: dept.id,
+                feedback: {
+                    createMany: {
+                        data: feedbackData,
                     },
+                },
+                dept: {
+                    connect: { id: dept.id },
                 },
                 lead: {
-                    connect: {
-                        id: leadId,
-                    },
+                    connect: { id: leadId },
                 },
+                member: {
+                    connect: { id: userId },
+                },
+            },
+            include: {
+                feedback: true,
             },
         });
 
-
-        const updatedLeadStatus = await prisma.leadStatus.updateMany({
+        const updatedLeadStatus = await prisma.leadStatus.update({
             where: {
                 leadId,
             },
             data: {
-                callStatus: CallStatus.SUCCESS,
                 assignedToId: company.companyManagerId
             },
         });
 
-        if (updatedLeadStatus.count === 0) {
-            return { lead: null, errors: [{ message: 'LeadStatus not found or not updated', path: [] }] };
-        }
-
-        return { lead: null, message: "Updated Successfully!", errors: [] };
-    } catch (error) {
+        return { lead: lead, message: "Updated Successfully!", errors: [] };
+    } catch (error: any) {
         logger.error('Error updating Lead:', error);
-        return { lead: null, errors: [{ message: 'Error Submitting Lead Feedback', path: [] }] };
+        throw new Error(`Error Submitting Lead Feedback: ${error.message}`);
     }
 }
 
@@ -301,6 +390,7 @@ export default {
     getAllLeads,
     getCompanyLeads,
     getCompanyLeadById,
+    getAssignedLeads,
     createLead,
     updateLead,
     leadAssignTo,

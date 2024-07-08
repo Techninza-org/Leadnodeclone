@@ -1,14 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
-// import { prisma } from '../config';
-// import { User, Vendor } from '@prisma/client';
+import JWT from 'jsonwebtoken';
+import prisma from '../config/database';
+import { Member } from '@prisma/client';
 
-import { USER_WITHOUT_PASSWORD } from '../utils/db-utils';
-
-// export interface ExtendedRequest extends Request {
-//   user?: User;
-//   vendor?: Vendor;
-// }
+export interface ExtendedRequest extends Request {
+  user?: Member | null;
+}
 
 type decodedTokenType = {
   id: string;
@@ -16,7 +13,41 @@ type decodedTokenType = {
   exp: number;
 };
 
-export const userAuthMiddleware = async (req: Request, res: Response, next: NextFunction) => {
-  // Add your admin authentication logic here
-  next();
+export const userAuthMiddleware = async (req: ExtendedRequest, res: Response, next: NextFunction) => {
+  try {
+    if (req.body.query.includes("loginUser") || req.body.query.includes("createUser")) {
+      return next();
+    }
+
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader) {
+      return res.status(401).send('Unauthorized');
+    }
+
+    if (!authHeader.startsWith('x-lead-token ')) {
+      return res.status(401).send('Unauthorized');
+    }
+
+    const token = authHeader.split(' ')[1];
+    const decodedToken = JWT.verify(token, process.env.JWT_SECRET!) as decodedTokenType;
+
+    const user = await prisma.member.findUnique({
+      where: {
+        id: decodedToken.id,
+      },
+      include: {
+        role: true
+      }
+    });
+
+    req.user = user
+    next();
+  } catch (error: any) {
+    console.log(error)
+    if(error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError' || error.message.includes('jwt expired')){
+      return res.status(401).send('Token Expired or Invalid Token');
+    }
+    return res.status(401).send('Unauthorized');
+  }
 };

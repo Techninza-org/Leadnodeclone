@@ -1,11 +1,67 @@
+import { buildSchema } from "graphql";
 import { authSchema } from "./authSchema";
 import { adminSchema } from "./adminSchema";
 import { leadSchema } from "./leadSchema";
 import { userSchema } from "./userSchema";
 
-export default {
-  authSchema,
-  adminSchema,
-  leadSchema,
-  userSchema
-}
+const queries_mutation = `
+type Query {
+    getAllUsers: [User]
+    getUser(id: ID!): User
+    getAllRoles: [Role]
+    getAllLeads: [Lead]
+    getCompanyLeads(companyId: String!): [Lead]
+    getCompanyLeadById(companyId: String!, leadId: String!): Lead
+    getCompanyDeptMembers(companyId: String!, deptId: String): [Member]
+    getAssignedLeads(userId: String!): [Lead]
+    getDeptFields(deptId: String!): Dept
+    getDepts(companyId: String!): [Dept]
+    getCompanyDepts(companyId: String!): [Dept]
+    getCompanyDeptFields(deptId: String!): [CompanyDeptForm]
+
+  }
+
+  type Mutation {
+    createUser(
+      name: String!,
+      email: String!,
+      phone: String!,
+      password: String!,
+      roleId: String,
+      deptId: String,
+      companyId: String,
+      companyName: String,
+      companyAddress: String,
+      companyPhone: String,
+      companyEmail: String
+    ): CreateUserResponse
+    
+    loginUser(email: String, password: String, phone: String, otp: String): LoginUserResponse
+
+    createOrUpdateManager(
+      memberId: ID,
+      name: String,
+      email: String,
+      password: String,
+      phone: String,
+      type: UpdateManagerType!,
+      companyId: ID!,
+      deptId: ID
+    ): CreateUserResponse
+
+    createUserRole(name: String!): CreateRoleResponse
+
+    createDept(input: CreateDeptInput!): CreateDeptResponse
+
+    createLead(input: LeadInput!): LeadResponse
+    
+    leadAssignTo(companyId: String!, leadIds: [String!]!, deptId: String!, userId: String!, description: String): [Lead]
+
+    submitFeedback(deptId: String!, leadId: String!, callStatus: String!, paymentStatus: String!, feedback: [FeedbackInput!]!): LeadResponse
+  }
+`
+const allSchemas = [authSchema, adminSchema, leadSchema, userSchema, queries_mutation];
+
+export const schema = buildSchema(
+  allSchemas.join("\n")
+);

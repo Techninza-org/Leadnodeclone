@@ -42,7 +42,7 @@ export const loginSchema = z.object({
     if ((data.email && data.password) || data.phone) {
         return true;
     }
-    
+
     return false;
 }, {
     message: 'Please provide either email and password, or phone number.',
@@ -57,7 +57,7 @@ export const CreateOrUpdateManagerSchema = z.object({
     email: z.string().min(3, 'Please enter your email.').email('The email address is badly formatted.').optional(),
     password: z.string().min(3, 'Please enter your password.').min(8, 'Your password must have 8 characters or more.').optional(),
     phone: z.string().length(10, 'Please enter a valid phone number.').optional(),
-    
+
     deptId: z.string().min(3, 'Please enter your deptId.').optional(),
     type: z.enum(['COMPANY', 'DEPARTMENT', 'BOTH']),
 
@@ -73,15 +73,30 @@ export const CreateOrUpdateManagerSchema = z.object({
     if (data.deptId && data.type === 'DEPARTMENT') {
         return true;
     }
-    if (!data.memberId && (!data.name || !data.email || !data.password || !data.phone)){
-        
+    if (!data.memberId && (!data.name || !data.email || !data.password || !data.phone)) {
+
         return {
             message: 'Please provide either memberId, or name, email, password, phone.',
         };
     }
-    
+
     return false;
 }, {
     message: 'Please provide either companyId, or deptId, or both companyId and deptId.',
     path: ['companyId', 'deptId', 'type'],
 });
+
+export const loggedUserSchema = z.object({
+    id: z.string(),
+    name: z.string(),
+    email: z.string(),
+    sessionToken: z.string(),
+    token: z.string(),
+    phone: z.string(),
+    role: z.object({
+        id: z.string(),
+        name: z.string(),
+    }),
+    deptId: z.string(),
+    companyId: z.string(),
+})

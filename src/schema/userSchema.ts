@@ -1,31 +1,70 @@
-import { buildSchema } from 'graphql';
-
-export const userSchema = buildSchema(`
+export const userSchema = `
   type Role {
     id: ID!
     name: String!
+    members: [Member!]
+    createdAt: String!
+    updatedAt: String!
   }
+
+  type CreateRoleResponse {
+    role: Role
+  }
+
   type User {
     id: ID!
     name: String!
     email: String!
     phone: String!
-    role: Role
+    deptId: String
+    role: Role!
     sessionToken: String
+    token: String!
+    companyId: String!
   }
 
-  type Error {
-    message: String!
-    path: [String!]
+  type Member {
+    id: ID!
+    name: String!
+    email: String!
+    phone: String!
+    dept: Dept!
+    role: Role
+    company: Company!
+    leadStatuses: [leadStatus!]
+    createdAt: String!
+    updatedAt: String!
   }
 
-  type CreateUserResponse {
-    user: User
-    errors: [Error!]
+  type Company {
+    id: ID!
+    userId: String!
+    name: String!
+    email: String!
+    phone: String!
+    members: [Member!]
+    leads: [Lead!]
+    depts: [Dept!]
+    createdAt: String!
+    updatedAt: String!
   }
 
-  type Query {
-    getUser(id: ID!): User
+   type leadStatus {
+    id: ID!
+    name: String
+    description: String!
+    callStatus: String!
+    paymentStatus: String!
+    leads: [Lead!]
+    Depts: [Dept!]
+    assignedTo: Member!
+    createdAt: String!
+    updatedAt: String!
+  }
+
+  type LeadResponse {
+    lead: Lead
+    message: String
   }
 
   enum UpdateManagerType {
@@ -33,17 +72,4 @@ export const userSchema = buildSchema(`
     DEPARTMENT
     BOTH
   }
-
-  type Mutation {
-    createOrUpdateManager(
-        memberId: ID, 
-        name: String,
-        email: String,
-        password: String,
-        phone: String,
-        type: UpdateManagerType!, 
-        companyId: ID!, 
-        deptId: ID
-    ): CreateUserResponse
-  }
-`);
+`
