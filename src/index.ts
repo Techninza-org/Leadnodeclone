@@ -14,7 +14,7 @@ app.use(cors({ origin: '*' }));
 app.use(express.json());
 app.use(middleware.loggerMiddleware);
 
-app.all('/graphql', middleware.userAuthMiddleware, createHandler({
+app.all('/api/', middleware.userAuthMiddleware, createHandler({
     schema: schema,
     rootValue: resolvers,
     context: (req: any) => ({ user: req.raw.user }),
