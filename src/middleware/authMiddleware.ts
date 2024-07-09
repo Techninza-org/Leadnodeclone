@@ -15,7 +15,7 @@ type decodedTokenType = {
 
 export const userAuthMiddleware = async (req: ExtendedRequest, res: Response, next: NextFunction) => {
   try {
-    if (req.body.query.includes("loginUser") || req.body.query.includes("createUser")) {
+    if (req?.body?.query?.includes("loginUser") || req?.body?.query?.includes("createUser")) {
       return next();
     }
 
