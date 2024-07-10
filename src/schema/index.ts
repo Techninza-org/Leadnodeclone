@@ -18,7 +18,7 @@ type Query {
     getDepts(companyId: String!): [Dept]
     getCompanyDepts(companyId: String!): [Dept]
     getCompanyDeptFields(deptId: String!): [CompanyDeptForm]
-
+    getLeadBids(leadId: String!): [Bid]
   }
 
   type Mutation {
@@ -57,7 +57,9 @@ type Query {
     
     leadAssignTo(companyId: String!, leadIds: [String!]!, deptId: String!, userId: String!, description: String): [Lead]
 
-    submitFeedback(deptId: String!, leadId: String!, callStatus: String!, paymentStatus: String!, feedback: [FeedbackInput!]!): LeadResponse
+    submitFeedback(deptId: String!, leadId: String!, callStatus: String!, paymentStatus: String!, feedback: [FeedbackInput!]!, urls: [String]): LeadResponse
+
+    submitBid(companyId: String!, deptId: String!, leadId: String!, bidAmount: String!, description: String): Bid
   }
 `
 const allSchemas = [authSchema, adminSchema, leadSchema, userSchema, queries_mutation];

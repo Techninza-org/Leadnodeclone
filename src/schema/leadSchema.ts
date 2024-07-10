@@ -23,6 +23,15 @@ export const leadSchema = `
     updatedAt: String!
   }
 
+  type Bid { 
+    id: ID!
+    bidAmount: Float!
+    description: String
+    Member: [Member]!
+    createdAt: String!
+    updatedAt: String!
+  }
+
   type Lead {
     id: ID!
     name: String!

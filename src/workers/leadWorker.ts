@@ -3,7 +3,7 @@ import { formatISO, parse } from "date-fns";
 import { CallStatus, PaymentStatus } from "@prisma/client";
 import prisma from "../config/database";
 import logger from "../utils/logger";
-import { createLeadSchema, leadAssignToSchema, submitFeedbackSchema } from "../types/lead";
+import { createLeadSchema, leadAssignToSchema, leadBidSchema, submitFeedbackSchema } from "../types/lead";
 
 const getAllLeads = async () => {
     try {
@@ -288,7 +288,7 @@ const leadAssignTo = async ({ companyId, leadIds, deptId, userId, description }:
     }
 }
 
-const submitFeedback = async ({ deptId, leadId, callStatus, paymentStatus, feedback }: z.infer<typeof submitFeedbackSchema>, userId: string) => {
+const submitFeedback = async ({ deptId, leadId, callStatus, paymentStatus, feedback, urls }: z.infer<typeof submitFeedbackSchema>, userId: string) => {
     try {
 
         const dept = await prisma.companyDept.findFirst({
@@ -331,6 +331,7 @@ const submitFeedback = async ({ deptId, leadId, callStatus, paymentStatus, feedb
             value: fb.value,
             fieldType: fb.fieldType,
             leadId: leadId,
+
         }));
 
         // Upsert lead feedback
@@ -348,6 +349,7 @@ const submitFeedback = async ({ deptId, leadId, callStatus, paymentStatus, feedb
                         data: feedbackData,
                     },
                 },
+                imageUrls: urls
             },
             create: {
                 feedback: {
@@ -355,6 +357,7 @@ const submitFeedback = async ({ deptId, leadId, callStatus, paymentStatus, feedb
                         data: feedbackData,
                     },
                 },
+                imageUrls: urls,
                 dept: {
                     connect: { id: dept.id },
                 },
@@ -386,8 +389,95 @@ const submitFeedback = async ({ deptId, leadId, callStatus, paymentStatus, feedb
     }
 }
 
+const submitBid = async ({ deptId, leadId, companyId, bidAmount, description }: z.infer<typeof leadBidSchema>, userId: string) => {
+
+    const dept = await prisma.companyDept.findFirst({
+        where: {
+            id: deptId,
+        },
+    });
+
+
+    if (!dept) {
+        throw new Error("Department not found")
+    }
+
+    const company = await prisma.company.findFirst({
+        where: {
+            id: companyId,
+        },
+    });
+
+    if (!company) {
+        throw new Error("Company not found")
+    }
+
+    const member = await prisma.member.findFirst({
+        where: {
+            id: userId,
+            companyId,
+        },
+    });
+
+    if (!member) {
+        throw new Error("Member not found")
+    }
+
+    const lead = await prisma.lead.findFirst({
+        where: {
+            id: leadId,
+            companyId,
+        },
+    });
+
+    if (!lead) {
+        throw new Error("Lead not found")
+    }
+
+    const newBid = await prisma.bid.upsert({
+        where: {
+            leadId,
+        },
+        update: {
+            bidAmount: parseFloat(bidAmount),
+            description,
+        },
+        create: {
+            bidAmount: parseFloat(bidAmount),
+            description,
+            lead: {
+                connect: { id: leadId },
+            },
+            Member: {
+                connect: { id: userId },
+            },
+        },
+    })
+
+    console.log(newBid)
+
+    return newBid;
+}
+
+export const getLeadBids = async (leadId: string) => {
+    console.log("leadId", leadId)
+    const bids = await prisma.bid.findMany({
+        where: {
+            leadId,
+        },
+        include: {
+            Member: true,
+        },
+    });
+
+    console.log("bids", bids)
+    return bids;
+}
+
+
 export default {
     getAllLeads,
+    getLeadBids,
     getCompanyLeads,
     getCompanyLeadById,
     getAssignedLeads,
@@ -395,4 +485,5 @@ export default {
     updateLead,
     leadAssignTo,
     submitFeedback,
+    submitBid
 }

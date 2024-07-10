@@ -1,7 +1,7 @@
 
 import { z, ZodIssue } from 'zod';
 import leadWorker from '../workers/leadWorker';
-import { createLeadSchema, leadAssignToSchema, submitFeedbackSchema } from '../types/lead';
+import { createLeadSchema, leadAssignToSchema, leadBidSchema, submitFeedbackSchema } from '../types/lead';
 import logger from '../utils/logger';
 import { loggedUserSchema } from '../types/user';
 
@@ -76,18 +76,34 @@ export const leadResolvers = {
         }
     },
 
-    submitFeedback: async ({ deptId, leadId, callStatus, paymentStatus, feedback }: z.infer<typeof submitFeedbackSchema>, {user}: {user: z.infer<typeof loggedUserSchema>}) => {
+    submitFeedback: async ({ deptId, leadId, callStatus, paymentStatus, feedback, urls }: z.infer<typeof submitFeedbackSchema>, { user }: { user: z.infer<typeof loggedUserSchema> }) => {
         try {
-            console.log('submitFeedback', { deptId, leadId, callStatus, paymentStatus, feedback })
             // const parsedData = submitFeedbackSchema.safeParse({ deptId, leadId, feedback });
             // if (!parsedData.success) {
             //     const errors = parsedData.error.errors.map((err: ZodIssue) => ([err.message, err.path]));
             //     throw new Error(errors.join(', '));
             // }
-            return await leadWorker.submitFeedback({ deptId, leadId, callStatus, paymentStatus, feedback }, user.id);
+            return await leadWorker.submitFeedback({ deptId, leadId, callStatus, paymentStatus, feedback, urls }, user.id);
         } catch (error) {
             logger.error('Error Submitting Feedback:', error);
             throw new Error('Error Submitting Feedback');
         }
+    },
+    getLeadBids: async ({ leadId }: { leadId: string }) => {
+        try {
+            console.log('leadId:', leadId)
+            return await leadWorker.getLeadBids(leadId);
+        } catch (error) {
+            logger.error('Error fetching lead bids:', error);
+            throw new Error('Error fetching lead bids');
+        }
+    },
+    submitBid: async ({ deptId, leadId, companyId, bidAmount, description }: z.infer<typeof leadBidSchema>, { user }: { user: z.infer<typeof loggedUserSchema> }) => {
+        try {
+            return await leadWorker.submitBid({ deptId, leadId, companyId, bidAmount, description, memberId: user.id }, user.id);
+        } catch (error) {
+            logger.error('Error Submitting Bid:', error);
+            throw new Error('Error Submitting Bid');
+        }
     }
-}
+};

@@ -1,4 +1,3 @@
-import { CallStatus } from '@prisma/client';
 import { z } from 'zod';
 
 export const createLeadSchema = z.object({
@@ -29,6 +28,8 @@ export const leadAssignToSchema = z.object({
     description: z.string().optional(),
 });
 
+
+
 export const submitFeedbackSchema = z.object({
     leadId: z.string().min(3, "Lead ID must be at least 3 characters long."),
     deptId: z.string().min(3, "Department ID must be at least 3 characters long."),
@@ -36,7 +37,18 @@ export const submitFeedbackSchema = z.object({
     paymentStatus: z.enum(['PENDING', 'PAID', 'FAILED']),
     feedback: z.array(z.object({
         name: z.string().min(3, "Name must be at least 3 characters long."),
-        value: z.string().min(2, "Value must be at least 3 characters long."),
+        value: z.string().min(2, "Value must be at least 2 characters long."),
         fieldType: z.string().min(3, "Field type must be at least 3 characters long."),
     })),
+    urls: z.array(z.string()).optional(),
+});
+
+
+export const leadBidSchema = z.object({
+    companyId: z.string().min(3, "Company ID must be at least 3 characters long."),
+    deptId: z.string().min(3, "Department ID must be at least 3 characters long."),
+    memberId: z.string().min(3, "User ID must be at least 3 characters long."),
+    leadId: z.string().min(3, "Lead ID must be at least 3 characters long."),
+    bidAmount: z.string().min(1, "Bid amount must be greater than 0."),
+    description: z.string().optional(),
 });

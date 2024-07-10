@@ -31,15 +31,42 @@ model Lead {
 
   LeadStatus   LeadStatus[]
   LeadFeedback LeadFeedback[]
-  Feedbacks Feedbacks[]
+  Feedbacks    Feedbacks[]
+  bids         Bid[]
 
   companyId String?  @db.ObjectId
   Company   Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([companyId])
+}
+
+model Bid {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  leadId String? @db.ObjectId @unique
+  lead   Lead?   @relation(fields: [leadId], references: [id])
+
+  bidAmount Float
+  bidStatus BidStatus @default(PENDING)
+
+  deptId String?      @db.ObjectId
+  Dept   CompanyDept? @relation(fields: [deptId], references: [id])
+
+  Member Member[]
+
+  description String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+}
+
+enum BidStatus {
+  PENDING
+  APPROVED
 }
 
 enum CallStatus {
@@ -86,12 +113,13 @@ model LeadFeedback {
   memberId String? @db.ObjectId
   member   Member? @relation(fields: [memberId], references: [id])
 
-  feedback Feedbacks[]
+  feedback  Feedbacks[]
+  imageUrls String[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-   @@unique([leadId, memberId]) 
+  @@unique([leadId, memberId])
 }
 
 model Feedbacks {
@@ -135,6 +163,7 @@ model CompanyDept {
   companyDeptForms CompanyDeptForm[]
   leadStatus       LeadStatus[]
   members          Member[]
+  Bid              Bid[]
 
   LeadFeedback LeadFeedback[] // All Lead Feedbacks
 
@@ -253,6 +282,9 @@ model Member {
 
   LeadStatuses LeadStatus[] // Assigned Lead Statuses
   LeadFeedback LeadFeedback[]
+
+  bidId        String?         @db.ObjectId
+  bid          Bid?           @relation(fields: [bidId], references: [id])
 
   sessionToken String? // Device Login Token at a time
 
