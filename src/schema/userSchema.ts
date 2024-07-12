@@ -31,7 +31,6 @@ export const userSchema = `
     dept: Dept!
     role: Role
     company: Company!
-    leadStatuses: [leadStatus!]
     createdAt: String!
     updatedAt: String!
   }

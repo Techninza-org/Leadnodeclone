@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { formatISO, parse } from "date-fns";
-import { CallStatus, PaymentStatus } from "@prisma/client";
+import { CallStatus, Member, PaymentStatus } from "@prisma/client";
 import prisma from "../config/database";
 import logger from "../utils/logger";
 import { createLeadSchema, leadAssignToSchema, leadBidSchema, submitFeedbackSchema } from "../types/lead";
@@ -10,11 +10,6 @@ const getAllLeads = async () => {
         const leads = await prisma.lead.findMany({
             include: {
                 Company: true,
-                LeadStatus: {
-                    include: {
-                        Dept: true,
-                    }
-                },
             },
         });
 
@@ -25,55 +20,44 @@ const getAllLeads = async () => {
     }
 }
 
-const getAssignedLeads = async (userId: string, companyId: string) => {
+const getAssignedLeads = async (userId: string, companyId?: string) => {
     try {
-        let leads;
-        if (!!companyId) {
-            leads = await prisma.lead.findMany({
-                where: {
-                    companyId,
-                    LeadStatus: {
-                        every: {
-                            assignedToId: userId,
-                        }
+        // Construct the where clause based on whether companyId is provided
+        const whereClause = companyId
+            ? {
+                companyId,
+                LeadMember: {
+                    some: { memberId: userId }
+                }
+            }
+            : {
+                LeadMember: {
+                    some: { memberId: userId }
+                }
+            };
+
+        // Fetch the leads with the constructed where clause
+        const leads = await prisma.lead.findMany({
+            where: whereClause,
+            include: {
+                Company: true,
+                LeadMember: {
+                    include: {
+                        Member: true,
                     },
                 },
-                include: {
-                    Company: true,
-                    LeadStatus: {
-                        include: {
-                            Dept: true,
-                        },
-                    },
-                },
-            });
-        } else {
-            leads = await prisma.lead.findMany({
-                where: {
-                    LeadStatus: {
-                        every: {
-                            assignedToId: userId,
-                        }
-                    },
-                },
-                include: {
-                    Company: true,
-                    LeadStatus: {
-                        include: {
-                            Dept: true,
-                        },
-                    },
-                },
-            });
-        }
+                LeadFeedback: true,
+                Feedbacks: true,
+                bids: true,
+            },
+        });
 
         return leads;
-    } catch (error) {
-        logger.error('Error fetching Leads:', error);
-        return [];
+    } catch (error: any) {
+        console.error('Error fetching assigned leads:', error);
+        throw new Error(`Error fetching assigned leads: ${error.message}`);
     }
-}
-
+};
 
 const getCompanyLeads = async (companyId: string) => {
     try {
@@ -83,12 +67,11 @@ const getCompanyLeads = async (companyId: string) => {
             },
             include: {
                 Company: true,
-                LeadStatus: {
+                LeadMember: {
                     include: {
-                        Dept: true,
-                        assignedTo: true
-                    },
-                },
+                        Member: true
+                    }
+                }
             },
             orderBy: {
                 createdAt: 'desc',
@@ -96,11 +79,11 @@ const getCompanyLeads = async (companyId: string) => {
         });
 
         return leads;
-    } catch (error) {
-        logger.error('Error fetching Leads:', error);
-        return [];
+    } catch (error: any) {
+        console.error('Error fetching Leads:', error);
+        throw new Error(`Error fetching leads: ${error.message}`);
     }
-}
+};
 
 const getCompanyLeadById = async (companyId: string, leadId: string) => {
     try {
@@ -111,11 +94,11 @@ const getCompanyLeadById = async (companyId: string, leadId: string) => {
             },
             include: {
                 Company: true,
-                LeadStatus: {
+                LeadMember: {
                     include: {
-                        Dept: true,
-                    },
-                },
+                        Member: true
+                    }
+                }
             },
         });
 
@@ -127,17 +110,13 @@ const getCompanyLeadById = async (companyId: string, leadId: string) => {
 }
 
 const createLead = async (lead: z.infer<typeof createLeadSchema>) => {
-
     try {
-
         const company = await prisma.company.findFirst({
-            where: {
-                id: lead.companyId,
-            },
+            where: { id: lead.companyId },
         });
 
         if (!company) {
-            throw new Error("Company not found")
+            throw new Error("Company not found");
         }
 
         const companyManager = await prisma.member.findFirst({
@@ -147,18 +126,18 @@ const createLead = async (lead: z.infer<typeof createLeadSchema>) => {
             },
         });
 
-
         if (!companyManager) {
-            throw new Error("Company manager not found")
+            throw new Error("Company manager not found");
         }
 
-        let newLead = null;
-        newLead = await prisma.lead.create({
+        const formattedVehicleDate = lead.vehicleDate
+            ? formatISO(parse(lead.vehicleDate, 'dd/MM/yyyy', new Date()))
+            : null;
+
+        const newLead = await prisma.lead.create({
             data: {
                 Company: {
-                    connect: {
-                        id: lead.companyId,
-                    },
+                    connect: { id: lead.companyId },
                 },
                 name: lead.name,
                 email: lead.email,
@@ -169,16 +148,14 @@ const createLead = async (lead: z.infer<typeof createLeadSchema>) => {
                 state: lead.state,
                 zip: lead.zip,
                 rating: lead.rating,
-                vehicleDate: formatISO(parse(lead.vehicleDate || "", 'dd/MM/yyyy', new Date())),
+                vehicleDate: formattedVehicleDate,
                 vehicleName: lead.vehicleName,
                 vehicleModel: lead.vehicleModel,
-                callStatus: CallStatus.PENDING,
-                paymentStatus: PaymentStatus.PENDING,
-                LeadStatus: {
+                callStatus: CallStatus.PENDING, // or PENDING
+                paymentStatus: PaymentStatus.PENDING, // or PENDING
+                LeadMember: {
                     create: {
-                        name: "New Lead",
-                        description: "description",
-
+                        memberId: companyManager.id,
                     },
                 },
             },
@@ -186,10 +163,10 @@ const createLead = async (lead: z.infer<typeof createLeadSchema>) => {
 
         return { lead: newLead, errors: [] };
     } catch (error: any) {
-        logger.error('Error creating Lead:', error);
-        throw new Error(`Error creating lead: ${error.message}`)
+        console.error('Error creating lead:', error);
+        throw new Error(`Error creating lead: ${error.message}`);
     }
-}
+};
 
 const updateLead = async (lead: z.infer<typeof createLeadSchema>) => {
     try {
@@ -220,12 +197,17 @@ const updateLead = async (lead: z.infer<typeof createLeadSchema>) => {
     }
 }
 
-const leadAssignTo = async ({ companyId, leadIds, deptId, userId, description }: z.infer<typeof leadAssignToSchema>) => {
+const leadAssignTo = async ({ companyId, leadIds, deptId, userIds, description }: z.infer<typeof leadAssignToSchema>) => {
     try {
         if (!Array.isArray(leadIds)) {
             throw new Error("leadIds must be an array of lead IDs");
         }
 
+        if (!Array.isArray(userIds)) {
+            throw new Error("userIds must be an array of user IDs");
+        }
+
+        // Fetch leads to ensure they exist and belong to the company
         const leads = await prisma.lead.findMany({
             where: {
                 companyId,
@@ -239,32 +221,49 @@ const leadAssignTo = async ({ companyId, leadIds, deptId, userId, description }:
             throw new Error("Some leads not found or not part of the company");
         }
 
-        const member = await prisma.member.findFirst({
+        // Fetch members to ensure they exist and belong to the company and department
+        const members = await prisma.member.findMany({
             where: {
                 companyId,
                 deptId,
-                id: userId,
+                id: {
+                    in: userIds,
+                },
             },
         });
 
-        if (!member) {
-            throw new Error("Member not found, Member must be part of the Company and respective Department");
+        if (members.length !== userIds.length) {
+            throw new Error("Some members not found or not part of the company or department");
         }
 
-        const updatedLeads = await prisma.leadStatus.updateMany({
+        await prisma.leadMember.deleteMany({
             where: {
                 leadId: {
                     in: leadIds,
                 },
             },
-            data: {
-                name: `Assigned to ${member.name}`,
-                description,
-                deptId: member.deptId,
-                assignedToId: userId,
-            },
         });
 
+        // Upsert LeadMember entries
+        for (const leadId of leadIds) {
+            for (const userId of userIds) {
+                await prisma.leadMember.upsert({
+                    where: {
+                        leadId_memberId: {
+                            leadId,
+                            memberId: userId,
+                        },
+                    },
+                    update: {},
+                    create: {
+                        leadId,
+                        memberId: userId,
+                    },
+                });
+            }
+        }
+
+        // Fetch updated leads with their LeadStatus and LeadMembers
         const updatedLeadsWithRelations = await prisma.lead.findMany({
             where: {
                 id: {
@@ -272,10 +271,9 @@ const leadAssignTo = async ({ companyId, leadIds, deptId, userId, description }:
                 },
             },
             include: {
-                LeadStatus: {
+                LeadMember: {
                     include: {
-                        assignedTo: true,
-                        Dept: true,
+                        Member: true,
                     },
                 },
             },
@@ -344,7 +342,11 @@ const submitFeedback = async ({ deptId, leadId, callStatus, paymentStatus, feedb
             },
             update: {
                 feedback: {
-                    deleteMany: {}, // Clear existing feedbacks to avoid duplicates
+                    deleteMany: {
+                        AND: feedbackData.map((fb) => ({
+                            name: fb.name,
+                        })),
+                    },
                     createMany: {
                         data: feedbackData,
                     },
@@ -373,14 +375,20 @@ const submitFeedback = async ({ deptId, leadId, callStatus, paymentStatus, feedb
             },
         });
 
-        const updatedLeadStatus = await prisma.leadStatus.update({
+        const updatedLead = await prisma.lead.update({
             where: {
-                leadId,
+                id: leadId,
             },
             data: {
-                assignedToId: company.companyManagerId
-            },
+                LeadMember: {
+                    deleteMany: {},
+                    create: {
+                        memberId: company.companyManagerId,
+                    }
+                }
+            }
         });
+
 
         return { lead: lead, message: "Updated Successfully!", errors: [] };
     } catch (error: any) {
@@ -390,77 +398,79 @@ const submitFeedback = async ({ deptId, leadId, callStatus, paymentStatus, feedb
 }
 
 const submitBid = async ({ deptId, leadId, companyId, bidAmount, description }: z.infer<typeof leadBidSchema>, userId: string) => {
+    try {
+        const dept = await prisma.companyDept.findFirst({
+            where: { id: deptId },
+        });
+        if (!dept) {
+            throw new Error("Department not found");
+        }
 
-    const dept = await prisma.companyDept.findFirst({
-        where: {
-            id: deptId,
-        },
-    });
+        const company = await prisma.company.findFirst({
+            where: { id: companyId },
+        });
+        if (!company) {
+            throw new Error("Company not found");
+        }
 
-
-    if (!dept) {
-        throw new Error("Department not found")
-    }
-
-    const company = await prisma.company.findFirst({
-        where: {
-            id: companyId,
-        },
-    });
-
-    if (!company) {
-        throw new Error("Company not found")
-    }
-
-    const member = await prisma.member.findFirst({
-        where: {
-            id: userId,
-            companyId,
-        },
-    });
-
-    if (!member) {
-        throw new Error("Member not found")
-    }
-
-    const lead = await prisma.lead.findFirst({
-        where: {
-            id: leadId,
-            companyId,
-        },
-    });
-
-    if (!lead) {
-        throw new Error("Lead not found")
-    }
-
-    const newBid = await prisma.bid.upsert({
-        where: {
-            leadId,
-        },
-        update: {
-            bidAmount: parseFloat(bidAmount),
-            description,
-        },
-        create: {
-            bidAmount: parseFloat(bidAmount),
-            description,
-            lead: {
-                connect: { id: leadId },
+        const member = await prisma.member.findFirst({
+            where: {
+                id: userId,
+                companyId,
             },
-            Member: {
-                connect: { id: userId },
+        });
+        if (!member) {
+            throw new Error("Member not found");
+        }
+
+        const lead = await prisma.lead.findFirst({
+            where: {
+                id: leadId,
+                companyId,
             },
-        },
-    })
+        });
+        if (!lead) {
+            throw new Error("Lead not found");
+        }
 
-    console.log(newBid)
+        const isBidExists = await prisma.bid.findFirst({
+            where: {
+                leadId,
+                memberId: userId,
+            },
+        });
+        if (isBidExists) {
+            throw new Error("Bid already submitted for this lead");
+        }
 
-    return newBid;
-}
+        const newBid = await prisma.bid.create({
+            data: {
+                bidAmount: parseFloat(bidAmount),
+                description,
+                lead: { connect: { id: leadId } },
+                Member: { connect: { id: userId } },
+            },
+        });
+
+        // Remove the member from the leadMember table
+        await prisma.leadMember.delete({
+            where: {
+                leadId_memberId: {
+                    leadId,
+                    memberId: userId,
+                },
+            },
+        });
+
+        return newBid;
+    } catch (error) {
+        logger.error('Error submitting bid:', error);
+        throw error;
+    }
+};
+
 
 export const getLeadBids = async (leadId: string) => {
-    console.log("leadId", leadId)
     const bids = await prisma.bid.findMany({
         where: {
             leadId,
@@ -470,7 +480,6 @@ export const getLeadBids = async (leadId: string) => {
         },
     });
 
-    console.log("bids", bids)
     return bids;
 }
 

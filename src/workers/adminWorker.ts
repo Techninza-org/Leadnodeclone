@@ -73,21 +73,30 @@ export const createRole = async (role: z.infer<typeof createRoleSchema>) => {
     }
 }
 
-export const createDept = async (dept: z.infer<typeof createAdminDeptSchema>) => {
+const createDept = async (dept: z.infer<typeof createAdminDeptSchema>) => {
     try {
-
-        console.log(dept, 'detp')
+        const fieldsToCreate = dept.deptFields.map(field => ({
+            name: field.name,
+            fieldType: field.fieldType,
+            value: field.value,
+            imgLimit: field.imgLimit,
+            options: field.options,
+            order: field.order,
+            isDisabled: field.isDisabled,
+            isRequired: field.isRequired
+        }));
 
         const newDept = await prisma.adminDept.upsert({
-            where: { 
+            where: {
                 name: dept.name,
             },
             update: {
                 deptFields: {
                     create: {
                         name: dept.subDeptName,
-                        SubDeptField:  { 
-                            create: dept.deptFields
+                        order: dept.order,
+                        SubDeptField: {
+                            create: fieldsToCreate
                         }
                     }
                 }
@@ -97,21 +106,29 @@ export const createDept = async (dept: z.infer<typeof createAdminDeptSchema>) =>
                 deptFields: {
                     create: {
                         name: dept.subDeptName,
-                        SubDeptField:  { 
-                            create: dept.deptFields
+                        order: dept.order,
+                        SubDeptField: {
+                            create: fieldsToCreate
                         }
                     }
                 }
+            },
+            include: {
+                deptFields: {
+                    include: {
+                        SubDeptField: true
+                    }
+                }
             }
-        })
+        });
 
         return { dept: newDept, errors: [] };
     } catch (error: any) {
-        console.log(error)
+        console.log(error);
         logger.error('Error creating department:', error);
         throw new Error(`Error creating department: ${error.message}`);
     }
-}
+};
 
 
 export default {

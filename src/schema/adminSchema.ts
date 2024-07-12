@@ -4,6 +4,13 @@ type SubDeptField {
   name: String!
   fieldType: FieldType!
   value: String
+  options: [Options!]
+  imgLimit: Int
+
+  order: Int!
+  isDisabled: Boolean!
+  isRequired: Boolean!
+
   createdAt: String!
   updatedAt: String!
 
@@ -21,7 +28,6 @@ type Dept {
   name: String!
   members: [Member!]
   companyDeptForms: [CompanyDeptForm!]
-  leadStatuses: [leadStatus!]
   createdAt: String!
   updatedAt: String!
 }
@@ -32,6 +38,7 @@ type CreateDeptResponse {
 
 enum FieldType {
   INPUT
+  DATE
   TEXTAREA
   IMAGE
   SELECT
@@ -39,15 +46,31 @@ enum FieldType {
   CHECKBOX
 }
 
+type Options {
+  label: String!
+  value: String!
+}
+
+input OptionsInput {
+  label: String!
+  value: String!
+}
+
 input DeptFieldsInput {
   name: String!
   fieldType: FieldType!
   value: String
+  order: Int!
+  imgLimit: Int
+  isDisabled: Boolean
+  isRequired: Boolean
+  options: [OptionsInput]
 }
 
 input CreateDeptInput {
   name: String!
   subDeptName: String!
+  order: Int!
   deptFields: [DeptFieldsInput!]
 }
 

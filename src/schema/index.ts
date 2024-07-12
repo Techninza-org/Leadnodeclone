@@ -55,7 +55,7 @@ type Query {
 
     createLead(input: LeadInput!): LeadResponse
     
-    leadAssignTo(companyId: String!, leadIds: [String!]!, deptId: String!, userId: String!, description: String): [Lead]
+    leadAssignTo(companyId: String!, leadIds: [String!]!, deptId: String!, userIds: [String!]!, description: String): [Lead]
 
     submitFeedback(deptId: String!, leadId: String!, callStatus: String!, paymentStatus: String!, feedback: [FeedbackInput!]!, urls: [String]): LeadResponse
 

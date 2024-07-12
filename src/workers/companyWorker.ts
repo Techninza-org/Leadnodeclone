@@ -12,6 +12,9 @@ export const getCompanyDeptFields = async (deptId: string) => {
             },
             include: {
                 subDeptFields: true
+            },
+            orderBy: { 
+                order: 'desc',
             }
         });
         return deptFields;
@@ -63,38 +66,61 @@ export const createRole = async (role: z.infer<typeof createRoleSchema>) => {
     }
 }
 
-export const createDept = async (dept: z.infer<typeof createAdminDeptSchema>) => {
-    // const existingDept = await prisma.adminDept.findFirst({
-    //     where: {
-    //         name: dept.name,
-    //     },
-    // });
+const createDept = async (dept: z.infer<typeof createAdminDeptSchema>) => {
+    try {
+        throw new Error('Not implemented');
+        // console.log(dept, 'dept');
 
-    // if (existingDept) {
-    //     throw new Error('Department with this name already exists.');
-    // }
+        // const newDept = await prisma.adminDept.upsert({
+        //     where: { 
+        //         name: dept.name,
+        //     },
+        //     update: {
+        //         deptFields: {
+        //             create: {
+        //                 name: dept.subDeptName,
+        //                 SubDeptField:  { 
+        //                     create: dept.deptFields.map(field => ({
+        //                         name: field.name,
+        //                         fieldType: field.fieldType,
+        //                         value: field.value,
+        //                         options: field.options,
+        //                         order: field.order,
+        //                         isDisabled: field.isDisabled,
+        //                         isRequired: field.isRequired
+        //                     }))
+        //                 }
+        //             }
+        //         }
+        //     },
+        //     create: {
+        //         name: dept.name,
+        //         deptFields: {
+        //             create: {
+        //                 name: dept.subDeptName,
+        //                 SubDeptField:  { 
+        //                     create: dept.deptFields.map(field => ({
+        //                         name: field.name,
+        //                         fieldType: field.fieldType,
+        //                         value: field.value,
+        //                         options: field.options,
+        //                         order: field.order,
+        //                         isDisabled: field.isDisabled,
+        //                         isRequired: field.isRequired
+        //                     }))
+        //                 }
+        //             }
+        //         }
+        //     }
+        // });
 
-    // try {
-    //     const newDept = await prisma.adminDept.create({
-    //         data: {
-    //             name: dept.name,
-    //             deptFields: {
-    //                 create: {
-    //                     name: dept.subDeptName,
-    //                     SubDeptField:  { 
-    //                         create: dept.deptFields
-    //                     }
-    //                 }
-    //             }
-    //         },
-    //     });
-
-    //     return { dept: newDept, errors: [] };
-    // } catch (error: any) {
-    //     logger.error('Error creating department:', error);
-    //     throw new Error(`Error creating department: ${error.message}`);
-    // }
-}
+        // return { dept: newDept, errors: [] };
+    } catch (error: any) {
+        console.log(error);
+        logger.error('Error creating department:', error);
+        throw new Error(`Error creating department: ${error.message}`);
+    }
+};
 
 
 export default {

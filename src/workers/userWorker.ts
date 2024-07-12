@@ -58,10 +58,19 @@ const createUser = async (user: z.infer<typeof signupSchema>) => {
                     companyDeptForms: {
                         create: dept.deptFields.map(field => ({
                             name: field.name,
+                            order: field.order,
                             subDeptFields: {
                                 create: field.SubDeptField.map(subField => ({
                                     name: subField.name,
+                                    order: subField.order,
                                     fieldType: subField.fieldType,
+                                    imgLimit: subField.imgLimit,
+                                    isDisabled: subField.isDisabled,
+                                    isRequired: subField.isRequired,
+                                    options: subField.options ? (subField.options as any).map((option : any) => ({
+                                        label: option.label,
+                                        value: option.value,
+                                    })) : [],
                                 })),
                             },
                         })),

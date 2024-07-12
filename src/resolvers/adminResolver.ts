@@ -43,9 +43,7 @@ export const adminResolvers = {
     const parsedData = createAdminDeptSchema.safeParse(input);
 
     if (!parsedData.success) {
-      const errors = parsedData.error.errors.map((err: ZodIssue) => ({
-        message: err.message,
-      }));
+      const errors = parsedData.error.errors.map((err: ZodIssue) => (`${err.message} ${err.path} `));
       throw new Error(errors.join(', '))
     }
 

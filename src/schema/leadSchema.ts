@@ -12,22 +12,19 @@ export const leadSchema = `
     FAILED
   }
 
-  type LeadStatus {
-    id: ID!
-    name: String!
-    description: String!
-    leads: [Lead!]
-    Dept: Dept
-    assignedTo: Member
-    createdAt: String!
-    updatedAt: String!
-  }
-
   type Bid { 
     id: ID!
     bidAmount: Float!
     description: String
-    Member: [Member]!
+    Member: Member!
+    createdAt: String!
+    updatedAt: String!
+  }
+
+  type LeadMember {
+    id: ID!
+    Lead: Lead!
+    Member: Member!
     createdAt: String!
     updatedAt: String!
   }
@@ -48,7 +45,7 @@ export const leadSchema = `
     vehicleModel: String!
     callStatus: String!
     paymentStatus: String!
-    LeadStatus: [LeadStatus]!
+    LeadMember: [LeadMember]
     Company: Company!
     createdAt: String!
     updatedAt: String!

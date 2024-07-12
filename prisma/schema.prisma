@@ -29,8 +29,8 @@ model Lead {
   callStatus    CallStatus
   paymentStatus PaymentStatus
 
-  LeadStatus   LeadStatus[]
   LeadFeedback LeadFeedback[]
+  LeadMember   LeadMember[]
   Feedbacks    Feedbacks[]
   bids         Bid[]
 
@@ -46,8 +46,8 @@ model Lead {
 model Bid {
   id String @id @default(auto()) @map("_id") @db.ObjectId
 
-  leadId String? @db.ObjectId @unique
-  lead   Lead?   @relation(fields: [leadId], references: [id])
+  leadId String @db.ObjectId
+  lead   Lead   @relation(fields: [leadId], references: [id])
 
   bidAmount Float
   bidStatus BidStatus @default(PENDING)
@@ -55,13 +55,15 @@ model Bid {
   deptId String?      @db.ObjectId
   Dept   CompanyDept? @relation(fields: [deptId], references: [id])
 
-  Member Member[]
+  memberId String @unique @db.ObjectId
+  Member   Member @relation(fields: [memberId], references: [id])
 
   description String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@index([leadId, memberId])
 }
 
 enum BidStatus {
@@ -81,24 +83,16 @@ enum PaymentStatus {
   FAILED
 }
 
-model LeadStatus {
-  id          String  @id @default(auto()) @map("_id") @db.ObjectId
-  name        String
-  description String?
+model LeadMember {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
 
-  leadId String @unique @db.ObjectId
+  leadId String @db.ObjectId
   Lead   Lead   @relation(fields: [leadId], references: [id], onDelete: Cascade)
 
-  deptId String?      @db.ObjectId
-  Dept   CompanyDept? @relation(fields: [deptId], references: [id])
+  memberId String @db.ObjectId
+  Member   Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
 
-  assignedToId String? @db.ObjectId
-  assignedTo   Member? @relation(fields: [assignedToId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([assignedToId])
+  @@unique([leadId, memberId])
 }
 
 model LeadFeedback {
@@ -161,7 +155,6 @@ model CompanyDept {
   Company   Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   companyDeptForms CompanyDeptForm[]
-  leadStatus       LeadStatus[]
   members          Member[]
   Bid              Bid[]
 
@@ -174,8 +167,9 @@ model CompanyDept {
 }
 
 model DeptField {
-  id   String @id @default(auto()) @map("_id") @db.ObjectId
-  name String
+  id    String @id @default(auto()) @map("_id") @db.ObjectId
+  name  String
+  order Int
 
   adminDeptId String?    @db.ObjectId
   AdminDept   AdminDept? @relation(fields: [adminDeptId], references: [id])
@@ -193,6 +187,13 @@ model SubDeptField {
   name      String
   fieldType FieldType
   value     Json?
+  options   Json?
+
+  imgLimit Int?
+
+  order      Int
+  isDisabled Boolean @default(false)
+  isRequired Boolean @default(false)
 
   deptFieldId String?    @db.ObjectId
   DeptField   DeptField? @relation(fields: [deptFieldId], references: [id])
@@ -209,6 +210,7 @@ model SubDeptField {
 enum FieldType {
   INPUT
   IMAGE
+  DATE
   TEXTAREA
   RADIO
   CHECKBOX
@@ -218,6 +220,7 @@ enum FieldType {
 model CompanyDeptForm {
   id   String @id @default(auto()) @map("_id") @db.ObjectId
   name String
+  order         Int
 
   companyDeptId String?      @db.ObjectId
   companyDept   CompanyDept? @relation(fields: [companyDeptId], references: [id])
@@ -280,11 +283,9 @@ model Member {
   companyId String?  @db.ObjectId
   Company   Company? @relation(fields: [companyId], references: [id], name: "CompanyMembers", onDelete: Cascade)
 
-  LeadStatuses LeadStatus[] // Assigned Lead Statuses
+  Bid          Bid[]
+  LeadMember   LeadMember[]
   LeadFeedback LeadFeedback[]
-
-  bidId        String?         @db.ObjectId
-  bid          Bid?           @relation(fields: [bidId], references: [id])
 
   sessionToken String? // Device Login Token at a time
 

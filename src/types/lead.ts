@@ -23,7 +23,7 @@ export const createLeadSchema = z.object({
 export const leadAssignToSchema = z.object({
     companyId: z.string().min(3, "Company ID must be at least 3 characters long."),
     leadIds: z.array(z.string().min(3, "Lead ID must be at least 3 characters long.")),
-    userId: z.string().min(3, "User ID must be at least 3 characters long."),
+    userIds: z.array(z.string().min(3, "User ID must be at least 3 characters long.")),
     deptId: z.string().min(3, "Department ID must be at least 3 characters long."),
     description: z.string().optional(),
 });

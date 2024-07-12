@@ -59,9 +59,9 @@ export const leadResolvers = {
         }
     },
 
-    leadAssignTo: async ({ companyId, leadIds, deptId, userId, description }: z.infer<typeof leadAssignToSchema>) => {
+    leadAssignTo: async ({ companyId, leadIds, deptId, userIds, description }: z.infer<typeof leadAssignToSchema>) => {
         try {
-            const parsedData = leadAssignToSchema.safeParse({ companyId, leadIds, deptId, userId, description });
+            const parsedData = leadAssignToSchema.safeParse({ companyId, leadIds, deptId, userIds, description });
             if (!parsedData.success) {
                 const errors = parsedData.error.errors.map((err: ZodIssue) => ({
                     message: err.message,
@@ -69,10 +69,10 @@ export const leadResolvers = {
                 }));
                 return { user: null, errors };
             }
-            return await leadWorker.leadAssignTo({ companyId, leadIds, deptId, userId, description });
+            return await leadWorker.leadAssignTo({ companyId, leadIds, deptId, userIds, description });
         } catch (error) {
             logger.error('Error Assigning lead [leadAssignTo]:', error);
-            throw new Error('Error fetching lead');
+            throw new Error(`${error}`);
         }
     },
 
@@ -91,7 +91,6 @@ export const leadResolvers = {
     },
     getLeadBids: async ({ leadId }: { leadId: string }) => {
         try {
-            console.log('leadId:', leadId)
             return await leadWorker.getLeadBids(leadId);
         } catch (error) {
             logger.error('Error fetching lead bids:', error);
