@@ -29,6 +29,29 @@ export const leadSchema = `
     updatedAt: String!
   }
 
+  type Feedback {
+    id: ID!
+    name: String!
+    fieldType: FieldType!
+    value: String!
+    Lead: Lead!
+    createdAt: String!
+    updatedAt: String!
+  }
+
+  type LeadFeedback {
+    id: ID!
+    leadId: String!
+    member: Member!
+    memberId: String!
+    Lead: Lead!
+    imageUrls: [String]
+
+    feedback: [Feedback]!
+    createdAt: String!
+    updatedAt: String!
+  }
+
   type Lead {
     id: ID!
     name: String!
@@ -46,6 +69,7 @@ export const leadSchema = `
     callStatus: String!
     paymentStatus: String!
     LeadMember: [LeadMember]
+    LeadFeedback: [LeadFeedback]
     Company: Company!
     createdAt: String!
     updatedAt: String!

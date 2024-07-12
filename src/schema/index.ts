@@ -60,6 +60,8 @@ type Query {
     submitFeedback(deptId: String!, leadId: String!, callStatus: String!, paymentStatus: String!, feedback: [FeedbackInput!]!, urls: [String]): LeadResponse
 
     submitBid(companyId: String!, deptId: String!, leadId: String!, bidAmount: String!, description: String): Bid
+
+    updateLeadFinanceStatus(leadId: String!, financeStatus: Boolean!): Lead
   }
 `
 const allSchemas = [authSchema, adminSchema, leadSchema, userSchema, queries_mutation];

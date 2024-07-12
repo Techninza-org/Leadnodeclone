@@ -66,24 +66,50 @@ const getCompanyLeads = async (companyId: string) => {
                 companyId,
             },
             include: {
-                Company: true,
                 LeadMember: {
                     include: {
                         Member: true
                     }
-                }
+                },
+                LeadFeedback: {
+                    include: {
+                        feedback: true,
+                        member: {
+                            include:{ 
+                                role: true
+                            }
+                        }
+                    }
+                },
             },
             orderBy: {
                 createdAt: 'desc',
             }
         });
 
-        return leads;
+        const leadsWithUniqueFeedback = leads.map(lead => {
+            lead.LeadFeedback.forEach(feedbackEntry => {
+                const feedbackMap = new Map<string, typeof feedbackEntry.feedback[0]>();
+
+                feedbackEntry.feedback.forEach(item => {
+                    const key = `${item.name}-${item.fieldType}`;
+                    feedbackMap.set(key, item);  // Override if key already exists
+                });
+
+                feedbackEntry.feedback = Array.from(feedbackMap.values());
+            });
+
+            return lead;
+        });
+
+        return leadsWithUniqueFeedback;
     } catch (error: any) {
         console.error('Error fetching Leads:', error);
         throw new Error(`Error fetching leads: ${error.message}`);
     }
 };
+
+
 
 const getCompanyLeadById = async (companyId: string, leadId: string) => {
     try {
@@ -470,7 +496,7 @@ const submitBid = async ({ deptId, leadId, companyId, bidAmount, description }: 
 };
 
 
-export const getLeadBids = async (leadId: string) => {
+const getLeadBids = async (leadId: string) => {
     const bids = await prisma.bid.findMany({
         where: {
             leadId,
@@ -483,6 +509,49 @@ export const getLeadBids = async (leadId: string) => {
     return bids;
 }
 
+const updateLeadFinanceStatus = async (leadId: string, financeStatus: boolean, userId: string, companyId: string) => {
+    try {
+        const company = await prisma.company.findFirst({
+            where: {
+                id: companyId,
+            },
+        });
+
+        if (!company) {
+            throw new Error("Company not found");
+        }
+
+        const updatedLead = await prisma.lead.update({
+            where: {
+                id: leadId,
+            },
+            data: {
+                isFinancedApproved: financeStatus,
+            },
+        });
+
+        const lead = await prisma.leadMember.delete({
+            where: {
+                leadId_memberId: {
+                    leadId,
+                    memberId: userId
+                },
+            }
+        });
+
+        const updatedLeadMember = await prisma.leadMember.create({
+            data: {
+                leadId,
+                memberId: company.companyManagerId,
+            },
+        });
+
+        return updatedLead;
+    } catch (error: any) {
+        logger.error('Error updating Lead:', error);
+        throw new Error(`Error updating Lead: ${error.message}`);
+    }
+}
 
 export default {
     getAllLeads,
@@ -494,5 +563,6 @@ export default {
     updateLead,
     leadAssignTo,
     submitFeedback,
-    submitBid
+    submitBid,
+    updateLeadFinanceStatus
 }

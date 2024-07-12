@@ -104,5 +104,13 @@ export const leadResolvers = {
             logger.error('Error Submitting Bid:', error);
             throw new Error('Error Submitting Bid');
         }
+    },
+    updateLeadFinanceStatus: async ({ leadId, financeStatus }: { leadId: string, financeStatus: boolean }, { user }: { user: z.infer<typeof loggedUserSchema> }) => {
+        try {
+            return await leadWorker.updateLeadFinanceStatus(leadId, financeStatus, user.id, user.companyId);
+        } catch (error) {
+            logger.error('Error updating lead finance status:', error);
+            throw new Error(`Error updating lead finance status: ${error}`);
+        }
     }
 };

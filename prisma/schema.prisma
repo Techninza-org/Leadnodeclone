@@ -34,6 +34,8 @@ model Lead {
   Feedbacks    Feedbacks[]
   bids         Bid[]
 
+  isFinancedApproved Boolean @default(false)
+
   companyId String?  @db.ObjectId
   Company   Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
@@ -59,6 +61,8 @@ model Bid {
   Member   Member @relation(fields: [memberId], references: [id])
 
   description String?
+
+  isApproved Boolean @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
