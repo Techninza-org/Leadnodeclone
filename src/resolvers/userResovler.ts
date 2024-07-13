@@ -5,11 +5,11 @@ import { CreateOrUpdateManagerSchema, loggedUserSchema } from '../types/user';
 
 export const userResolvers = {
 
-    createOrUpdateManager: async ({ memberId, name, email, password, phone, type, companyId, deptId }: z.infer<typeof CreateOrUpdateManagerSchema>, { user }: { user: z.infer<typeof loggedUserSchema> }) => {
+    createOrUpdateManager: async ({ memberId, name, email, password, phone, memberType, companyId, deptId }: z.infer<typeof CreateOrUpdateManagerSchema>, { user }: { user: z.infer<typeof loggedUserSchema> }) => {
         if (user?.role?.name !== 'Root') {
             throw new Error('Unauthorized');
         }
-        const parsedData = CreateOrUpdateManagerSchema.safeParse({ memberId, name, email, password, phone, type, companyId, deptId });
+        const parsedData = CreateOrUpdateManagerSchema.safeParse({ memberId, name, email, password, phone, memberType, companyId, deptId });
 
         if (!parsedData.success) {
             const errors = parsedData.error.errors.map((err: ZodIssue) => ({

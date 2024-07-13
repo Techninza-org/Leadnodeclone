@@ -59,18 +59,18 @@ export const CreateOrUpdateManagerSchema = z.object({
     phone: z.string().length(10, 'Please enter a valid phone number.').optional(),
 
     deptId: z.string().min(3, 'Please enter your deptId.').optional(),
-    type: z.enum(['COMPANY', 'DEPARTMENT', 'BOTH']),
+    memberType: z.enum(['COMPANY', 'DEPARTMENT', 'BOTH']),
 
 }).refine(data => {
-    if ((data.companyId || data.deptId) && data.type === 'BOTH') {
+    if ((data.companyId || data.deptId) && data.memberType === 'BOTH') {
         return true;
     }
 
-    if (data.companyId && data.type === 'COMPANY') {
+    if (data.companyId && data.memberType === 'COMPANY') {
         return true;
     }
 
-    if (data.deptId && data.type === 'DEPARTMENT') {
+    if (data.deptId && data.memberType === 'DEPARTMENT') {
         return true;
     }
     if (!data.memberId && (!data.name || !data.email || !data.password || !data.phone)) {

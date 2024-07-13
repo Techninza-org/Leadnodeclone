@@ -34,7 +34,7 @@ app.use('/images', express.static(path.join(__dirname, 'uploads')));
 //     });
 // });
 
-app.post('/graphql/upload', upload.array('files'), uploadImage);
+app.post('/graphql/upload', upload.any(), uploadImage);
 
 app.use('/graphql', middleware.userAuthMiddleware, createHandler({
     schema: schema,

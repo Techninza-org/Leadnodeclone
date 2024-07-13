@@ -214,7 +214,7 @@ const createOrUpdateManager = async ({
     phone,
     companyId,
     deptId,
-    type
+    memberType: type
 }: z.infer<typeof CreateOrUpdateManagerSchema>) => {
     try {
         // Fetch Manager Role

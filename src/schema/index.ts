@@ -44,7 +44,7 @@ type Query {
       email: String,
       password: String,
       phone: String,
-      type: UpdateManagerType!,
+      memberType: String!,
       companyId: ID!,
       deptId: ID
     ): CreateUserResponse
