@@ -19,7 +19,7 @@ app.use(cors({ origin: '*' }));
 app.use(express.json());
 app.use(middleware.loggerMiddleware);
 
-app.use('/images', express.static(path.join(__dirname, 'uploads')));
+app.use('/graphql/images', express.static(path.join(__dirname, 'uploads')));
 
 // app.get('/images/:filename', (req, res) => {
 //     const filename = req.params.filename;

@@ -8,7 +8,7 @@ export const uploadImage = (req: ExtendedRequest, res: Response) => {
     }
     const fileInfos = files.map(file => ({
         fieldname: file.fieldname, // Capturing the original field name
-        url: `${req.protocol}://${req.get('host')}/images/${file.filename}`
+        url: `${req.protocol}://${req.get('host')}/graphql/images/${file.filename}`
     }));
 
     res.status(200).json({ files: fileInfos });
