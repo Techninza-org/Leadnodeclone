@@ -76,14 +76,14 @@ export const leadResolvers = {
         }
     },
 
-    submitFeedback: async ({ deptId, leadId, callStatus, paymentStatus, feedback, urls }: z.infer<typeof submitFeedbackSchema>, { user }: { user: z.infer<typeof loggedUserSchema> }) => {
+    submitFeedback: async ({ deptId, leadId, callStatus, paymentStatus, feedback, urls, submitType }: z.infer<typeof submitFeedbackSchema>, { user }: { user: z.infer<typeof loggedUserSchema> }) => {
         try {
             // const parsedData = submitFeedbackSchema.safeParse({ deptId, leadId, feedback });
             // if (!parsedData.success) {
             //     const errors = parsedData.error.errors.map((err: ZodIssue) => ([err.message, err.path]));
             //     throw new Error(errors.join(', '));
             // }
-            return await leadWorker.submitFeedback({ deptId, leadId, callStatus, paymentStatus, feedback, urls }, user.id);
+            return await leadWorker.submitFeedback({ deptId, leadId, callStatus, paymentStatus, feedback, urls, submitType }, user.id);
         } catch (error) {
             logger.error('Error Submitting Feedback:', error);
             throw new Error('Error Submitting Feedback');

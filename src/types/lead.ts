@@ -34,6 +34,7 @@ export const submitFeedbackSchema = z.object({
     leadId: z.string().min(3, "Lead ID must be at least 3 characters long."),
     deptId: z.string().min(3, "Department ID must be at least 3 characters long."),
     callStatus: z.enum(['BUSY', 'PENDING', 'SUCCESS']),
+    submitType: z.enum(['submitToManager', 'updateLead']),
     paymentStatus: z.enum(['PENDING', 'PAID', 'FAILED']),
     feedback: z.array(z.object({
         name: z.string().min(3, "Name must be at least 3 characters long."),

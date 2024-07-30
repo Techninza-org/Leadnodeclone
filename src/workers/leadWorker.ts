@@ -4,6 +4,7 @@ import { CallStatus, Member, PaymentStatus } from "@prisma/client";
 import prisma from "../config/database";
 import logger from "../utils/logger";
 import { createLeadSchema, leadAssignToSchema, leadBidSchema, submitFeedbackSchema } from "../types/lead";
+import { leadUtils } from "../utils";
 
 const getAllLeads = async () => {
     try {
@@ -75,7 +76,7 @@ const getCompanyLeads = async (companyId: string) => {
                     include: {
                         feedback: true,
                         member: {
-                            include:{ 
+                            include: {
                                 role: true
                             }
                         }
@@ -312,7 +313,7 @@ const leadAssignTo = async ({ companyId, leadIds, deptId, userIds, description }
     }
 }
 
-const submitFeedback = async ({ deptId, leadId, callStatus, paymentStatus, feedback, urls }: z.infer<typeof submitFeedbackSchema>, userId: string) => {
+const submitFeedback = async ({ deptId, leadId, callStatus, paymentStatus, feedback, urls, submitType }: z.infer<typeof submitFeedbackSchema>, userId: string) => {
     try {
 
         const dept = await prisma.companyDept.findFirst({
@@ -401,19 +402,21 @@ const submitFeedback = async ({ deptId, leadId, callStatus, paymentStatus, feedb
             },
         });
 
-        const updatedLead = await prisma.lead.update({
-            where: {
-                id: leadId,
-            },
-            data: {
-                LeadMember: {
-                    deleteMany: {},
-                    create: {
-                        memberId: company.companyManagerId,
+        if (submitType === leadUtils.SUBMIT_TO_MANAGER) {
+            const updatedLead = await prisma.lead.update({
+                where: {
+                    id: leadId,
+                },
+                data: {
+                    LeadMember: {
+                        deleteMany: {},
+                        create: {
+                            memberId: company.companyManagerId,
+                        }
                     }
                 }
-            }
-        });
+            });
+        }
 
 
         return { lead: lead, message: "Updated Successfully!", errors: [] };
