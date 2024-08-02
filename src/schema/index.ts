@@ -5,6 +5,8 @@ import { leadSchema } from "./leadSchema";
 import { userSchema } from "./userSchema";
 
 const queries_mutation = `
+scalar JSON
+
 type Query {
     getAllUsers: [User]
     getUser(id: ID!): User

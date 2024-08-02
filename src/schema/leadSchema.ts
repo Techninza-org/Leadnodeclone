@@ -33,7 +33,7 @@ export const leadSchema = `
     id: ID!
     name: String!
     fieldType: FieldType!
-    value: String!
+    value: JSON!
     Lead: Lead!
     createdAt: String!
     updatedAt: String!
@@ -97,10 +97,11 @@ export const leadSchema = `
   }
 
   
+  
   input FeedbackInput {
     name: String!
     fieldType: FieldType!
-    value: String!
+    value: JSON
   }
     
 `;
