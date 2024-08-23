@@ -15,6 +15,15 @@ export const leadResolvers = {
         }
     },
 
+    getLastMonthAllLeads: async () => {
+        try {
+            return await leadWorker.getLastMonthAllLeads();
+        } catch (error) {
+            logger.error('Error fetching lead [getLastMonthAllLeads]:', error);
+            throw new Error('Error fetching lead');
+        }
+    },
+
     getCompanyLeads: async ({ companyId }: { companyId: string }, ctx: any) => {
         try {
             return await leadWorker.getCompanyLeads(companyId);

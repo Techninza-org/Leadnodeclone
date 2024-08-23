@@ -21,6 +21,28 @@ const getAllLeads = async () => {
     }
 }
 
+const getLastMonthAllLeads = async () => {
+    try {
+        const leads = await prisma.lead.findMany({
+            where: {
+                createdAt: {
+                    gte: new Date(new Date().setMonth(new Date().getMonth() - 1))
+                }
+            },
+            include: {
+                Company: true,
+            },
+        });
+        const count = leads.length
+
+        return count;
+    } catch (error) {
+        logger.error('Error fetching Leads:', error);
+        return [];
+    }
+}
+
+
 const getAssignedLeads = async (userId: string, companyId?: string) => {
     try {
         // Construct the where clause based on whether companyId is provided
@@ -567,5 +589,6 @@ export default {
     leadAssignTo,
     submitFeedback,
     submitBid,
-    updateLeadFinanceStatus
+    updateLeadFinanceStatus,
+    getLastMonthAllLeads
 }
