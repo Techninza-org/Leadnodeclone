@@ -158,7 +158,7 @@ const createLead = async (lead: z.infer<typeof createLeadSchema>) => {
         }
 
         const formattedVehicleDate = lead.vehicleDate
-            ? formatISO(parse(lead.vehicleDate, 'dd/MM/yyyy', new Date()))
+            ? formatISO(parse(lead.vehicleDate, 'dd-MM-yyyy', new Date()))
             : null;
 
         const newLead = await prisma.lead.create({
