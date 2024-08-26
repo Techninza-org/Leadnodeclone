@@ -583,6 +583,25 @@ const updateLeadFinanceStatus = async (leadId: string, financeStatus: boolean, u
     }
 }
 
+const updateLeadFollowUpDate = async (leadId: string, followUpDate: string) => {
+    try {
+        const updatedLead = await prisma.lead.update({
+            where: {
+                id: leadId,
+            },
+            data: {
+                nextFollowUpDate: followUpDate,
+            },
+        });
+
+        return updatedLead;
+    } catch (error: any) {
+        logger.error('Error updating Lead:', error);
+        throw new Error(`Error updating Lead: ${error.message}`);
+    }
+}
+
+
 export default {
     getAllLeads,
     getLeadBids,
@@ -595,5 +614,6 @@ export default {
     submitFeedback,
     submitBid,
     updateLeadFinanceStatus,
-    getLastMonthAllLeads
+    getLastMonthAllLeads,
+    updateLeadFollowUpDate
 }

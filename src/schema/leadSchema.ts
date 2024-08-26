@@ -71,6 +71,7 @@ export const leadSchema = `
     LeadMember: [LeadMember]
     LeadFeedback: [LeadFeedback]
     Company: Company!
+    nextFollowUpDate: String
     createdAt: String!
     updatedAt: String!
   }
@@ -100,12 +101,6 @@ export const leadSchema = `
     name: String!
     fieldType: FieldType!
     value: JSON
-  }
-
-  input NextFollowUpDate {
-    id: ID!
-    leadId: String!
-    nextFollowUpDate: String!
   }
     
 `;

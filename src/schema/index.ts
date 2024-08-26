@@ -65,6 +65,8 @@ type Query {
     submitBid(companyId: String!, deptId: String!, leadId: String!, bidAmount: String!, description: String): Bid
 
     updateLeadFinanceStatus(leadId: String!, financeStatus: Boolean!): Lead
+
+    updateLeadFollowUpDate(leadId: String!, nextFollowUpDate: String!): Lead
   }
 `
 const allSchemas = [authSchema, adminSchema, leadSchema, userSchema, queries_mutation];
