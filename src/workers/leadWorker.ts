@@ -31,11 +31,16 @@ const getLastMonthAllLeads = async () => {
             },
             include: {
                 Company: true,
+                LeadMember: {
+                    include: {
+                        Member: true
+                    }
+                }
             },
         });
-        const count = leads.length
-
-        return count;
+        const assignedLeads = leads.filter(lead => lead.LeadMember.length > 0)
+        
+        return assignedLeads;
     } catch (error) {
         logger.error('Error fetching Leads:', error);
         return [];

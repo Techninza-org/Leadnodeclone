@@ -12,6 +12,7 @@ type Query {
     getUser(id: ID!): User
     getAllRoles: [Role]
     getAllLeads: [Lead]
+    getLastMonthAllLeads: [Lead]
     getCompanyLeads(companyId: String!): [Lead]
     getCompanyLeadById(companyId: String!, leadId: String!): Lead
     getCompanyDeptMembers(companyId: String!, deptId: String): [Member]

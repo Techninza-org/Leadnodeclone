@@ -96,12 +96,16 @@ export const leadSchema = `
     vehicleModel: String
   }
 
-  
-  
   input FeedbackInput {
     name: String!
     fieldType: FieldType!
     value: JSON
+  }
+
+  input NextFollowUpDate {
+    id: ID!
+    leadId: String!
+    nextFollowUpDate: String!
   }
     
 `;
