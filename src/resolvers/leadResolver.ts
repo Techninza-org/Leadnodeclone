@@ -15,12 +15,13 @@ export const leadResolvers = {
         }
     },
 
-    getLastMonthAllLeads: async () => {
+    getLeadsByDateRange: async ({ companyId, startDate, endDate }: { companyId: string, startDate: string, endDate: string }) => {
         try {
-            return await leadWorker.getLastMonthAllLeads();
+            console.log('companyId', companyId, 'startDate', startDate, 'endDate', endDate);
+            return await leadWorker.getLeadsByDateRange(companyId, startDate, endDate);
         } catch (error) {
-            logger.error('Error fetching lead [getLastMonthAllLeads]:', error);
-            throw new Error('Error fetching lead');
+            logger.error('Error fetching lead [getLeadsByDateRange]:', error);
+            throw new Error(`Error fetching lead ${error}`);
         }
     },
 

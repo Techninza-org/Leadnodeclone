@@ -38,7 +38,7 @@ model Lead {
 
   isFinancedApproved Boolean @default(false)
 
-  nextFollowUpDate String?
+  nextFollowUpDate DateTime?
 
   companyId String?  @db.ObjectId
   Company   Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)

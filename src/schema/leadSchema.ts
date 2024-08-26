@@ -1,5 +1,16 @@
 export const leadSchema = `
 
+  type RootDashboardResponse { 
+    callCount: Int
+    totalPayCollectedCount: Int
+    groupedCallPerday: JSON
+  }
+
+  type groupedCallPerday { 
+    date: String
+    callCount: Int
+  }
+
   type groupLeads { 
     formName: String
     feedback: [Feedback]

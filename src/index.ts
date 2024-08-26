@@ -21,19 +21,6 @@ app.use(middleware.loggerMiddleware);
 
 app.use('/graphql/images', express.static(path.join(__dirname, 'uploads')));
 
-// app.get('/images/:filename', (req, res) => {
-//     const filename = req.params.filename;
-//     const filePath = path.join(__dirname, 'uploads', filename);
-//     console.log(filePath)
-
-//     fs.access(filePath, fs.constants.F_OK, (err) => {
-//         if (err) {
-//             return res.status(404).send({ message: 'File not found' });
-//         }
-//         res.sendFile(filePath);
-//     });
-// });
-
 app.post('/graphql/upload', upload.any(), uploadImage);
 
 // middleware.userAuthMiddleware,

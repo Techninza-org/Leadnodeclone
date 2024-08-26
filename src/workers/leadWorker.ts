@@ -1,10 +1,10 @@
 import { z } from "zod";
 import { formatISO, parse } from "date-fns";
-import { CallStatus, Member, PaymentStatus } from "@prisma/client";
 import prisma from "../config/database";
 import logger from "../utils/logger";
-import { createLeadSchema, leadAssignToSchema, leadBidSchema, submitFeedbackSchema } from "../types/lead";
 import { leadUtils } from "../utils";
+import { CallStatus, Feedbacks, PaymentStatus } from "@prisma/client";
+import { createLeadSchema, leadAssignToSchema, leadBidSchema, submitFeedbackSchema } from "../types/lead";
 
 const getAllLeads = async () => {
     try {
@@ -21,26 +21,65 @@ const getAllLeads = async () => {
     }
 }
 
-const getLastMonthAllLeads = async () => {
+const getLeadsByDateRange = async (companyId: string, fromDateStr: string, toDateStr: string): Promise<{
+    callCount: number,
+    totalPayCollectedCount: number
+    groupedCallPerday: {
+        [key: string]: number;
+    }
+} | []> => {
     try {
+        const fromDate = parse(fromDateStr, 'MM/dd/yyyy', new Date());
+        const toDate = parse(toDateStr, 'MM/dd/yyyy', new Date());
+
         const leads = await prisma.lead.findMany({
             where: {
+                companyId,
                 createdAt: {
-                    gte: new Date(new Date().setMonth(new Date().getMonth() - 1))
+                    gte: fromDate,
+                    lte: toDate
                 }
             },
             include: {
-                Company: true,
-                LeadMember: {
+                LeadFeedback: {
                     include: {
-                        Member: true
+                        feedback: true,
+                        member: {
+                            include: {
+                                role: true
+                            }
+                        }
                     }
-                }
-            },
+                },
+            }
         });
-        const assignedLeads = leads.filter(lead => lead.LeadMember.length > 0)
-        
-        return assignedLeads;
+
+        // totalPayCollectedCount
+        const totalAmtCollected = leads.reduce((totalAmt: number, lead) => {
+            lead.LeadFeedback.forEach((feedback: any) => {
+                if (feedback?.formName?.includes('Payment')) {
+                    feedback?.feedback?.forEach((item: Feedbacks) => {
+                        if (item.name === 'amount') {
+                            console.log('item:', item);
+                            totalAmt += parseFloat(String(item?.value ?? '0'));
+                        }
+                    });
+                }
+            });
+            return totalAmt;
+        }, 0);
+
+        // callCount
+        const callSuccessLeadCount = leads.filter(lead => lead.callStatus === CallStatus.SUCCESS).length;
+
+        // groupedCallPerday
+        const calcDailyCallMadeEachDay = leads.reduce((acc: { [key: string]: number }, lead) => {
+            const date = lead.createdAt.toISOString().split('T')[0];
+            acc[date] = acc[date] ? acc[date] + 1 : 1;
+            return acc;
+        }, {});
+
+        return { callCount: callSuccessLeadCount, totalPayCollectedCount: totalAmtCollected, groupedCallPerday: calcDailyCallMadeEachDay };
     } catch (error) {
         logger.error('Error fetching Leads:', error);
         return [];
@@ -658,6 +697,6 @@ export default {
     submitFeedback,
     submitBid,
     updateLeadFinanceStatus,
-    getLastMonthAllLeads,
+    getLeadsByDateRange,
     updateLeadFollowUpDate
 }

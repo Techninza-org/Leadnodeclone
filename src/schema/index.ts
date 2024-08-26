@@ -13,6 +13,7 @@ type Query {
     getAllRoles: [Role]
     getAllLeads: [Lead]
     getCompanyLeads(companyId: String!): LeadAndGroupedLeads
+    getLeadsByDateRange(companyId: ID!, startDate: String!, endDate: String!): RootDashboardResponse
     getCompanyLeadById(companyId: String!, leadId: String!): Lead
     getCompanyDeptMembers(companyId: String!, deptId: String): [Member]
     getAssignedLeads(userId: String!): [Lead]
