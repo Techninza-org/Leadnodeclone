@@ -17,7 +17,7 @@ export const createLeadSchema = z.object({
     vehicleDate: z.string().optional(),
     vehicleName: z.string().optional(),
     vehicleModel: z.string().optional(),
-
+    nextFollowUpDate: z.string().optional(),
 });
 
 export const leadAssignToSchema = z.object({
@@ -26,6 +26,7 @@ export const leadAssignToSchema = z.object({
     userIds: z.array(z.string().min(3, "User ID must be at least 3 characters long.")),
     deptId: z.string().min(3, "Department ID must be at least 3 characters long."),
     description: z.string().optional(),
+    // assignedOn: z.date().default(() => new Date()),
 });
 
 

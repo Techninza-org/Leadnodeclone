@@ -21,6 +21,33 @@ const getAllLeads = async () => {
     }
 }
 
+const getLastMonthAllLeads = async () => {
+    try {
+        const leads = await prisma.lead.findMany({
+            where: {
+                createdAt: {
+                    gte: new Date(new Date().setMonth(new Date().getMonth() - 1))
+                }
+            },
+            include: {
+                Company: true,
+                LeadMember: {
+                    include: {
+                        Member: true
+                    }
+                }
+            },
+        });
+        const assignedLeads = leads.filter(lead => lead.LeadMember.length > 0)
+        
+        return assignedLeads;
+    } catch (error) {
+        logger.error('Error fetching Leads:', error);
+        return [];
+    }
+}
+
+
 const getAssignedLeads = async (userId: string, companyId?: string) => {
     try {
         // Construct the where clause based on whether companyId is provided
@@ -186,7 +213,7 @@ const createLead = async (lead: z.infer<typeof createLeadSchema>) => {
         }
 
         const formattedVehicleDate = lead.vehicleDate
-            ? formatISO(parse(lead.vehicleDate, 'dd/MM/yyyy', new Date()))
+            ? formatISO(parse(lead.vehicleDate, 'dd-MM-yyyy', new Date()))
             : null;
 
         const newLead = await prisma.lead.create({
@@ -599,6 +626,25 @@ const updateLeadFinanceStatus = async (leadId: string, financeStatus: boolean, u
     }
 }
 
+const updateLeadFollowUpDate = async (leadId: string, followUpDate: string) => {
+    try {
+        const updatedLead = await prisma.lead.update({
+            where: {
+                id: leadId,
+            },
+            data: {
+                nextFollowUpDate: followUpDate,
+            },
+        });
+
+        return updatedLead;
+    } catch (error: any) {
+        logger.error('Error updating Lead:', error);
+        throw new Error(`Error updating Lead: ${error.message}`);
+    }
+}
+
+
 export default {
     getAllLeads,
     getLeadBids,
@@ -611,5 +657,7 @@ export default {
     leadAssignTo,
     submitFeedback,
     submitBid,
-    updateLeadFinanceStatus
+    updateLeadFinanceStatus,
+    getLastMonthAllLeads,
+    updateLeadFollowUpDate
 }

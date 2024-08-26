@@ -15,6 +15,15 @@ export const leadResolvers = {
         }
     },
 
+    getLastMonthAllLeads: async () => {
+        try {
+            return await leadWorker.getLastMonthAllLeads();
+        } catch (error) {
+            logger.error('Error fetching lead [getLastMonthAllLeads]:', error);
+            throw new Error('Error fetching lead');
+        }
+    },
+
     getCompanyLeads: async ({ companyId }: { companyId: string }, ctx: any) => {
         try {
             return await leadWorker.getCompanyLeads(companyId);
@@ -120,6 +129,14 @@ export const leadResolvers = {
         } catch (error) {
             logger.error('Error updating lead finance status:', error);
             throw new Error(`Error updating lead finance status: ${error}`);
+        }
+    },
+    updateLeadFollowUpDate: async ({ leadId, followUpDate }: { leadId: string, followUpDate: string }) => {
+        try {
+            return await leadWorker.updateLeadFollowUpDate(leadId, followUpDate);
+        } catch (error) {
+            logger.error('Error updating lead follow up date:', error);
+            throw new Error(`Error updating lead follow up date: ${error}`);
         }
     }
 };

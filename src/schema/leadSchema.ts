@@ -82,6 +82,7 @@ export const leadSchema = `
     LeadMember: [LeadMember]
     LeadFeedback: [LeadFeedback]
     Company: Company!
+    nextFollowUpDate: String
     createdAt: String!
     updatedAt: String!
   }
@@ -107,8 +108,6 @@ export const leadSchema = `
     vehicleModel: String
   }
 
-  
-  
   input FeedbackInput {
     name: String!
     fieldType: FieldType!
