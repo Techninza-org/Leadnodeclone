@@ -12,7 +12,7 @@ type Query {
     getUser(id: ID!): User
     getAllRoles: [Role]
     getAllLeads: [Lead]
-    getCompanyLeads(companyId: String!): [Lead]
+    getCompanyLeads(companyId: String!): LeadAndGroupedLeads
     getCompanyLeadById(companyId: String!, leadId: String!): Lead
     getCompanyDeptMembers(companyId: String!, deptId: String): [Member]
     getAssignedLeads(userId: String!): [Lead]
@@ -40,6 +40,8 @@ type Query {
     
     loginUser(email: String, password: String, phone: String, otp: String): LoginUserResponse
 
+    appvedLead(leadId: ID!, status: Boolean): Lead
+
     createOrUpdateManager(
       memberId: ID,
       name: String,
@@ -59,7 +61,7 @@ type Query {
     
     leadAssignTo(companyId: String!, leadIds: [String!]!, deptId: String!, userIds: [String!]!, description: String): [Lead]
 
-    submitFeedback(deptId: String!, leadId: String!, callStatus: String!, paymentStatus: String!, feedback: [FeedbackInput!]!, urls: [String], submitType: String): LeadResponse
+    submitFeedback(deptId: String!, leadId: String!, callStatus: String!, paymentStatus: String!, feedback: [FeedbackInput!]!, urls: [String], submitType: String, formName: String): LeadResponse
 
     submitBid(companyId: String!, deptId: String!, leadId: String!, bidAmount: String!, description: String): Bid
 

@@ -36,7 +36,8 @@ app.use('/graphql/images', express.static(path.join(__dirname, 'uploads')));
 
 app.post('/graphql/upload', upload.any(), uploadImage);
 
-app.use('/graphql', middleware.userAuthMiddleware, createHandler({
+// middleware.userAuthMiddleware,
+app.use('/graphql',  createHandler({
     schema: schema,
     rootValue: resolvers,
     context: (req: any) => ({ user: req.raw.user }),

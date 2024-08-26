@@ -103,14 +103,32 @@ const getCompanyLeads = async (companyId: string) => {
             return lead;
         });
 
-        return leadsWithUniqueFeedback;
+
+        const groupedLeads = leads.reduce((groups: any[], lead) => {
+            lead.LeadFeedback.forEach((feedback: any) => {
+                let group = groups.find(g => g.formName === feedback.formName);
+                if (!group) {
+                    group = {
+                        formName: feedback.formName,
+                        feedback: [],
+                    };
+                    groups.push(group);
+                }
+                group.feedback.push(...feedback.feedback);
+            });
+            return groups;
+        }, []);
+
+        return {
+            lead: leadsWithUniqueFeedback,
+            groupedLeads,
+        };
+
     } catch (error: any) {
         console.error('Error fetching Leads:', error);
         throw new Error(`Error fetching leads: ${error.message}`);
     }
 };
-
-
 
 const getCompanyLeadById = async (companyId: string, leadId: string) => {
     try {
@@ -125,7 +143,17 @@ const getCompanyLeadById = async (companyId: string, leadId: string) => {
                     include: {
                         Member: true
                     }
-                }
+                },
+                LeadFeedback: {
+                    include: {
+                        feedback: true,
+                        member: {
+                            include: {
+                                role: true
+                            }
+                        }
+                    }
+                },
             },
         });
 
@@ -224,6 +252,20 @@ const updateLead = async (lead: z.infer<typeof createLeadSchema>) => {
     }
 }
 
+const approveLead = async (leadId: string, status: boolean) => {
+    const lead = await prisma.lead.update({
+        where: {
+            id: leadId,
+        },
+        data: {
+            isLeadApproved: status,
+        },
+    });
+
+    return lead;
+}
+
+
 const leadAssignTo = async ({ companyId, leadIds, deptId, userIds, description }: z.infer<typeof leadAssignToSchema>) => {
     try {
         if (!Array.isArray(leadIds)) {
@@ -313,7 +355,7 @@ const leadAssignTo = async ({ companyId, leadIds, deptId, userIds, description }
     }
 }
 
-const submitFeedback = async ({ deptId, leadId, callStatus, paymentStatus, feedback, urls, submitType }: z.infer<typeof submitFeedbackSchema>, userId: string) => {
+const submitFeedback = async ({ deptId, leadId, callStatus, paymentStatus, feedback, urls, submitType, formName }: z.infer<typeof submitFeedbackSchema>, userId: string) => {
     try {
 
         const dept = await prisma.companyDept.findFirst({
@@ -381,6 +423,7 @@ const submitFeedback = async ({ deptId, leadId, callStatus, paymentStatus, feedb
                 imageUrls: urls
             },
             create: {
+                formName,
                 feedback: {
                     createMany: {
                         data: feedbackData,
@@ -564,6 +607,7 @@ export default {
     getAssignedLeads,
     createLead,
     updateLead,
+    approveLead,
     leadAssignTo,
     submitFeedback,
     submitBid,

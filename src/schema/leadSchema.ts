@@ -1,5 +1,15 @@
 export const leadSchema = `
 
+  type groupLeads { 
+    formName: String
+    feedback: [Feedback]
+  }
+
+  type LeadAndGroupedLeads { 
+    lead: [Lead]
+    groupedLeads: [groupLeads]
+  }
+
   enum CallStatus {
     BUSY
     PENDING
@@ -63,6 +73,7 @@ export const leadSchema = `
     state: String!
     zip: String!
     rating: Int!
+    isLeadApproved: Boolean!
     vehicleDate: String!
     vehicleName: String!
     vehicleModel: String!

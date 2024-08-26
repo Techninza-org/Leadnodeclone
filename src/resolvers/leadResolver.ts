@@ -58,6 +58,15 @@ export const leadResolvers = {
             throw new Error('Error Creating lead');
         }
     },
+    
+    appvedLead: async ({ leadId, status }: { leadId: string, status: boolean }) => {
+        try {
+            return await leadWorker.approveLead(leadId, status);
+        } catch (error) {
+            logger.error('Error Approving lead:', error);
+            throw new Error('Error Approving lead');
+        }
+    },
 
     leadAssignTo: async ({ companyId, leadIds, deptId, userIds, description }: z.infer<typeof leadAssignToSchema>) => {
         try {
@@ -76,14 +85,14 @@ export const leadResolvers = {
         }
     },
 
-    submitFeedback: async ({ deptId, leadId, callStatus, paymentStatus, feedback, urls, submitType }: z.infer<typeof submitFeedbackSchema>, { user }: { user: z.infer<typeof loggedUserSchema> }) => {
+    submitFeedback: async ({ deptId, leadId, callStatus, paymentStatus, feedback, urls, submitType, formName }: z.infer<typeof submitFeedbackSchema>, { user }: { user: z.infer<typeof loggedUserSchema> }) => {
         try {
             // const parsedData = submitFeedbackSchema.safeParse({ deptId, leadId, feedback });
             // if (!parsedData.success) {
             //     const errors = parsedData.error.errors.map((err: ZodIssue) => ([err.message, err.path]));
             //     throw new Error(errors.join(', '));
             // }
-            return await leadWorker.submitFeedback({ deptId, leadId, callStatus, paymentStatus, feedback, urls, submitType }, user.id);
+            return await leadWorker.submitFeedback({ deptId, leadId, callStatus, paymentStatus, feedback, urls, submitType, formName }, user.id);
         } catch (error) {
             logger.error('Error Submitting Feedback:', error);
             throw new Error('Error Submitting Feedback');
@@ -102,7 +111,7 @@ export const leadResolvers = {
             return await leadWorker.submitBid({ deptId, leadId, companyId, bidAmount, description, memberId: user.id }, user.id);
         } catch (error) {
             logger.error('Error Submitting Bid:', error);
-            throw new Error('Error Submitting Bid');
+            throw new Error(`Error Submitting Bid ${error}`);
         }
     },
     updateLeadFinanceStatus: async ({ leadId, financeStatus }: { leadId: string, financeStatus: boolean }, { user }: { user: z.infer<typeof loggedUserSchema> }) => {
