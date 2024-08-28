@@ -4,6 +4,7 @@ export const leadSchema = `
     callCount: Int
     totalPayCollectedCount: Int
     groupedCallPerday: JSON
+    leadsWithFeedbackByRole: JSON
   }
 
   type groupedCallPerday { 
