@@ -3,6 +3,7 @@ export const leadSchema = `
   type RootDashboardResponse { 
     callCount: Int
     totalPayCollectedCount: Int
+    numberOfLeads: Int
     groupedCallPerday: JSON
   }
 

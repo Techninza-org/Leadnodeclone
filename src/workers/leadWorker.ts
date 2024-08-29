@@ -13,7 +13,7 @@ const getAllLeads = async () => {
                 Company: true,
             },
         });
-
+        
         return leads;
     } catch (error) {
         logger.error('Error fetching Leads:', error);
@@ -24,13 +24,15 @@ const getAllLeads = async () => {
 const getLeadsByDateRange = async (companyId: string, fromDateStr: string, toDateStr: string): Promise<{
     callCount: number,
     totalPayCollectedCount: number
+    numberOfLeads: number
     groupedCallPerday: {
         [key: string]: number;
     }
 } | []> => {
+    
     try {
-        const fromDate = parse(fromDateStr, 'MM/dd/yyyy', new Date());
-        const toDate = parse(toDateStr, 'MM/dd/yyyy', new Date());
+        const fromDate = parse(fromDateStr, 'dd/MM/yyyy', new Date());
+        const toDate = parse(toDateStr, 'dd/MM/yyyy', new Date());
 
         const leads = await prisma.lead.findMany({
             where: {
@@ -53,6 +55,8 @@ const getLeadsByDateRange = async (companyId: string, fromDateStr: string, toDat
                 },
             }
         });
+
+        const number = leads.length
 
         // totalPayCollectedCount
         const totalAmtCollected = leads.reduce((totalAmt: number, lead) => {
@@ -78,8 +82,8 @@ const getLeadsByDateRange = async (companyId: string, fromDateStr: string, toDat
             acc[date] = acc[date] ? acc[date] + 1 : 1;
             return acc;
         }, {});
-
-        return { callCount: callSuccessLeadCount, totalPayCollectedCount: totalAmtCollected, groupedCallPerday: calcDailyCallMadeEachDay };
+        
+        return { callCount: callSuccessLeadCount, totalPayCollectedCount: totalAmtCollected, numberOfLeads: number, groupedCallPerday: calcDailyCallMadeEachDay };
     } catch (error) {
         logger.error('Error fetching Leads:', error);
         return [];
@@ -184,6 +188,8 @@ const getCompanyLeads = async (companyId: string) => {
             });
             return groups;
         }, []);
+        console.log(leadsWithUniqueFeedback, 'leadsWithUniqueFeedback');
+        
 
         return {
             lead: leadsWithUniqueFeedback,
