@@ -44,6 +44,7 @@ export const submitFeedbackSchema = z.object({
         fieldType: z.string().min(3, "Field type must be at least 3 characters long."),
     })),
     urls: z.array(z.string()).optional(),
+    nextFollowUpDate: z.string().optional(),
 });
 
 

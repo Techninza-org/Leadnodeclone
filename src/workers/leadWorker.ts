@@ -28,6 +28,9 @@ const getLeadsByDateRange = async (companyId: string, fromDateStr: string, toDat
     groupedCallPerday: {
         [key: string]: number;
     }
+    leadsWithFeedbackByRole: { 
+        [roleName: string]: number;
+    }
 } | []> => {
     
     try {
@@ -58,6 +61,27 @@ const getLeadsByDateRange = async (companyId: string, fromDateStr: string, toDat
 
         const number = leads.length
 
+        // TODO: Calc totalLeads in which any member has given feedback based on member role
+        const leadsWithFeedbackByRole = leads.reduce((acc: { [roleName: string]: number }, lead) => {
+            lead.LeadFeedback.forEach((feedback: any) => {
+                if (feedback.member && feedback.member.role && feedback.feedback.length > 0) {
+                    const roleName = feedback.member.role.name;
+                    // Exclude roles 'manager' and 'root'
+                    if (roleName.toLowerCase() !== 'manager' && roleName.toLowerCase() !== 'root') {
+                        if (acc[roleName]) {
+                            acc[roleName]++;
+                        } else {
+                            acc[roleName] = 1;
+                        }
+                    }
+                }
+            });
+            return acc;
+        }, {});
+
+        console.log(leadsWithFeedbackByRole, "leadsWithFeedbackByRole")
+
+
         // totalPayCollectedCount
         const totalAmtCollected = leads.reduce((totalAmt: number, lead) => {
             lead.LeadFeedback.forEach((feedback: any) => {
@@ -82,8 +106,13 @@ const getLeadsByDateRange = async (companyId: string, fromDateStr: string, toDat
             acc[date] = acc[date] ? acc[date] + 1 : 1;
             return acc;
         }, {});
-        
-        return { callCount: callSuccessLeadCount, totalPayCollectedCount: totalAmtCollected, numberOfLeads: number, groupedCallPerday: calcDailyCallMadeEachDay };
+
+        return {
+            callCount: callSuccessLeadCount,
+            totalPayCollectedCount: totalAmtCollected,
+            groupedCallPerday: calcDailyCallMadeEachDay,
+            leadsWithFeedbackByRole
+        };
     } catch (error) {
         logger.error('Error fetching Leads:', error);
         return [];
@@ -314,6 +343,7 @@ const updateLead = async (lead: z.infer<typeof createLeadSchema>) => {
                 vehicleDate: formatISO(parse(lead.vehicleDate || "", 'dd/MM/yyyy', new Date())),
                 vehicleName: lead.vehicleName,
                 vehicleModel: lead.vehicleModel,
+                nextFollowUpDate: lead.nextFollowUpDate,
             },
         });
 
@@ -427,7 +457,7 @@ const leadAssignTo = async ({ companyId, leadIds, deptId, userIds, description }
     }
 }
 
-const submitFeedback = async ({ deptId, leadId, callStatus, paymentStatus, feedback, urls, submitType, formName }: z.infer<typeof submitFeedbackSchema>, userId: string) => {
+const submitFeedback = async ({ deptId, leadId, callStatus, paymentStatus, feedback, urls, submitType, formName, nextFollowUpDate }: z.infer<typeof submitFeedbackSchema>, userId: string) => {
     try {
 
         const dept = await prisma.companyDept.findFirst({
@@ -456,9 +486,9 @@ const submitFeedback = async ({ deptId, leadId, callStatus, paymentStatus, feedb
             },
             data: {
                 callStatus,
-                paymentStatus
+                paymentStatus,
+                nextFollowUpDate
             }
-
         });
 
         if (!lead) {
