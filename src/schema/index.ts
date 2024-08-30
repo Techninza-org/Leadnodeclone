@@ -22,9 +22,11 @@ type Query {
     getCompanyDepts(companyId: String!): [Dept]
     getCompanyDeptFields(deptId: String!): [CompanyDeptForm]
     getLeadBids(leadId: String!): [Bid]
+    getMemberLocation(memberId: String!, date: String!): MemberLocation
   }
 
   type Mutation {
+    savedMemberLocation(memberId: String!, locations: [LocationInput]): MemberLocation
     createUser(
       name: String!,
       email: String!,
