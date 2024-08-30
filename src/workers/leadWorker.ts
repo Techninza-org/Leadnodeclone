@@ -111,6 +111,7 @@ const getLeadsByDateRange = async (companyId: string, fromDateStr: string, toDat
             callCount: callSuccessLeadCount,
             totalPayCollectedCount: totalAmtCollected,
             groupedCallPerday: calcDailyCallMadeEachDay,
+            numberOfLeads: number,
             leadsWithFeedbackByRole
         };
     } catch (error) {
