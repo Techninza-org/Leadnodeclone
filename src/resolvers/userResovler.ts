@@ -26,5 +26,17 @@ export const userResolvers = {
             throw new Error('Unauthorized');
         }
         return await userWorker.getCompanyDeptMembers(companyId, deptId);
-    }
+    },
+    savedMemberLocation: async ({ memberId, locations }: { memberId: string, locations: Array<{ latitude: number; longitude: number; idleTime?: string, movingTime: string }> }, { user }: { user: z.infer<typeof loggedUserSchema> }) => {
+        // if (user.role.name !== 'Root' && user.role.name !== 'Manager') {
+        //     throw new Error('Unauthorized');
+        // }
+        return await userWorker.savedMemberLocation(memberId, locations);
+    },
+    getMemberLocation: async ({ memberId, date }: { memberId: string, date: string }, { user }: { user: z.infer<typeof loggedUserSchema> }) => {
+        // if (user.role.name !== 'Root' && user.role.name !== 'Manager') {
+        //     throw new Error('Unauthorized');
+        // }
+        return await userWorker.getDriverLocationHistory(memberId, date);
+    },
 }

@@ -5,6 +5,8 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { loginSchema, signupSchema, CreateOrUpdateManagerSchema } from '../types/user';
 import { generateHash, generateToken, getUserByIdEmailPhone, verifyHash, verifyOtp } from '../utils/user-worker-utils';
+import { format } from 'date-fns';
+import { getISTTime } from '../utils';
 
 /*
 User: [Root, Telecaller, Exchanger, Financer, Manager]
@@ -67,7 +69,7 @@ const createUser = async (user: z.infer<typeof signupSchema>) => {
                                     imgLimit: subField.imgLimit,
                                     isDisabled: subField.isDisabled,
                                     isRequired: subField.isRequired,
-                                    options: subField.options ? (subField.options as any).map((option : any) => ({
+                                    options: subField.options ? (subField.options as any).map((option: any) => ({
                                         label: option.label,
                                         value: option.value,
                                     })) : [],
@@ -358,6 +360,69 @@ const getCompanyDeptMembers = async (companyId: string, deptId: string) => {
     }
 }
 
+const savedMemberLocation = async (memberId: string, locations: Array<{ latitude: number; longitude: number; idleTime?: string, movingTime: string }>) => {
+    try {
+        const today = format(new Date(), 'dd-MM-yyyy');
+
+        const locationData = locations.map(location => ({
+            latitude: location.latitude,
+            longitude: location.longitude,
+            movingTime: location.movingTime,
+            idleTime: location?.idleTime,
+            timestamp: getISTTime(new Date()),
+        }));
+
+        const existingDocument = await prisma.location.findUnique({
+            where: {
+                leadAssingeeMemberId_day: {
+                    leadAssingeeMemberId: memberId,
+                    day: today,
+                },
+            },
+        });
+
+        if (existingDocument) {
+            return await prisma.location.update({
+                where: {
+                    id: existingDocument.id,
+                },
+                data: {
+                    locations: {
+                        push: locationData,
+                    },
+                    updatedAt: new Date(),
+                },
+            });
+        } else {
+            return await prisma.location.create({
+                data: {
+                    leadAssingeeMemberId: memberId,
+                    day: today,
+                    locations: locationData,
+                },
+            });
+        }
+
+    } catch (error: any) {
+        logger.error('Error saving member location:', error);
+        throw new Error(error?.message);
+    }
+}
+
+const getDriverLocationHistory = async (memberId: string, date: string) => {
+    try {
+        const locations = await prisma.location.findFirst({
+            where: {
+                leadAssingeeMemberId: memberId,
+                day: date,
+            },
+        });
+        return locations;
+    } catch (error: any) {
+        logger.error('Error fetching driver location history:', error);
+        throw new Error(error?.message);
+    }
+}
 
 export default {
     // getAllUsers,
@@ -366,5 +431,7 @@ export default {
     // updateUser,
     loginUser,
     createOrUpdateManager,
-    getCompanyDeptMembers
+    getCompanyDeptMembers,
+    getDriverLocationHistory,
+    savedMemberLocation
 };

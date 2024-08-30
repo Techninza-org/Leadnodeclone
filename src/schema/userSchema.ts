@@ -1,4 +1,26 @@
 export const userSchema = `
+  input LocationInput {
+    latitude: Float!
+    longitude: Float!
+    idleTime: String
+    movingTime: String!
+  }
+
+  type MemberLocation {
+    id: ID!
+    leadAssingeeMemberId: String!
+    locations: [Location]!
+    day: String!
+  }
+
+  type Location {
+    latitude: Float!
+    longitude: Float!
+    idleTime: String
+    timestamp: String!
+    movingTime: String!
+  }
+
   type Role {
     id: ID!
     name: String!
