@@ -67,7 +67,7 @@ type Query {
     
     leadAssignTo(companyId: String!, leadIds: [String!]!, deptId: String!, userIds: [String!]!, description: String): [Lead]
 
-    submitFeedback(nextFollowUpDate: String!, deptId: String!, leadId: String!, callStatus: String!, paymentStatus: String!, feedback: [FeedbackInput!]!, urls: [String], submitType: String, formName: String): LeadResponse
+    submitFeedback(nextFollowUpDate: String, deptId: String!, leadId: String!, callStatus: String!, paymentStatus: String!, feedback: [FeedbackInput!]!, urls: [String], submitType: String, formName: String): LeadResponse
 
     submitBid(companyId: String!, deptId: String!, leadId: String!, bidAmount: String!, description: String): Bid
 

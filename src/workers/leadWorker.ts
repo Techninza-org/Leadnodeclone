@@ -148,7 +148,16 @@ const getAssignedLeads = async (userId: string, companyId?: string) => {
                         Member: true,
                     },
                 },
-                LeadFeedback: true,
+                LeadFeedback: {
+                    include: {
+                        feedback: true,
+                        member: {
+                            include: {
+                                role: true
+                            }
+                        }
+                    }
+                },
                 Feedbacks: true,
                 bids: true,
             },
@@ -280,8 +289,16 @@ const getTransferedLeads = async (userId: string) => {
             include: {
                 LeadTransferTo: {
                     include: {
-                        transferTo: true,
-                        transferBy: true,
+                        transferTo: {
+                            include: {
+                                role: true
+                            }
+                        },
+                        transferBy: {
+                            include:{
+                                role: true
+                            }
+                        },
                     }
                 },
             },
