@@ -97,6 +97,16 @@ export const leadSchema = `
     nextFollowUpDate: String
     createdAt: String!
     updatedAt: String!
+    LeadTransferTo: [LeadTransferTo]
+  }
+
+  type LeadTransferTo {
+    lead: Lead
+    transferBy: Member!
+    transferTo: Member!
+    leadData: JSON!
+    createdAt: String!
+    updatedAt: String!
   }
 
   type leadResponse {

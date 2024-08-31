@@ -5,6 +5,7 @@ import logger from "../utils/logger";
 import { leadUtils } from "../utils";
 import { CallStatus, Feedbacks, PaymentStatus } from "@prisma/client";
 import { createLeadSchema, leadAssignToSchema, leadBidSchema, submitFeedbackSchema } from "../types/lead";
+import { loggedUserSchema } from "../types/user";
 
 const getAllLeads = async () => {
     try {
@@ -27,7 +28,7 @@ const getLeadsByDateRange = async (companyId: string, fromDateStr: string, toDat
     groupedCallPerday: {
         [key: string]: number;
     }
-    leadsWithFeedbackByRole: { 
+    leadsWithFeedbackByRole: {
         [roleName: string]: number;
     }
 } | []> => {
@@ -259,6 +260,33 @@ const getCompanyLeadById = async (companyId: string, leadId: string) => {
     }
 }
 
+const getTransferedLeads = async (userId: string) => {
+    try {
+        const leads = await prisma.lead.findMany({
+            where: {
+                LeadTransferTo: {
+                    some: {
+                        transferById: userId,
+                    },
+                },
+            },
+            include: {
+                LeadTransferTo: {
+                    include: {
+                        transferTo: true,
+                        transferBy: true,
+                    }
+                },
+            },
+        });
+
+        return leads;
+    } catch (error: any) {
+        console.error('Error fetching transfered leads:', error);
+        throw new Error(`Error fetching transfered leads: ${error.message}`);
+    }
+}
+
 const createLead = async (lead: z.infer<typeof createLeadSchema>) => {
     try {
         const company = await prisma.company.findFirst({
@@ -361,7 +389,6 @@ const approveLead = async (leadId: string, status: boolean) => {
     return lead;
 }
 
-
 const leadAssignTo = async ({ companyId, leadIds, deptId, userIds, description }: z.infer<typeof leadAssignToSchema>) => {
     try {
         if (!Array.isArray(leadIds)) {
@@ -448,6 +475,63 @@ const leadAssignTo = async ({ companyId, leadIds, deptId, userIds, description }
     } catch (error: any) {
         logger.error('Error assigning Leads:', error);
         throw new Error(`Error Assigning Leads: ${error.message}`);
+    }
+}
+
+const leadTransferTo = async ({ leadId, transferToId }: { leadId: string, transferToId: string }, { user }: { user: z.infer<typeof loggedUserSchema> }) => {
+    try {
+        const lead = await prisma.lead.findFirst({
+            where: {
+                id: leadId,
+                companyId: user.companyId,
+            },
+            include: {
+                LeadFeedback: true
+            }
+        });
+
+        if (!lead) {
+            throw new Error("Lead not found");
+        }
+
+        const member = await prisma.member.findFirst({
+            where: {
+                id: transferToId,
+                companyId: user.companyId,
+            },
+        });
+
+        if (!member) {
+            throw new Error("Member not found");
+        }
+
+        const leadTransfer = await prisma.leadTransferTo.create({
+            data: {
+                leadId,
+                leadData: lead.LeadFeedback,
+                transferToId,
+                transferById: user.id,
+            },
+        });
+
+        const updatedLead = await prisma.lead.update({
+            where: {
+                id: leadId,
+            },
+            data: {
+                LeadMember: {
+                    deleteMany: {},
+                    create: {
+                        memberId: transferToId,
+                    },
+                },
+            },
+        });
+
+        return updatedLead;
+    } catch (error: any) {
+        logger.error('Error transferring lead:', error);
+        throw new Error(`Error transferring lead: ${error.message}`);
     }
 }
 
@@ -728,5 +812,7 @@ export default {
     submitBid,
     updateLeadFinanceStatus,
     getLeadsByDateRange,
-    updateLeadFollowUpDate
+    updateLeadFollowUpDate,
+    leadTransferTo,
+    getTransferedLeads
 }

@@ -23,6 +23,7 @@ type Query {
     getCompanyDeptFields(deptId: String!): [CompanyDeptForm]
     getLeadBids(leadId: String!): [Bid]
     getMemberLocation(memberId: String!, date: String!): MemberLocation
+    getTransferedLeads(userId: String!): [Lead]
   }
 
   type Mutation {
@@ -40,6 +41,8 @@ type Query {
       companyPhone: String,
       companyEmail: String
     ): CreateUserResponse
+
+    leadTransferTo(leadId: ID!, transferToId: ID!): Lead
     
     loginUser(email: String, password: String, phone: String, otp: String): LoginUserResponse
 
