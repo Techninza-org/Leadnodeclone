@@ -35,6 +35,7 @@ model Lead {
   LeadMember   LeadMember[]
   Feedbacks    Feedbacks[]
   bids         Bid[]
+  LeadTransferTo LeadTransferTo[]
 
   isFinancedApproved Boolean @default(false)
 
@@ -45,7 +46,6 @@ model Lead {
 
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
-  LeadTransferTo LeadTransferTo[]
 
   @@index([companyId])
 }

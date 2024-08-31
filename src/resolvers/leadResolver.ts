@@ -50,6 +50,14 @@ export const leadResolvers = {
             throw new Error('Error fetching lead');
         }
     },
+    getTransferedLeads: async ({ userId }: { userId: string }) => {
+        try {
+            return await leadWorker.getTransferedLeads(userId);
+        } catch (error) {
+            logger.error('Error fetching lead [getTransferedLeads]:', error);
+            throw new Error('Error fetching lead');
+        }
+    },
     createLead: async ({ input }: { input: z.infer<typeof createLeadSchema> }) => {
         try {
             const parsedData = createLeadSchema.safeParse(input);
@@ -89,6 +97,15 @@ export const leadResolvers = {
                 return { user: null, errors };
             }
             return await leadWorker.leadAssignTo({ companyId, leadIds, deptId, userIds, description });
+        } catch (error) {
+            logger.error('Error Assigning lead [leadAssignTo]:', error);
+            throw new Error(`${error}`);
+        }
+    },
+
+    leadTransferTo: async ({ leadId, transferToId }: { leadId: string, transferToId: string }, { user }: { user: z.infer<typeof loggedUserSchema> }) => {
+        try {
+            return await leadWorker.leadTransferTo({ leadId, transferToId }, { user });
         } catch (error) {
             logger.error('Error Assigning lead [leadAssignTo]:', error);
             throw new Error(`${error}`);
