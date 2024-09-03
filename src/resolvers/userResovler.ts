@@ -40,7 +40,7 @@ export const userResolvers = {
         return await userWorker.getDriverLocationHistory(memberId, date);
     },
     getMembersByRole: async ({ role }: { role: string }, { user }: { user: z.infer<typeof loggedUserSchema> }) => {
-        if (user.role.name !== 'Root') {
+        if (user.role.name === 'Root') {
             throw new Error('Unauthorized');
         }
         return await userWorker.getUserByRole(role);
