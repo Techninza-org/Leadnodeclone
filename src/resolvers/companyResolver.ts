@@ -53,7 +53,6 @@ export const companyResolvers = {
         message: err.message,
         path: err.path,
       }));
-      console.log(errors, 'parsedData')
       return { user: null, errors };
     }
 

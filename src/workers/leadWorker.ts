@@ -80,8 +80,6 @@ const getLeadsByDateRange = async (companyId: string, fromDateStr: string, toDat
             return acc;
         }, {});
 
-        console.log(leadsWithFeedbackByRole, "leadsWithFeedbackByRole")
-
 
         // totalPayCollectedCount
         const totalAmtCollected = leads.reduce((totalAmt: number, lead) => {
@@ -89,7 +87,6 @@ const getLeadsByDateRange = async (companyId: string, fromDateStr: string, toDat
                 if (feedback?.formName?.includes('Payment')) {
                     feedback?.feedback?.forEach((item: Feedbacks) => {
                         if (item.name === 'amount') {
-                            console.log('item:', item);
                             totalAmt += parseFloat(String(item?.value ?? '0'));
                         }
                     });
@@ -165,7 +162,6 @@ const getAssignedLeads = async (userId: string, companyId?: string) => {
 
         return leads;
     } catch (error: any) {
-        console.error('Error fetching assigned leads:', error);
         throw new Error(`Error fetching assigned leads: ${error.message}`);
     }
 };
@@ -228,8 +224,6 @@ const getCompanyLeads = async (companyId: string) => {
             });
             return groups;
         }, []);
-        console.log(leadsWithUniqueFeedback, 'leadsWithUniqueFeedback');
-        
 
         return {
             lead: leadsWithUniqueFeedback,
@@ -237,7 +231,7 @@ const getCompanyLeads = async (companyId: string) => {
         };
 
     } catch (error: any) {
-        console.error('Error fetching Leads:', error);
+        logger.error('Error fetching Leads:', error);
         throw new Error(`Error fetching leads: ${error.message}`);
     }
 };
@@ -306,7 +300,7 @@ const getTransferedLeads = async (userId: string) => {
 
         return leads;
     } catch (error: any) {
-        console.error('Error fetching transfered leads:', error);
+        logger.error('Error fetching transfered leads:', error);
         throw new Error(`Error fetching transfered leads: ${error.message}`);
     }
 }
@@ -365,7 +359,7 @@ const createLead = async (lead: z.infer<typeof createLeadSchema>) => {
 
         return { lead: newLead, errors: [] };
     } catch (error: any) {
-        console.error('Error creating lead:', error);
+        logger.error('Error creating lead:', error);
         throw new Error(`Error creating lead: ${error.message}`);
     }
 };

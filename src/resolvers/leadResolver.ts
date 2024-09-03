@@ -17,7 +17,6 @@ export const leadResolvers = {
 
     getLeadsByDateRange: async ({ companyId, startDate, endDate }: { companyId: string, startDate: string, endDate: string }) => {
         try {
-            console.log('companyId', companyId, 'startDate', startDate, 'endDate', endDate);
             return await leadWorker.getLeadsByDateRange(companyId, startDate, endDate);
         } catch (error) {
             logger.error('Error fetching lead [getLeadsByDateRange]:', error);

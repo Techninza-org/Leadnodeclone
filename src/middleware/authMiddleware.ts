@@ -44,7 +44,6 @@ export const userAuthMiddleware = async (req: ExtendedRequest, res: Response, ne
     req.user = user
     next();
   } catch (error: any) {
-    console.log(error)
     if(error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError' || error.message.includes('jwt expired')){
       return res.status(401).send('Token Expired or Invalid Token');
     }

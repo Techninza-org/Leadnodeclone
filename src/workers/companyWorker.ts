@@ -19,7 +19,7 @@ export const getCompanyDeptFields = async (deptId: string) => {
         });
         return deptFields;
     } catch (error: any) {
-        console.log(error.message, 'error')
+        logger.log(error.message, 'error')
         throw new Error('Error fetching departments');
     }
 }
@@ -36,7 +36,7 @@ export const getDepts = async (companyId: string) => {
         });
         return depts;
     } catch (error: any) {
-        console.log(error.message, 'error')
+        logger.log(error.message, 'error')
         throw new Error('Error fetching departments');
     }
 }
@@ -69,7 +69,7 @@ export const createRole = async (role: z.infer<typeof createRoleSchema>) => {
 const createDept = async (dept: z.infer<typeof createAdminDeptSchema>) => {
     try {
         throw new Error('Not implemented');
-        // console.log(dept, 'dept');
+        // logger.log(dept, 'dept');
 
         // const newDept = await prisma.adminDept.upsert({
         //     where: { 
@@ -116,7 +116,6 @@ const createDept = async (dept: z.infer<typeof createAdminDeptSchema>) => {
 
         // return { dept: newDept, errors: [] };
     } catch (error: any) {
-        console.log(error);
         logger.error('Error creating department:', error);
         throw new Error(`Error creating department: ${error.message}`);
     }

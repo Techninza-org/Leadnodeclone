@@ -43,8 +43,7 @@ export const getDepts = async () => {
         const depts = await prisma.adminDept.findMany();
         return depts;
     } catch (error: any) {
-        console.log(error.message, 'error')
-        throw new Error('Error fetching departments');
+        throw new Error(`Error fetching departments: ${error.message}`);
     }
 }
 
@@ -124,7 +123,7 @@ const createDept = async (dept: z.infer<typeof createAdminDeptSchema>) => {
 
         return { dept: newDept, errors: [] };
     } catch (error: any) {
-        console.log(error);
+        logger.log(error);
         logger.error('Error creating department:', error);
         throw new Error(`Error creating department: ${error.message}`);
     }
