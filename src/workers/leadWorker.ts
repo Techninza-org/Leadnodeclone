@@ -14,7 +14,7 @@ const getAllLeads = async () => {
                 Company: true,
             },
         });
-
+        
         return leads;
     } catch (error) {
         logger.error('Error fetching Leads:', error);
@@ -25,6 +25,7 @@ const getAllLeads = async () => {
 const getLeadsByDateRange = async (companyId: string, fromDateStr: string, toDateStr: string): Promise<{
     callCount: number,
     totalPayCollectedCount: number
+    numberOfLeads: number
     groupedCallPerday: {
         [key: string]: number;
     }
@@ -32,9 +33,10 @@ const getLeadsByDateRange = async (companyId: string, fromDateStr: string, toDat
         [roleName: string]: number;
     }
 } | []> => {
+    
     try {
-        const fromDate = parse(fromDateStr, 'MM/dd/yyyy', new Date());
-        const toDate = parse(toDateStr, 'MM/dd/yyyy', new Date());
+        const fromDate = parse(fromDateStr, 'dd/MM/yyyy', new Date());
+        const toDate = parse(toDateStr, 'dd/MM/yyyy', new Date());
 
         const leads = await prisma.lead.findMany({
             where: {
@@ -57,6 +59,8 @@ const getLeadsByDateRange = async (companyId: string, fromDateStr: string, toDat
                 },
             }
         });
+
+        const number = leads.length
 
         // TODO: Calc totalLeads in which any member has given feedback based on member role
         const leadsWithFeedbackByRole = leads.reduce((acc: { [roleName: string]: number }, lead) => {
@@ -108,6 +112,7 @@ const getLeadsByDateRange = async (companyId: string, fromDateStr: string, toDat
             callCount: callSuccessLeadCount,
             totalPayCollectedCount: totalAmtCollected,
             groupedCallPerday: calcDailyCallMadeEachDay,
+            numberOfLeads: number,
             leadsWithFeedbackByRole
         };
     } catch (error) {
@@ -143,7 +148,16 @@ const getAssignedLeads = async (userId: string, companyId?: string) => {
                         Member: true,
                     },
                 },
-                LeadFeedback: true,
+                LeadFeedback: {
+                    include: {
+                        feedback: true,
+                        member: {
+                            include: {
+                                role: true
+                            }
+                        }
+                    }
+                },
                 Feedbacks: true,
                 bids: true,
             },
@@ -214,6 +228,8 @@ const getCompanyLeads = async (companyId: string) => {
             });
             return groups;
         }, []);
+        console.log(leadsWithUniqueFeedback, 'leadsWithUniqueFeedback');
+        
 
         return {
             lead: leadsWithUniqueFeedback,
@@ -273,8 +289,16 @@ const getTransferedLeads = async (userId: string) => {
             include: {
                 LeadTransferTo: {
                     include: {
-                        transferTo: true,
-                        transferBy: true,
+                        transferTo: {
+                            include: {
+                                role: true
+                            }
+                        },
+                        transferBy: {
+                            include:{
+                                role: true
+                            }
+                        },
                     }
                 },
             },
