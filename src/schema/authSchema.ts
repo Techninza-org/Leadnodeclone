@@ -8,4 +8,9 @@ export const authSchema = `
     user: User
   }
 
+  type GenerateOTPResponse {
+    otp: String
+    otpExpiry: String
+    id: String
+  }
 `;

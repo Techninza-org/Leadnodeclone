@@ -23,8 +23,8 @@ export const adminResolvers = {
   getDepts: async () => {
     return await adminWorker.getDepts();
   },
-  getDeptFields: async ({ deptId }: { deptId: string }) => {
-    return await adminWorker.getDeptFields(deptId);
+  getDeptWFields: async () => {
+    return await adminWorker.getDeptWFields();
   },
   createUserRole: async ({ name }: z.infer<typeof createRoleSchema>) => {
     const parsedData = createRoleSchema.safeParse({ name });

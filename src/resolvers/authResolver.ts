@@ -4,6 +4,9 @@ import userWorker from '../workers/userWorker';
 import { loginSchema, signupSchema } from '../types/user';
 
 export const authResolvers = {
+  generateOTP: async ({ phone }: { phone: string }) => {
+    return await userWorker.generateOTP(phone);
+  },
   createUser: async ({
     name,
     email,

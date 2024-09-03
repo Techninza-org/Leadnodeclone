@@ -4,13 +4,47 @@ import { z } from 'zod';
 import { v4 as uuidv4 } from 'uuid';
 
 import { loginSchema, signupSchema, CreateOrUpdateManagerSchema } from '../types/user';
-import { generateHash, generateToken, getUserByIdEmailPhone, verifyHash, verifyOtp } from '../utils/user-worker-utils';
+import { generateHash, generateToken, getUserByIdEmailPhone, sendOTP, verifyHash, verifyOtp } from '../utils/user-worker-utils';
 import { format } from 'date-fns';
 import { getISTTime } from '../utils';
 
 /*
 User: [Root, Telecaller, Exchanger, Financer, Manager]
 */
+const generateOTP = async (phone: string) => {
+    try {
+        const user = await prisma.member.findFirst({
+            where: {
+                phone,
+            },
+        });
+
+        if (!user) {
+            throw new Error('User not found.');
+        }
+
+        const otp = Math.floor(1000 + Math.random() * 9000).toString();
+        const otpExpiry = new Date(Date.now() + 5 * 60000);
+
+        await prisma.member.update({
+            where: { id: user.id },
+            data: { otp, otpExpiry },
+        });
+
+        await sendOTP(1, phone, otp);
+
+        return {
+            id: user.id,
+            otp,
+            otpExpiry,
+        };
+    }
+    catch (error: any) {
+        logger.error('Error generating OTP:', error);
+        throw new Error(error.message);
+    }
+}
+
 const createUser = async (user: z.infer<typeof signupSchema>) => {
     try {
 
@@ -446,6 +480,7 @@ export default {
     // getUserById,
     createUser,
     // updateUser,
+    generateOTP,
     getUserByRole,
     loginUser,
     createOrUpdateManager,

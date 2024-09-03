@@ -17,7 +17,7 @@ type Query {
     getCompanyLeadById(companyId: String!, leadId: String!): Lead
     getCompanyDeptMembers(companyId: String!, deptId: String): [Member]
     getAssignedLeads(userId: String!): [Lead]
-    getDeptFields(deptId: String!): Dept
+    getDeptWFields: [Dept]
     getDepts(companyId: String!): [Dept]
     getCompanyDepts(companyId: String!): [Dept]
     getCompanyDeptFields(deptId: String!): [CompanyDeptForm]
@@ -28,6 +28,7 @@ type Query {
   }
 
   type Mutation {
+    generateOTP(phone: String!): GenerateOTPResponse
     savedMemberLocation(memberId: String!, locations: [LocationInput]): MemberLocation
     createUser(
       name: String!,

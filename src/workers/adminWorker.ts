@@ -4,29 +4,36 @@ import { z } from 'zod';
 import { createRoleSchema } from '../types/admin';
 import { createAdminDeptSchema } from '../types/dept';
 
-export const getDeptFields = async (deptId: string) => {
-    throw new Error('Not implemented')
+export const getDeptWFields = async () => {
+    const dept = await prisma.adminDept.findMany({
+        include: {
+            deptFields: {
+                include: {
+                    SubDeptField: true
+                }
+            },
+        },
+    });
 
-    // const dept = await prisma.dept.findUnique({
-    //     where: {
-    //         id: deptId
-    //     },
-    // });
+    if (!dept) {
+        throw new Error('Department not found.');
+    }
+    return dept;
+}
 
-    // if (!dept) {
-    //     throw new Error('Department not found.');
-    // }
-
-    // const adminDeptId = dept.adminDeptId;
-    // const fields = await prisma.adminDept.findFirst({
-    //     where: {
-    //         id: adminDeptId
-    //     },
-    //     include: {
-    //         deptFields: true
-    //     }
-    // });
-    // return fields;
+export const getRootUsers = async () => {
+    try {
+        const rootUsers = await prisma.member.findMany({
+            where: {
+                role: {
+                    name: 'Root',
+                },
+            },
+        });
+        return rootUsers;
+    } catch (error: any) {
+        throw new Error('Error fetching root users');
+    }
 }
 
 export const getRoles = async () => {
@@ -129,11 +136,71 @@ const createDept = async (dept: z.infer<typeof createAdminDeptSchema>) => {
     }
 };
 
+const updateDept = async (deptId: string, deptUpdateInput: z.infer<typeof createAdminDeptSchema>) => {
+    try {
+        // Prepare fields for update
+        const fieldsToUpdateOrCreate = deptUpdateInput.deptFields.map(field => ({
+            where: { name: field.name },
+            update: {
+                fieldType: field.fieldType,
+                order: field.order,
+                isDisabled: field.isDisabled,
+                isRequired: field.isRequired
+            },
+            create: {
+                name: field.name,
+                fieldType: field.fieldType,
+                order: field.order,
+                isDisabled: field.isDisabled,
+                isRequired: field.isRequired,
+                SubDeptField: {
+                    // @ts-ignore
+                    create: field.SubDeptField?.map(subField => ({
+                        name: subField.name,
+                        fieldType: subField.fieldType,
+                        order: subField.order,
+                        isDisabled: subField.isDisabled,
+                        isRequired: subField.isRequired
+                    })) || []
+                }
+            }
+        }));
+        
+        const updatedDept = await prisma.adminDept.update({
+            where: {
+                id: deptId,
+            },
+            data: {
+                name: deptUpdateInput.name,
+                deptFields: {
+                    // @ts-ignore
+                    upsert: fieldsToUpdateOrCreate
+                }
+            },
+            include: {
+                deptFields: {
+                    include: {
+                        SubDeptField: true
+                    }
+                }
+            }
+        });
+
+        console.log('updatedDept:', updatedDept);
+
+        return updatedDept;
+    } catch (error: any) {
+        console.error('Error updating department:', error);
+        throw new Error(`Error updating department: ${error.message}`);
+    }
+};
+
 
 export default {
     getDepts,
     getRoles,
-    getDeptFields,
+    getDeptWFields,
     createRole,
-    createDept
+    createDept,
+    updateDept
 }

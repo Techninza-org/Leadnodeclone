@@ -320,6 +320,9 @@ model Member {
   imgURL   String?
   phone    String
 
+  otp String?
+  otpExpiry DateTime?
+
   deptId String?      @db.ObjectId
   Dept   CompanyDept? @relation(fields: [deptId], references: [id], onDelete: Cascade)
 

@@ -28,6 +28,7 @@ type Dept {
   name: String!
   members: [Member!]
   companyDeptForms: [CompanyDeptForm!]
+  deptFields: [CompanyDeptForm!]
   createdAt: String!
   updatedAt: String!
 }
