@@ -24,6 +24,7 @@ type Query {
     getLeadBids(leadId: String!): [Bid]
     getMemberLocation(memberId: String!, date: String!): MemberLocation
     getTransferedLeads(userId: String!): [Lead]
+    getMembersByRole(role: String!): [Member]
   }
 
   type Mutation {

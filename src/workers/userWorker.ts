@@ -156,6 +156,23 @@ const createUser = async (user: z.infer<typeof signupSchema>) => {
     }
 }
 
+const getUserByRole = async (role: string) => {
+    try {
+        const users = await prisma.member.findMany({
+            where: {
+                role: {
+                    name: role
+                }
+            }
+        });
+
+        return users;
+    } catch (error: any) {
+        logger.error('Error fetching users:', error);
+        throw new Error(error.message);
+    }
+}
+
 const loginUser = async (loginInfo: z.infer<typeof loginSchema>) => {
     try {
         let user = null;
@@ -429,6 +446,7 @@ export default {
     // getUserById,
     createUser,
     // updateUser,
+    getUserByRole,
     loginUser,
     createOrUpdateManager,
     getCompanyDeptMembers,
