@@ -23,7 +23,7 @@ const generateOTP = async (phone: string) => {
             throw new Error('User not found.');
         }
 
-        const otp = Math.floor(1000 + Math.random() * 9000).toString();
+        const otp = Math.floor(1000 + Math.random() * 900000).toString();
         const otpExpiry = new Date(Date.now() + 5 * 60000);
 
         await prisma.member.update({
