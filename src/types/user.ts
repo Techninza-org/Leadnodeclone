@@ -36,7 +36,7 @@ export const loginSchema = z.object({
     email: z.string().email('The email address is badly formatted.').optional(),
     password: z.string().min(3, 'Please enter your password.').optional(),
     phone: z.string().length(10, 'Please enter a valid phone number.').optional(),
-    otp: z.string().length(4, 'Please enter a valid OTP.').optional(),
+    otp: z.string().length(6, 'Please enter a valid OTP.').optional(),
 
 }).refine(data => {
     if ((data.email && data.password) || data.phone) {
