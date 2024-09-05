@@ -191,6 +191,8 @@ const createUser = async (user: z.infer<typeof signupSchema>) => {
 }
 
 const getUserByRole = async (role: string) => {
+    console.log(role, 'role');
+    
     try {
         const users = await prisma.member.findMany({
             where: {
@@ -198,13 +200,15 @@ const getUserByRole = async (role: string) => {
                     name: role
                 }
             },
-            select: {
+            select:{
                 id: true,
                 name: true,
                 companyId: true,
-                Company: true,
-            }
-        });
+                Company: true
+            }    
+    });
+    console.log(users, 'users');
+    
 
         return users;
     } catch (error: any) {

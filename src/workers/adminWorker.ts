@@ -240,6 +240,7 @@ export default {
     getDepts,
     getRoles,
     getDeptWFields,
+    getRootUsers,
     createRole,
     createDept,
     updateDept,

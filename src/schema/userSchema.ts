@@ -52,6 +52,7 @@ export const userSchema = `
     phone: String!
     dept: Dept!
     role: Role
+    companyId: String!
     company: Company!
     createdAt: String!
     updatedAt: String!
