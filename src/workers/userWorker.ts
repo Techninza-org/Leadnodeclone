@@ -256,7 +256,7 @@ const loginUser = async (loginInfo: z.infer<typeof loginSchema>) => {
 
         user = await prisma.member.update({
             where: { id: user.id },
-            data: { sessionToken },
+            data: { sessionToken, otp: "", otpExpiry: null },
             include: { role: true },
         });
 

@@ -171,7 +171,7 @@ const updateDept = async (deptId: string, deptUpdateInput: z.infer<typeof create
                 }
             }
         }));
-        
+
         const updatedDept = await prisma.adminDept.update({
             where: {
                 id: deptId,
@@ -201,6 +201,40 @@ const updateDept = async (deptId: string, deptUpdateInput: z.infer<typeof create
     }
 };
 
+const createNUpdateSubscriptionPlan = async (plan: any) => {
+    try {
+        const newPlan = await prisma.plan.upsert({
+            where: {
+                id: plan.id,
+            },
+            update: {
+                name: plan.name,
+                price: plan.price,
+                description: plan.description,
+                duration: plan.duration,
+                maxUsers: plan.maxUsers,
+                allowedDepts: {
+                    set: plan.allowedDepts
+                }
+            },
+            create: {
+                name: plan.name,
+                price: plan.price,
+                description: plan.description,
+                duration: plan.duration,
+                maxUsers: plan.maxUsers,
+                allowedDepts: {
+                    set: plan.allowedDepts
+                }
+            },
+        });
+
+        return newPlan;
+    } catch (error: any) {
+        throw new Error(`Error creating subscription plan: ${error.message}`);
+    }
+}
+
 
 export default {
     getDepts,
@@ -209,5 +243,6 @@ export default {
     getRootUsers,
     createRole,
     createDept,
-    updateDept
+    updateDept,
+    createNUpdateSubscriptionPlan
 }
