@@ -197,6 +197,12 @@ const getUserByRole = async (role: string) => {
                 role: {
                     name: role
                 }
+            },
+            select: {
+                id: true,
+                name: true,
+                companyId: true,
+                Company: true,
             }
         });
 
@@ -246,7 +252,7 @@ const loginUser = async (loginInfo: z.infer<typeof loginSchema>) => {
 
         user = await prisma.member.update({
             where: { id: user.id },
-            data: { sessionToken },
+            data: { sessionToken, otp: "", otpExpiry: null },
             include: { role: true },
         });
 

@@ -49,4 +49,7 @@ export const adminResolvers = {
 
     return await adminWorker.createDept(parsedData.data);
   },
+  createNUpdateSubscriptionPlan: async ({ input }: { input: any }) => {
+    return await adminWorker.createNUpdateSubscriptionPlan(input);
+  }
 }

@@ -31,10 +31,10 @@ model Lead {
   callStatus    CallStatus
   paymentStatus PaymentStatus
 
-  LeadFeedback LeadFeedback[]
-  LeadMember   LeadMember[]
-  Feedbacks    Feedbacks[]
-  bids         Bid[]
+  LeadFeedback   LeadFeedback[]
+  LeadMember     LeadMember[]
+  Feedbacks      Feedbacks[]
+  bids           Bid[]
   LeadTransferTo LeadTransferTo[]
 
   isFinancedApproved Boolean @default(false)
@@ -44,8 +44,8 @@ model Lead {
   companyId String?  @db.ObjectId
   Company   Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([companyId])
 }
@@ -279,6 +279,42 @@ model CompanyDeptForm {
   @@index([companyDeptId])
 }
 
+model Plan {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  name        String
+  description String
+  price       Float
+  duration    Int
+  maxUsers    Int?
+  isActive    Boolean @default(true)
+
+  allowedDepts String[] // AdminDept Ids
+
+  Subscriptions Subscriptions[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Subscriptions {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  companyId String?  @db.ObjectId
+  Company   Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  planId String? @db.ObjectId
+  plan   Plan?   @relation(fields: [planId], references: [id])
+
+  startDate DateTime
+  endDate   DateTime
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([companyId])
+}
+
 model Company {
   id               String  @id @default(auto()) @map("_id") @db.ObjectId
   rootId           String
@@ -290,9 +326,10 @@ model Company {
 
   isSubscribed Boolean @default(false)
 
-  members Member[]      @relation("CompanyMembers")
-  Depts   CompanyDept[]
-  Leads   Lead[]
+  members       Member[]        @relation("CompanyMembers")
+  Depts         CompanyDept[]
+  Subscriptions Subscriptions[]
+  Leads         Lead[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -320,7 +357,7 @@ model Member {
   imgURL   String?
   phone    String
 
-  otp String?
+  otp       String?
   otpExpiry DateTime?
 
   deptId String?      @db.ObjectId

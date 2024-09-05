@@ -75,4 +75,25 @@ input CreateDeptInput {
   deptFields: [DeptFieldsInput!]
 }
 
+input PlanInput { 
+  name: String!
+  price: Float!
+  duration: Int!
+  allowedDepts: [String!]
+  description: String!
+  isActive: Boolean!
+}
+
+type Plan {
+  id: ID!
+  name: String!
+  price: Float!
+  duration: Int!
+  allowedDepts: [String!]
+  description: String!
+  isActive: Boolean!
+  createdAt: String!
+  updatedAt: String!
+}
+
 `;

@@ -65,6 +65,8 @@ type Query {
 
     createDept(input: CreateDeptInput!): CreateDeptResponse
 
+    createNUpdateSubscriptionPlan(input: PlanInput!): Plan
+
     createLead(input: LeadInput!): LeadResponse
     
     leadAssignTo(companyId: String!, leadIds: [String!]!, deptId: String!, userIds: [String!]!, description: String): [Lead]
