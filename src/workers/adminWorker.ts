@@ -29,6 +29,12 @@ export const getRootUsers = async () => {
                     name: 'Root',
                 },
             },
+            select: {
+                companyId: true,
+                deptId: true,
+                role: true,
+                Company: true
+            }
         });
         return rootUsers;
     } catch (error: any) {
@@ -200,6 +206,7 @@ export default {
     getDepts,
     getRoles,
     getDeptWFields,
+    getRootUsers,
     createRole,
     createDept,
     updateDept

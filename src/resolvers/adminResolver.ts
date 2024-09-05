@@ -1,6 +1,6 @@
 
 import { z, ZodIssue } from 'zod';
-import adminWorker from '../workers/adminWorker';
+import adminWorker, { getRootUsers } from '../workers/adminWorker';
 import { createRoleSchema } from '../types/admin';
 import { createAdminDeptSchema } from '../types/dept';
 
@@ -25,6 +25,13 @@ export const adminResolvers = {
   },
   getDeptWFields: async () => {
     return await adminWorker.getDeptWFields();
+  },
+  getRootUsers: async () => {
+    try {
+      return await getRootUsers();
+    } catch (error) {
+      throw new Error('Error fetching root users');
+    }
   },
   createUserRole: async ({ name }: z.infer<typeof createRoleSchema>) => {
     const parsedData = createRoleSchema.safeParse({ name });
