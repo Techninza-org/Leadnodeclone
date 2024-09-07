@@ -58,7 +58,7 @@ export const getDeptsAdmin = async () => {
             include: {
                 deptFields: {
                     include: {
-                        SubDeptField: true
+                        subDeptFields: true
                     }
                 }
             }
