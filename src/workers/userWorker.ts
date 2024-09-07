@@ -7,6 +7,7 @@ import { loginSchema, signupSchema, CreateOrUpdateManagerSchema } from '../types
 import { generateHash, generateToken, getUserByIdEmailPhone, sendOTP, verifyHash, verifyOtp } from '../utils/user-worker-utils';
 import { format } from 'date-fns';
 import { getISTTime } from '../utils';
+import { createAdminDeptSchema } from '../types/dept';
 
 /*
 User: [Root, Telecaller, Exchanger, Financer, Manager]
@@ -23,7 +24,7 @@ const generateOTP = async (phone: string) => {
             throw new Error('User not found.');
         }
 
-        const otp = Math.floor(1000 + Math.random() * 900000).toString();
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
         const otpExpiry = new Date(Date.now() + 5 * 60000);
 
         await prisma.member.update({
@@ -79,15 +80,23 @@ const createUser = async (user: z.infer<typeof signupSchema>) => {
                     },
                 });
 
+                // const freePlan = await prisma.plan.findFirst({
+                //     where: { rank: 0 },
+                // });
+
                 const existingDepts = await prisma.adminDept.findMany({
+                    // where: {
+                    //     id: { in: freePlan?.defaultAllowedDeptsIds || [] },
+                    // },
                     include: {
                         deptFields: {
                             include: {
-                                SubDeptField: true
+                                subDeptFields: true
                             }
                         },
                     }
                 });
+
                 const deptsArray = existingDepts.map(dept => ({
                     name: dept.name,
                     deptManagerId: newUser.id,
@@ -96,7 +105,7 @@ const createUser = async (user: z.infer<typeof signupSchema>) => {
                             name: field.name,
                             order: field.order,
                             subDeptFields: {
-                                create: field.SubDeptField.map(subField => ({
+                                create: field.subDeptFields.map(subField => ({
                                     name: subField.name,
                                     order: subField.order,
                                     fieldType: subField.fieldType,
@@ -113,6 +122,7 @@ const createUser = async (user: z.infer<typeof signupSchema>) => {
                     },
                 }));
 
+                // TODO: update endDate and startDate
                 const newCompany = await prisma.company.create({
                     data: {
                         rootId: newUser.id,
@@ -123,6 +133,14 @@ const createUser = async (user: z.infer<typeof signupSchema>) => {
                         Depts: {
                             create: deptsArray,
                         },
+                        // Subscriptions: {
+                        //     create: {
+                        //         planId: freePlan?.id || "",
+                        //         allowedDeptsIds: existingDepts.map(dept => dept.id),
+                        //         endDate: new Date(),
+                        //         startDate: new Date(),
+                        //     }
+                        // }
                     },
                 });
 
@@ -190,25 +208,22 @@ const createUser = async (user: z.infer<typeof signupSchema>) => {
     }
 }
 
-const getUserByRole = async (role: string) => {
-    console.log(role, 'role');
-    
+const getUserByRole = async (role: string, companyId: string) => {
     try {
         const users = await prisma.member.findMany({
             where: {
+                companyId,
                 role: {
                     name: role
                 }
             },
-            select:{
+            select: {
                 id: true,
                 name: true,
                 companyId: true,
                 Company: true
-            }    
-    });
-    console.log(users, 'users');
-    
+            }
+        });
 
         return users;
     } catch (error: any) {

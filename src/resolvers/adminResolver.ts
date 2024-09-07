@@ -58,5 +58,8 @@ export const adminResolvers = {
   },
   createNUpdateSubscriptionPlan: async ({ input }: { input: any }) => {
     return await adminWorker.createNUpdateSubscriptionPlan(input);
+  },
+  updateCompanySubscription: async ({ companyId, planId, allowedDeptsIds, startDate, endDate }: { startDate: Date, endDate: Date, companyId: string, planId: string, allowedDeptsIds: string[] }) => {
+    return await adminWorker.updateCompanySubscription(companyId, planId, allowedDeptsIds, startDate, endDate);
   }
 }

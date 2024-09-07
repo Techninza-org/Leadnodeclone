@@ -740,7 +740,6 @@ const submitBid = async ({ deptId, leadId, companyId, bidAmount, description }: 
     }
 };
 
-
 const getLeadBids = async (leadId: string) => {
     const bids = await prisma.bid.findMany({
         where: {
@@ -816,6 +815,24 @@ const updateLeadFollowUpDate = async (leadId: string, followUpDate: string) => {
     }
 }
 
+const updateLeadPaymentStatus = async (leadId: string, paymentStatus: PaymentStatus | string) => {
+    try {
+        const updatedLead = await prisma.lead.update({
+            where: {
+                id: leadId,
+            },
+            data: {
+                paymentStatus: paymentStatus?.toUpperCase() as PaymentStatus,
+            },
+        });
+
+        return updatedLead;
+    } catch (error: any) {
+        logger.error('Error updating Lead:', error);
+        throw new Error(`Error updating Lead: ${error.message}`);
+    }
+}
+
 
 export default {
     getAllLeads,
@@ -833,5 +850,6 @@ export default {
     getLeadsByDateRange,
     updateLeadFollowUpDate,
     leadTransferTo,
-    getTransferedLeads
+    getTransferedLeads,
+    updateLeadPaymentStatus
 }

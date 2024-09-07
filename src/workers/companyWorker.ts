@@ -121,10 +121,70 @@ const createDept = async (dept: z.infer<typeof createAdminDeptSchema>) => {
     }
 };
 
+const createnUpdateCompanyDept = async (companyId: string, dept: z.infer<typeof createAdminDeptSchema>) => {
+    try {
+        const fieldsToCreate = dept.deptFields.map(field => ({
+            name: field.name,
+            fieldType: field.fieldType,
+            value: field.value,
+            imgLimit: field.imgLimit,
+            options: field.options,
+            order: field.order,
+            isDisabled: field.isDisabled,
+            isRequired: field.isRequired
+        }));
+
+        const company = await prisma.company.findFirst({
+            where: { id: companyId },
+        });
+
+        if (!company) {
+            throw new Error('Company not found.');
+        }
+
+        const newDept = await prisma.companyDept.upsert({
+            where: {
+                id: dept.id,
+            },
+            update: {
+                companyDeptForms: {
+                    create: {
+                        name: dept.subDeptName,
+                        order: dept.order,
+                        subDeptFields: {
+                            create: fieldsToCreate
+                        }
+                    }
+                }
+            },
+            create: {
+                name: dept.name,
+                deptManagerId: company?.companyManagerId,
+                companyId,
+                companyDeptForms: {
+                    create: {
+                        name: dept.subDeptName,
+                        order: dept.order,
+                        subDeptFields: {
+                            create: fieldsToCreate
+                        }
+                    }
+                }
+            },
+        });
+
+        return { dept: newDept, errors: [] };
+    } catch (error: any) {
+        logger.error('Error creating department:', error);
+        throw new Error(`Error creating department: ${error.message}`);
+    }
+};
+
 
 export default {
     getDepts,
     getCompanyDeptFields,
+    createnUpdateCompanyDept,
     createRole,
     createDept
 }

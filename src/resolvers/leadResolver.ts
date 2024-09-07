@@ -155,5 +155,13 @@ export const leadResolvers = {
             logger.error('Error updating lead follow up date:', error);
             throw new Error(`Error updating lead follow up date: ${error}`);
         }
+    },
+    updateLeadPaymentStatus: async ({ leadId, paymentStatus }: { leadId: string, paymentStatus: string }) => {
+        try {
+            return await leadWorker.updateLeadPaymentStatus(leadId, paymentStatus);
+        } catch (error) {
+            logger.error('Error updating lead payment status:', error);
+            throw new Error(`Error updating lead payment status: ${error}`);
+        }
     }
 };

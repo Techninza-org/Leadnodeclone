@@ -43,6 +43,6 @@ export const userResolvers = {
         if (user.role.name === 'Root') {
             throw new Error('Unauthorized');
         }
-        return await userWorker.getUserByRole(role);
+        return await userWorker.getUserByRole(role, user.companyId);
     }
 }
