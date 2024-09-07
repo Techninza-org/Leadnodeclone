@@ -53,7 +53,7 @@ export const userSchema = `
     dept: Dept!
     role: Role
     companyId: String!
-    company: Company!
+    Company: Company!
     createdAt: String!
     updatedAt: String!
   }
@@ -65,6 +65,7 @@ export const userSchema = `
     email: String!
     phone: String!
     members: [Member!]
+    Subscriptions: [Subscription!]
     leads: [Lead!]
     depts: [Dept!]
     createdAt: String!

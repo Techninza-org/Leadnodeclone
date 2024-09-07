@@ -30,11 +30,12 @@ export const getRootUsers = async () => {
                     name: 'Root',
                 },
             },
-            select: {
-                companyId: true,
-                deptId: true,
-                role: true,
-                Company: true
+            include: {
+                Company: {
+                    include: {
+                        Subscriptions: true,
+                    },
+                },
             }
         });
         return rootUsers;
