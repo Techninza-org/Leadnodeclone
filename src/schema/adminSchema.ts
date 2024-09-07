@@ -96,4 +96,16 @@ type Plan {
   updatedAt: String!
 }
 
+type Subscription  { 
+  id: ID!
+  planId: String!
+  plan: Plan!
+  allowedDeptsIds: [String!]
+  companyId: String!
+  Company: Company!
+  createdAt: String!
+  updatedAt: String!
+}
+
+
 `;
