@@ -20,8 +20,8 @@ export const adminResolvers = {
       throw new Error('Error fetching roles');
     }
   },
-  getDepts: async () => {
-    return await adminWorker.getDepts();
+  getDeptsAdmin: async () => {
+    return await adminWorker.getDeptsAdmin();
   },
   getDeptWFields: async () => {
     return await adminWorker.getDeptWFields();

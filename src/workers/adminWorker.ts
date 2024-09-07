@@ -51,9 +51,17 @@ export const getRoles = async () => {
     }
 }
 
-export const getDepts = async () => {
+export const getDeptsAdmin = async () => {
     try {
-        const depts = await prisma.adminDept.findMany();
+        const depts = await prisma.adminDept.findMany({
+            include: {
+                deptFields: {
+                    include: {
+                        SubDeptField: true
+                    }
+                }
+            }
+        });
         return depts;
     } catch (error: any) {
         throw new Error(`Error fetching departments: ${error.message}`);
@@ -256,7 +264,7 @@ const createNUpdateSubscriptionPlan = async (plan: any) => {
 
 
 export default {
-    getDepts,
+    getDeptsAdmin,
     getRoles,
     getDeptWFields,
     getRootUsers,
