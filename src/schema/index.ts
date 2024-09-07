@@ -80,6 +80,10 @@ type Query {
     updateLeadFinanceStatus(leadId: String!, financeStatus: Boolean!): Lead
 
     updateLeadFollowUpDate(leadId: String!, nextFollowUpDate: String!): Lead
+
+    updateLeadPaymentStatus(leadId: String!, paymentStatus: String!): Lead
+
+    createnUpdateCompanyDept(companyId: String!, deptId: String, input: CreateDeptInput!): CreateDeptResponse
   }
 `
 const allSchemas = [authSchema, adminSchema, leadSchema, userSchema, queries_mutation];

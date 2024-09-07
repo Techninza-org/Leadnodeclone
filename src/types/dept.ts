@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 export const createAdminDeptSchema = z.object({
+    id: z.string().optional(),
     name: z.string().min(3, "Department Name must be at least 3 characters long").max(30),
     subDeptName: z.string().min(3, "Sub Department Name must be at least 3 characters long").max(30),
     order: z.number().int().positive(),

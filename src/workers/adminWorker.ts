@@ -3,13 +3,14 @@ import prisma from '../config/database';
 import { z } from 'zod';
 import { createRoleSchema } from '../types/admin';
 import { createAdminDeptSchema } from '../types/dept';
+import { Plan } from '@prisma/client';
 
 export const getDeptWFields = async () => {
     const dept = await prisma.adminDept.findMany({
         include: {
             deptFields: {
                 include: {
-                    SubDeptField: true
+                    subDeptFields: true
                 }
             },
         },
@@ -116,7 +117,7 @@ const createDept = async (dept: z.infer<typeof createAdminDeptSchema>) => {
                 name: dept.name,
             },
             include: {
-                deptFields: true, 
+                deptFields: true,
             }
         });
 
@@ -124,7 +125,7 @@ const createDept = async (dept: z.infer<typeof createAdminDeptSchema>) => {
         const existingDeptField = await prisma.deptField.findFirst({
             where: {
                 name: dept.subDeptName,
-                adminDeptId: newDept.id 
+                adminDeptId: newDept.id
             }
         });
 
@@ -132,7 +133,7 @@ const createDept = async (dept: z.infer<typeof createAdminDeptSchema>) => {
         if (existingDeptField) {
             await prisma.subDeptField.deleteMany({
                 where: {
-                    deptFieldId: existingDeptField.id 
+                    deptFieldId: existingDeptField.id
                 }
             });
 
@@ -141,8 +142,8 @@ const createDept = async (dept: z.infer<typeof createAdminDeptSchema>) => {
                     id: existingDeptField.id,
                 },
                 data: {
-                    SubDeptField: {
-                        create: fieldsToCreate 
+                    subDeptFields: {
+                        create: fieldsToCreate
                     }
                 }
             });
@@ -152,7 +153,7 @@ const createDept = async (dept: z.infer<typeof createAdminDeptSchema>) => {
                     name: dept.subDeptName,
                     order: dept.order,
                     adminDeptId: newDept.id,
-                    SubDeptField: {
+                    subDeptFields: {
                         create: fieldsToCreate
                     }
                 }
@@ -213,7 +214,7 @@ const updateDept = async (deptId: string, deptUpdateInput: z.infer<typeof create
             include: {
                 deptFields: {
                     include: {
-                        SubDeptField: true
+                        subDeptFields: true
                     }
                 }
             }
@@ -228,7 +229,7 @@ const updateDept = async (deptId: string, deptUpdateInput: z.infer<typeof create
     }
 };
 
-const createNUpdateSubscriptionPlan = async (plan: any) => {
+const createNUpdateSubscriptionPlan = async (plan: Plan) => {
     try {
         const newPlan = await prisma.plan.upsert({
             where: {
@@ -238,20 +239,22 @@ const createNUpdateSubscriptionPlan = async (plan: any) => {
                 name: plan.name,
                 price: plan.price,
                 description: plan.description,
+                rank: plan.rank,
                 duration: plan.duration,
                 maxUsers: plan.maxUsers,
-                allowedDepts: {
-                    set: plan.allowedDepts
+                defaultAllowedDeptsIds: {
+                    set: plan.defaultAllowedDeptsIds
                 }
             },
             create: {
                 name: plan.name,
                 price: plan.price,
+                rank: plan.rank,
                 description: plan.description,
                 duration: plan.duration,
                 maxUsers: plan.maxUsers,
-                allowedDepts: {
-                    set: plan.allowedDepts
+                defaultAllowedDeptsIds: {
+                    set: plan.defaultAllowedDeptsIds
                 }
             },
         });
@@ -259,6 +262,30 @@ const createNUpdateSubscriptionPlan = async (plan: any) => {
         return newPlan;
     } catch (error: any) {
         throw new Error(`Error creating subscription plan: ${error.message}`);
+    }
+}
+
+const updateCompanySubscription = async (companyId: string, planId: string, allowedDeptsIds: string[], startDate: Date, endDate: Date) => {
+    try {
+        const updatedCompany = await prisma.company.update({
+            where: {
+                id: companyId,
+            },
+            data: {
+                Subscriptions: {
+                    create: {
+                        allowedDeptsIds,
+                        planId: planId,
+                        startDate,
+                        endDate
+                    }
+                }
+            },
+        });
+
+        return updatedCompany;
+    } catch (error: any) {
+        throw new Error(`Error updating company subscription: ${error.message}`);
     }
 }
 
@@ -271,5 +298,6 @@ export default {
     createRole,
     createDept,
     updateDept,
-    createNUpdateSubscriptionPlan
+    createNUpdateSubscriptionPlan,
+    updateCompanySubscription
 }
