@@ -27,7 +27,7 @@ export const userResolvers = {
         // }
         return await userWorker.getCompanyDeptMembers(companyId, deptId);
     },
-    savedMemberLocation: async ({ memberId, locations }: { memberId: string, locations: Array<{ latitude: number; longitude: number; idleTime?: string, movingTime: string }> }, { user }: { user: z.infer<typeof loggedUserSchema> }) => {
+    savedMemberLocation: async ({ memberId, locations }: { memberId: string, locations: Array<{ latitude: number; longitude: number; idleTime?: string, movingTime: string, batteryPercentage: string, networkStrength: string }> }, { user }: { user: z.infer<typeof loggedUserSchema> }) => {
         // if (user.role.name !== 'Root' && user.role.name !== 'Manager') {
         //     throw new Error('Unauthorized');
         // }
