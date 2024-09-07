@@ -193,7 +193,6 @@ const getCompanyLeads = async (companyId: string) => {
                 createdAt: 'desc',
             }
         });
-        console.log('leads', leads);
 
         const leadsWithUniqueFeedback = leads.map(lead => {
             lead.LeadFeedback.forEach(feedbackEntry => {

@@ -86,6 +86,7 @@ export const createRole = async (role: z.infer<typeof createRoleSchema>) => {
 }
 
 const createDept = async (dept: z.infer<typeof createAdminDeptSchema>) => {
+
     try {
         const fieldsToCreate = dept.deptFields.map(field => ({
             name: field.name,
@@ -102,45 +103,63 @@ const createDept = async (dept: z.infer<typeof createAdminDeptSchema>) => {
             where: {
                 name: dept.name,
             },
-            update: {
-                deptFields: {
-                    create: {
-                        name: dept.subDeptName,
-                        order: dept.order,
-                        SubDeptField: {
-                            create: fieldsToCreate
-                        }
-                    }
-                }
-            },
+            update: {},
             create: {
                 name: dept.name,
-                deptFields: {
-                    create: {
-                        name: dept.subDeptName,
-                        order: dept.order,
-                        SubDeptField: {
-                            create: fieldsToCreate
-                        }
-                    }
-                }
             },
             include: {
-                deptFields: {
-                    include: {
-                        SubDeptField: true
-                    }
-                }
+                deptFields: true, 
             }
         });
 
+
+        const existingDeptField = await prisma.deptField.findFirst({
+            where: {
+                name: dept.subDeptName,
+                adminDeptId: newDept.id 
+            }
+        });
+
+
+        if (existingDeptField) {
+            await prisma.subDeptField.deleteMany({
+                where: {
+                    deptFieldId: existingDeptField.id 
+                }
+            });
+
+            const updatedSubDept = await prisma.deptField.update({
+                where: {
+                    id: existingDeptField.id,
+                },
+                data: {
+                    SubDeptField: {
+                        create: fieldsToCreate 
+                    }
+                }
+            });
+        } else {
+            const createdSubDept = await prisma.deptField.create({
+                data: {
+                    name: dept.subDeptName,
+                    order: dept.order,
+                    adminDeptId: newDept.id,
+                    SubDeptField: {
+                        create: fieldsToCreate
+                    }
+                }
+            });
+        }
+
         return { dept: newDept, errors: [] };
     } catch (error: any) {
-        logger.log(error);
-        logger.error('Error creating department:', error);
-        throw new Error(`Error creating department: ${error.message}`);
+        console.error('Error creating or updating department:', error);
+        throw new Error(`Error creating or updating department: ${error.message}`);
     }
 };
+
+
+
 
 const updateDept = async (deptId: string, deptUpdateInput: z.infer<typeof createAdminDeptSchema>) => {
     try {
