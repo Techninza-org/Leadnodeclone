@@ -3,6 +3,8 @@ export const userSchema = `
     latitude: Float!
     longitude: Float!
     idleTime: String
+    batteryPercentage: String
+    networkStrength: String
     movingTime: String!
   }
 

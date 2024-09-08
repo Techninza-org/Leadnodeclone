@@ -129,6 +129,8 @@ model Location {
   id        String @id @default(auto()) @map("_id") @db.ObjectId
   locations Json[]
   day       String
+  batteryPercentage String?
+  networkStrength  String?
 
   leadAssingeeMemberId String     @db.ObjectId
   leadAssingeeMember   LeadMember @relation(fields: [leadAssingeeMemberId], references: [id])

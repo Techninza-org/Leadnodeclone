@@ -436,7 +436,7 @@ const getCompanyDeptMembers = async (companyId: string, deptId: string) => {
     }
 }
 
-const savedMemberLocation = async (memberId: string, locations: Array<{ latitude: number; longitude: number; idleTime?: string, movingTime: string }>) => {
+const savedMemberLocation = async (memberId: string, locations: Array<{ latitude: number; longitude: number; idleTime?: string, movingTime: string, batteryPercentage: string, networkStrength: string }>) => {
     try {
         const today = format(new Date(), 'dd-MM-yyyy');
 
@@ -445,6 +445,8 @@ const savedMemberLocation = async (memberId: string, locations: Array<{ latitude
             longitude: location.longitude,
             movingTime: location.movingTime,
             idleTime: location?.idleTime,
+            batteryPercentage: location.batteryPercentage,
+            networkStrength: location.networkStrength,
             timestamp: getISTTime(new Date()),
         }));
 
