@@ -349,6 +349,7 @@ const createLead = async (lead: z.infer<typeof createLeadSchema>) => {
                 vehicleModel: lead.vehicleModel,
                 callStatus: CallStatus.PENDING, // or PENDING
                 paymentStatus: PaymentStatus.PENDING, // or PENDING
+                department: lead.department,
                 LeadMember: {
                     create: {
                         memberId: companyManager.id,

@@ -18,6 +18,7 @@ export const createLeadSchema = z.object({
     vehicleName: z.string().optional(),
     vehicleModel: z.string().optional(),
     nextFollowUpDate: z.string().optional(),
+    department: z.string().optional()
 });
 
 export const leadAssignToSchema = z.object({
