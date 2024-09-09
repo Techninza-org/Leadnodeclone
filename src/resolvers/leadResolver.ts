@@ -148,9 +148,9 @@ export const leadResolvers = {
             throw new Error(`Error updating lead finance status: ${error}`);
         }
     },
-    updateLeadFollowUpDate: async ({ leadId, followUpDate }: { leadId: string, followUpDate: string }) => {
+    updateLeadFollowUpDate: async ({ leadId, nextFollowUpDate, remark, customerResponse, rating }: { leadId: string, nextFollowUpDate: string, remark: string, customerResponse: string, rating: string }, { user }: { user: z.infer<typeof loggedUserSchema> }) => {
         try {
-            return await leadWorker.updateLeadFollowUpDate(leadId, followUpDate);
+            return await leadWorker.updateLeadFollowUpDate(leadId, nextFollowUpDate, remark, customerResponse, rating, user.id);
         } catch (error) {
             logger.error('Error updating lead follow up date:', error);
             throw new Error(`Error updating lead follow up date: ${error}`);
@@ -162,6 +162,14 @@ export const leadResolvers = {
         } catch (error) {
             logger.error('Error updating lead payment status:', error);
             throw new Error(`Error updating lead payment status: ${error}`);
+        }
+    },
+    getFollowUpByLeadId: async ({ leadId }: { leadId: string }) => {
+        try {
+            return await leadWorker.getFollowUpByLeadId(leadId);
+        } catch (error) {
+            logger.error('Error fetching follow up:', error);
+            throw new Error(`Error fetching follow up: ${error}`);
         }
     }
 };

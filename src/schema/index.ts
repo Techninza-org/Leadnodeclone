@@ -26,6 +26,7 @@ type Query {
     getMemberLocation(memberId: String!, date: String!): MemberLocation
     getTransferedLeads(userId: String!): [Lead]
     getMembersByRole(role: String!): [Member]
+    getFollowUpByLeadId(leadId: String!): [FollowUp]
   }
 
   type Mutation {
@@ -78,7 +79,7 @@ type Query {
 
     updateLeadFinanceStatus(leadId: String!, financeStatus: Boolean!): Lead
 
-    updateLeadFollowUpDate(leadId: String!, nextFollowUpDate: String!): Lead
+    updateLeadFollowUpDate(leadId: String!, nextFollowUpDate: String!, remark: String!, customerResponse: String!, rating: String!): Lead
 
     updateLeadPaymentStatus(leadId: String!, paymentStatus: String!): Lead
 

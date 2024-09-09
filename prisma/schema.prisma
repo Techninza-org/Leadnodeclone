@@ -40,6 +40,7 @@ model Lead {
   isFinancedApproved Boolean @default(false)
 
   nextFollowUpDate String?
+  followUps        FollowUp[]
 
   companyId String?  @db.ObjectId
   Company   Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
@@ -48,6 +49,24 @@ model Lead {
   updatedAt DateTime @updatedAt
 
   @@index([companyId])
+}
+
+model FollowUp {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  leadId String @db.ObjectId
+  lead   Lead   @relation(fields: [leadId], references: [id])
+
+  followUpById String @db.ObjectId
+  followUpBy   Member @relation(fields: [followUpById], references: [id])
+
+  nextFollowUpDate String
+  remark          String
+  customerResponse String? // Hot/Warm/Cold
+  rating           String? // 1-10
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Bid {
@@ -122,15 +141,14 @@ model LeadTransferTo {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
 }
 
 model Location {
-  id        String @id @default(auto()) @map("_id") @db.ObjectId
-  locations Json[]
-  day       String
+  id                String  @id @default(auto()) @map("_id") @db.ObjectId
+  locations         Json[]
+  day               String
   batteryPercentage String?
-  networkStrength  String?
+  networkStrength   String?
 
   leadAssingeeMemberId String     @db.ObjectId
   leadAssingeeMember   LeadMember @relation(fields: [leadAssingeeMemberId], references: [id])
@@ -303,7 +321,7 @@ model Plan {
 model Subscriptions {
   id String @id @default(auto()) @map("_id") @db.ObjectId
 
-  companyId String @db.ObjectId 
+  companyId String  @db.ObjectId
   Company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   planId String @db.ObjectId
@@ -379,6 +397,7 @@ model Member {
   LeadFeedback   LeadFeedback[]
   LeadTransferTo LeadTransferTo[] @relation("TransferTo")
   LeadTransferBy LeadTransferTo[] @relation("TransferBy")
+  FollowUp       FollowUp[]
 
   sessionToken String? // Device Login Token at a time
 

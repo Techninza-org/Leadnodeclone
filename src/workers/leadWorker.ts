@@ -14,7 +14,7 @@ const getAllLeads = async () => {
                 Company: true,
             },
         });
-        
+
         return leads;
     } catch (error) {
         logger.error('Error fetching Leads:', error);
@@ -33,7 +33,7 @@ const getLeadsByDateRange = async (companyId: string, fromDateStr: string, toDat
         [roleName: string]: number;
     }
 } | []> => {
-    
+
     try {
         const fromDate = parse(fromDateStr, 'dd/MM/yyyy', new Date());
         const toDate = parse(toDateStr, 'dd/MM/yyyy', new Date());
@@ -290,7 +290,7 @@ const getTransferedLeads = async (userId: string) => {
                             }
                         },
                         transferBy: {
-                            include:{
+                            include: {
                                 role: true
                             }
                         },
@@ -797,14 +797,27 @@ const updateLeadFinanceStatus = async (leadId: string, financeStatus: boolean, u
     }
 }
 
-const updateLeadFollowUpDate = async (leadId: string, followUpDate: string) => {
+const updateLeadFollowUpDate = async (leadId: string, nextFollowUpDate: string, remark: string, customerResponse: string, rating: string, memberId: string) => {
     try {
         const updatedLead = await prisma.lead.update({
             where: {
                 id: leadId,
             },
             data: {
-                nextFollowUpDate: followUpDate,
+                nextFollowUpDate: nextFollowUpDate,
+                followUps: {
+                    create: {
+                        nextFollowUpDate: nextFollowUpDate,
+                        followUpBy: {
+                            connect: {
+                                id: memberId,
+                            },
+                        },
+                        remark,
+                        customerResponse,
+                        rating,
+                    },
+                },
             },
         });
 
@@ -812,6 +825,24 @@ const updateLeadFollowUpDate = async (leadId: string, followUpDate: string) => {
     } catch (error: any) {
         logger.error('Error updating Lead:', error);
         throw new Error(`Error updating Lead: ${error.message}`);
+    }
+}
+
+const getFollowUpByLeadId = async (leadId: string) => {
+    try {
+        const followUps = await prisma.followUp.findMany({
+            where: {
+                leadId,
+            },
+            include: {
+                followUpBy: true,
+            },
+        });
+
+        return followUps;
+    } catch (error: any) {
+        logger.error('Error fetching followups:', error);
+        throw new Error(`Error fetching followups: ${error.message}`);
     }
 }
 
@@ -851,5 +882,6 @@ export default {
     updateLeadFollowUpDate,
     leadTransferTo,
     getTransferedLeads,
-    updateLeadPaymentStatus
+    updateLeadPaymentStatus,
+    getFollowUpByLeadId
 }

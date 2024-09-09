@@ -136,5 +136,20 @@ export const leadSchema = `
     fieldType: FieldType!
     value: JSON
   }
+  
+  type FollowUp { 
+    id: ID!
+    nextFollowUpDate: String!
+    remark: String!
+    customerResponse: String!
+    rating: String!
     
+    leadId: String!
+    lead: Lead!
+    followUpById: String!
+    followUpBy: Member!
+
+    createdAt: String!
+    updatedAt: String!
+  }
 `;
