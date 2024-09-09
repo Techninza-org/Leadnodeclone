@@ -53,9 +53,17 @@ export const getRoles = async () => {
     }
 }
 
-export const getDepts = async () => {
+export const getDeptsAdmin = async () => {
     try {
-        const depts = await prisma.adminDept.findMany();
+        const depts = await prisma.adminDept.findMany({
+            include: {
+                deptFields: {
+                    include: {
+                        subDeptFields: true
+                    }
+                }
+            }
+        });
         return depts;
     } catch (error: any) {
         throw new Error(`Error fetching departments: ${error.message}`);
@@ -159,6 +167,9 @@ const createDept = async (dept: z.infer<typeof createAdminDeptSchema>) => {
         throw new Error(`Error creating or updating department: ${error.message}`);
     }
 };
+
+
+
 
 const updateDept = async (deptId: string, deptUpdateInput: z.infer<typeof createAdminDeptSchema>) => {
     try {
@@ -281,7 +292,7 @@ const updateCompanySubscription = async (companyId: string, planId: string, allo
 
 
 export default {
-    getDepts,
+    getDeptsAdmin,
     getRoles,
     getDeptWFields,
     getRootUsers,

@@ -44,6 +44,7 @@ model Lead {
 
   companyId String?  @db.ObjectId
   Company   Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  department String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

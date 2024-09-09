@@ -18,6 +18,7 @@ type Query {
     getCompanyDeptMembers(companyId: String!, deptId: String): [Member]
     getAssignedLeads(userId: String!): [Lead]
     getDeptWFields: [Dept]
+    getDeptsAdmin: [Dept]
     getRootUsers: [Member]
     getDepts(companyId: String!): [Dept]
     getCompanyDepts(companyId: String!): [Dept]
