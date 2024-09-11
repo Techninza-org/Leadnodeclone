@@ -1,4 +1,22 @@
 export const userSchema = `
+  input CreateDeptFormInput { 
+    companyDeptId: ID
+    name: String!
+    order: Int
+    subDeptFields: [CreateDeptFieldInput!]!
+  }
+
+  input CreateDeptFieldInput {
+    name: String!
+    fieldType: String!
+    value: String
+    imgLimit: Int
+    options: [String]
+    order: Int!
+    isDisabled: Boolean
+    isRequired: Boolean
+  }
+
   input LocationInput {
     latitude: Float!
     longitude: Float!

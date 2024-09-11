@@ -287,15 +287,15 @@ model CompanyDeptForm {
   name  String
   order Int
 
-  companyDeptId String?      @db.ObjectId
-  companyDept   CompanyDept? @relation(fields: [companyDeptId], references: [id])
+  companyDeptId String      @db.ObjectId
+  companyDept   CompanyDept @relation(fields: [companyDeptId], references: [id])
 
   subDeptFields SubDeptField[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([companyDeptId])
+  @@unique([companyDeptId, name])
 }
 
 model Plan {

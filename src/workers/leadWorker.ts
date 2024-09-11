@@ -727,14 +727,14 @@ const submitBid = async ({ deptId, leadId, companyId, bidAmount, description }: 
         });
 
         // Remove the member from the leadMember table
-        await prisma.leadMember.delete({
-            where: {
-                leadId_memberId: {
-                    leadId,
-                    memberId: userId,
-                },
-            },
-        });
+        // await prisma.leadMember.delete({
+        //     where: {
+        //         leadId_memberId: {
+        //             leadId,
+        //             memberId: userId,
+        //         },
+        //     },
+        // });
 
         return newBid;
     } catch (error) {

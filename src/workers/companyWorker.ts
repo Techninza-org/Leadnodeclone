@@ -3,6 +3,8 @@ import prisma from '../config/database';
 import { z } from 'zod';
 import { createRoleSchema } from '../types/admin';
 import { createAdminDeptSchema } from '../types/dept';
+import { CompanyDeptForm } from '@prisma/client';
+import { loggedUserSchema } from '../types/user';
 
 export const getCompanyDeptFields = async (deptId: string) => {
     try {
@@ -13,7 +15,7 @@ export const getCompanyDeptFields = async (deptId: string) => {
             include: {
                 subDeptFields: true
             },
-            orderBy: { 
+            orderBy: {
                 order: 'desc',
             }
         });
@@ -66,55 +68,52 @@ export const createRole = async (role: z.infer<typeof createRoleSchema>) => {
     }
 }
 
-const createDept = async (dept: z.infer<typeof createAdminDeptSchema>) => {
+const createNUpdateCompanyDeptForm = async (deptForm: any, ctxUser: z.infer<typeof loggedUserSchema>) => {
     try {
-        throw new Error('Not implemented');
-        // logger.log(dept, 'dept');
+        const newDept = await prisma.companyDeptForm.upsert({
+            where: {
+                companyDeptId_name: {
+                    companyDeptId: deptForm.companyDeptId,
+                    name: deptForm.name
+                }
+            },
+            update: {
+                name: deptForm.name,
+                order: deptForm.order,
+                subDeptFields: {
+                    deleteMany: {},
+                    create: deptForm.subDeptFields.map((field: any) => ({
+                        name: field.name,
+                        fieldType: field.fieldType,
+                        value: field.value,
+                        imgLimit: field.imgLimit,
+                        options: field.options,
+                        order: field.order,
+                        isDisabled: field.isDisabled,
+                        isRequired: field.isRequired
+                    }))
+                }
+            },
+            create: {
+                name: deptForm.name,
+                order: deptForm.order,
+                companyDeptId: deptForm.companyDeptId,
+                subDeptFields: {
+                    create: deptForm.subDeptFields.map((field: any) => ({
+                        name: field.name,
+                        fieldType: field.fieldType,
+                        value: field.value,
+                        imgLimit: field.imgLimit,
+                        options: field.options,
+                        order: field.order,
+                        isDisabled: field.isDisabled,
+                        isRequired: field.isRequired
+                    }))
+                }
+            }
+        });
 
-        // const newDept = await prisma.adminDept.upsert({
-        //     where: { 
-        //         name: dept.name,
-        //     },
-        //     update: {
-        //         deptFields: {
-        //             create: {
-        //                 name: dept.subDeptName,
-        //                 SubDeptField:  { 
-        //                     create: dept.deptFields.map(field => ({
-        //                         name: field.name,
-        //                         fieldType: field.fieldType,
-        //                         value: field.value,
-        //                         options: field.options,
-        //                         order: field.order,
-        //                         isDisabled: field.isDisabled,
-        //                         isRequired: field.isRequired
-        //                     }))
-        //                 }
-        //             }
-        //         }
-        //     },
-        //     create: {
-        //         name: dept.name,
-        //         deptFields: {
-        //             create: {
-        //                 name: dept.subDeptName,
-        //                 SubDeptField:  { 
-        //                     create: dept.deptFields.map(field => ({
-        //                         name: field.name,
-        //                         fieldType: field.fieldType,
-        //                         value: field.value,
-        //                         options: field.options,
-        //                         order: field.order,
-        //                         isDisabled: field.isDisabled,
-        //                         isRequired: field.isRequired
-        //                     }))
-        //                 }
-        //             }
-        //         }
-        //     }
-        // });
-
-        // return { dept: newDept, errors: [] };
+        return newDept;
     } catch (error: any) {
         logger.error('Error creating department:', error);
         throw new Error(`Error creating department: ${error.message}`);
@@ -186,5 +185,5 @@ export default {
     getCompanyDeptFields,
     createnUpdateCompanyDept,
     createRole,
-    createDept
+    createNUpdateCompanyDeptForm
 }

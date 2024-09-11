@@ -3,6 +3,7 @@ import { z, ZodIssue } from 'zod';
 import companyWorker from '../workers/companyWorker';
 import { createRoleSchema } from '../types/admin';
 import { createAdminDeptSchema } from '../types/dept';
+import { loggedUserSchema } from '../types/user';
 
 export const companyResolvers = {
   getAllCompanyMembers: async () => {
@@ -44,18 +45,16 @@ export const companyResolvers = {
 
     return await companyWorker.createRole(parsedData.data);
   },
-  createCompanyDept: async ({ input }: { input: z.infer<typeof createAdminDeptSchema> }) => {
-    const parsedData = createAdminDeptSchema.safeParse(input);
+  createNUpdateCompanyDeptForm: async ({ input }: { input: any }, { user }: { user: z.infer<typeof loggedUserSchema> }) => {
+    // const parsedData = createAdminDeptSchema.safeParse(input);
+    // if (!parsedData.success) {
+    //   const errors = parsedData.error.errors.map((err: ZodIssue) => ({
+    //     message: err.message,
+    //     path: err.path,
+    //   }));
+    //   return { user: null, errors };
+    // }
 
-
-    if (!parsedData.success) {
-      const errors = parsedData.error.errors.map((err: ZodIssue) => ({
-        message: err.message,
-        path: err.path,
-      }));
-      return { user: null, errors };
-    }
-
-    return await companyWorker.createDept(parsedData.data);
+    return await companyWorker.createNUpdateCompanyDeptForm(input, user);
   },
 }
