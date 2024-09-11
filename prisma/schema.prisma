@@ -82,7 +82,7 @@ model Bid {
   deptId String?      @db.ObjectId
   Dept   CompanyDept? @relation(fields: [deptId], references: [id])
 
-  memberId String @unique @db.ObjectId
+  memberId String @db.ObjectId
   Member   Member @relation(fields: [memberId], references: [id])
 
   description String?
