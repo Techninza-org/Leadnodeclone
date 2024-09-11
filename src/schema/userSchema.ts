@@ -22,6 +22,9 @@ export const userSchema = `
     idleTime: String
     timestamp: String!
     movingTime: String!
+    batteryPercentage: String
+    networkStrength: String
+    isLocationOff: Boolean
   }
 
   type Role {
