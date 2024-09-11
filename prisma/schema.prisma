@@ -42,8 +42,8 @@ model Lead {
   nextFollowUpDate String?
   followUps        FollowUp[]
 
-  companyId String?  @db.ObjectId
-  Company   Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyId  String?  @db.ObjectId
+  Company    Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
   department String?
 
   createdAt DateTime @default(now())
@@ -62,7 +62,7 @@ model FollowUp {
   followUpBy   Member @relation(fields: [followUpById], references: [id])
 
   nextFollowUpDate String
-  remark          String
+  remark           String
   customerResponse String? // Hot/Warm/Cold
   rating           String? // 1-10
 
@@ -150,6 +150,7 @@ model Location {
   day               String
   batteryPercentage String?
   networkStrength   String?
+  isLocationOff     Boolean @default(true)
 
   leadAssingeeMemberId String     @db.ObjectId
   leadAssingeeMember   LeadMember @relation(fields: [leadAssingeeMemberId], references: [id])

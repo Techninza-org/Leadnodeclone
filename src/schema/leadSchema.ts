@@ -95,6 +95,7 @@ export const leadSchema = `
     LeadMember: [LeadMember]
     LeadFeedback: [LeadFeedback]
     Company: Company!
+    bids: [Bid]
     nextFollowUpDate: String
     department: String
     createdAt: String!

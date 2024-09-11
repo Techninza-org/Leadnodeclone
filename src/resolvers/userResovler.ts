@@ -1,10 +1,12 @@
 
 import { z, ZodIssue } from 'zod';
 import userWorker from '../workers/userWorker';
-import { CreateOrUpdateManagerSchema, loggedUserSchema } from '../types/user';
+import { CreateOrUpdateManagerSchema, loggedUserSchema, signupSchema } from '../types/user';
 
 export const userResolvers = {
-
+    updateUser: async ({ updateUserInput }: { updateUserInput: { name?: string, email?: string, deptId?: string, roleId?: string } }, { user }: { user: z.infer<typeof loggedUserSchema> }) => {
+        return await userWorker.updateUser(updateUserInput, user);
+    },
     createOrUpdateManager: async ({ memberId, name, email, password, phone, memberType, companyId, deptId }: z.infer<typeof CreateOrUpdateManagerSchema>, { user }: { user: z.infer<typeof loggedUserSchema> }) => {
         if (user?.role?.name !== 'Root') {
             throw new Error('Unauthorized');
@@ -27,7 +29,7 @@ export const userResolvers = {
         // }
         return await userWorker.getCompanyDeptMembers(companyId, deptId);
     },
-    savedMemberLocation: async ({ memberId, locations }: { memberId: string, locations: Array<{ latitude: number; longitude: number; idleTime?: string, movingTime: string, batteryPercentage: string, networkStrength: string }> }, { user }: { user: z.infer<typeof loggedUserSchema> }) => {
+    savedMemberLocation: async ({ memberId, locations }: { memberId: string, locations: Array<{ latitude: number; longitude: number; idleTime?: string, movingTime: string, batteryPercentage: string, networkStrength: string, isLocationOff: boolean }> }, { user }: { user: z.infer<typeof loggedUserSchema> }) => {
         // if (user.role.name !== 'Root' && user.role.name !== 'Manager') {
         //     throw new Error('Unauthorized');
         // }

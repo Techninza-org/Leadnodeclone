@@ -31,6 +31,7 @@ type Query {
   }
 
   type Mutation {
+    updateUser(updateUserInput: UpdateUserInput!): User
     generateOTP(phone: String!): GenerateOTPResponse
     savedMemberLocation(memberId: String!, locations: [LocationInput]): MemberLocation
     createUser(

@@ -3,7 +3,7 @@ import prisma from '../config/database';
 import { z } from 'zod';
 import { v4 as uuidv4 } from 'uuid';
 
-import { loginSchema, signupSchema, CreateOrUpdateManagerSchema } from '../types/user';
+import { loginSchema, signupSchema, CreateOrUpdateManagerSchema, loggedUserSchema } from '../types/user';
 import { generateHash, generateToken, getUserByIdEmailPhone, sendOTP, verifyHash, verifyOtp } from '../utils/user-worker-utils';
 import { format } from 'date-fns';
 import { getISTTime } from '../utils';
@@ -204,6 +204,54 @@ const createUser = async (user: z.infer<typeof signupSchema>) => {
         return { user: newUser, errors: [] };
     } catch (error: any) {
         logger.error('Error creating user:', error);
+        throw new Error(error.message);
+    }
+}
+
+const updateUser = async (user: { name?: string, email?: string, deptId?: string, roleId?: string }, ctxUser: z.infer<typeof loggedUserSchema>) => {
+    try {
+        const existingUser = await getUserByIdEmailPhone({ id: ctxUser.id });
+
+        if (!existingUser) {
+            throw new Error('User not found.');
+        }
+
+        const role = await prisma.role.findFirst({
+            where: { id: user.roleId }
+        });
+
+        if (!role) {
+            throw new Error('Role not found.');
+        }
+
+
+        const updateData: any = {
+            email: user.email,
+            name: user.name,
+            role: {
+                connect: { id: role.id },
+            },
+        };
+
+        if (user?.deptId) {
+            updateData.Dept = {
+                connect: { id: user.deptId },
+            };
+        }
+
+        const updatedUser = await prisma.member.update({
+            where: { id: existingUser.id },
+            data: updateData,
+            include: {
+                role: true,
+                Company: true,
+                Dept: true,
+            }
+        });
+
+        return updatedUser;
+    } catch (error: any) {
+        logger.error('Error updating user:', error);
         throw new Error(error.message);
     }
 }
@@ -436,7 +484,7 @@ const getCompanyDeptMembers = async (companyId: string, deptId: string) => {
     }
 }
 
-const savedMemberLocation = async (memberId: string, locations: Array<{ latitude: number; longitude: number; idleTime?: string, movingTime: string, batteryPercentage: string, networkStrength: string }>) => {
+const savedMemberLocation = async (memberId: string, locations: Array<{ latitude: number; longitude: number; idleTime?: string, movingTime: string, batteryPercentage: string, networkStrength: string, isLocationOff: boolean }>) => {
     try {
         const today = format(new Date(), 'dd-MM-yyyy');
 
@@ -447,6 +495,7 @@ const savedMemberLocation = async (memberId: string, locations: Array<{ latitude
             idleTime: location?.idleTime,
             batteryPercentage: location.batteryPercentage,
             networkStrength: location.networkStrength,
+            isLocationOff: location.isLocationOff,
             timestamp: getISTTime(new Date()),
         }));
 
@@ -506,7 +555,7 @@ export default {
     // getAllUsers,
     // getUserById,
     createUser,
-    // updateUser,
+    updateUser,
     generateOTP,
     getUserByRole,
     loginUser,

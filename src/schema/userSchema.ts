@@ -6,6 +6,7 @@ export const userSchema = `
     batteryPercentage: String
     networkStrength: String
     movingTime: String!
+    isLocationOff: Boolean
   }
 
   type MemberLocation {
@@ -96,5 +97,12 @@ export const userSchema = `
     COMPANY
     DEPARTMENT
     BOTH
+  }
+
+  input UpdateUserInput {
+    name: String
+    email: String
+    deptId: String
+    roleId: String
   }
 `

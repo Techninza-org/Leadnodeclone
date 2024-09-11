@@ -12,6 +12,7 @@ const getAllLeads = async () => {
         const leads = await prisma.lead.findMany({
             include: {
                 Company: true,
+                bids: true,
             },
         });
 
@@ -57,6 +58,7 @@ const getLeadsByDateRange = async (companyId: string, fromDateStr: string, toDat
                         }
                     }
                 },
+                bids: true
             }
         });
 
@@ -188,6 +190,7 @@ const getCompanyLeads = async (companyId: string) => {
                         }
                     }
                 },
+                bids: true,
             },
             orderBy: {
                 createdAt: 'desc',
@@ -260,6 +263,7 @@ const getCompanyLeadById = async (companyId: string, leadId: string) => {
                         }
                     }
                 },
+                bids: true,
             },
         });
 
@@ -349,7 +353,6 @@ const createLead = async (lead: z.infer<typeof createLeadSchema>) => {
                 vehicleModel: lead.vehicleModel,
                 callStatus: CallStatus.PENDING, // or PENDING
                 paymentStatus: PaymentStatus.PENDING, // or PENDING
-                department: lead.department,
                 LeadMember: {
                     create: {
                         memberId: companyManager.id,
