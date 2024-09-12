@@ -374,7 +374,7 @@ model Role {
 
 model Member {
   id       String  @id @default(auto()) @map("_id") @db.ObjectId
-  email    String  @unique
+  email    String
   password String
   name     String
   imgURL   String?
