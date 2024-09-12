@@ -123,6 +123,7 @@ export const userSchema = `
   input UpdateUserInput {
     name: String
     email: String
+    phone: String
     deptId: String
     roleId: String
   }

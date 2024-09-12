@@ -4,7 +4,7 @@ import userWorker from '../workers/userWorker';
 import { CreateOrUpdateManagerSchema, loggedUserSchema, signupSchema } from '../types/user';
 
 export const userResolvers = {
-    updateUser: async ({ updateUserInput }: { updateUserInput: { name?: string, email?: string, deptId?: string, roleId?: string } }, { user }: { user: z.infer<typeof loggedUserSchema> }) => {
+    updateUser: async ({ updateUserInput }: { updateUserInput: { name?: string, email?: string, phone: string, deptId?: string, roleId?: string } }, { user }: { user: z.infer<typeof loggedUserSchema> }) => {
         return await userWorker.updateUser(updateUserInput, user);
     },
     createOrUpdateManager: async ({ memberId, name, email, password, phone, memberType, companyId, deptId }: z.infer<typeof CreateOrUpdateManagerSchema>, { user }: { user: z.infer<typeof loggedUserSchema> }) => {

@@ -208,9 +208,13 @@ const createUser = async (user: z.infer<typeof signupSchema>) => {
     }
 }
 
-const updateUser = async (user: { name?: string, email?: string, deptId?: string, roleId?: string }, ctxUser: z.infer<typeof loggedUserSchema>) => {
+const updateUser = async (user: { name?: string, email?: string, phone: string, deptId?: string, roleId?: string }, ctxUser: z.infer<typeof loggedUserSchema>) => {
     try {
-        const existingUser = await getUserByIdEmailPhone({ id: ctxUser.id });
+        const existingUser = await prisma.member.findFirst({
+            where: {
+                phone: user.phone
+            }
+        });
 
         if (!existingUser) {
             throw new Error('User not found.');
@@ -238,6 +242,8 @@ const updateUser = async (user: { name?: string, email?: string, deptId?: string
                 connect: { id: user.deptId },
             };
         }
+
+        console.log(updateData, "updateData")
 
         const updatedUser = await prisma.member.update({
             where: { id: existingUser.id },
