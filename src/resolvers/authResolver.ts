@@ -36,8 +36,8 @@ export const authResolvers = {
     return await userWorker.createUser(parsedData.data);
 
   },
-  loginUser: async ({ email, password, phone, otp }: z.infer<typeof loginSchema>) => {
-    const parsedData = loginSchema.safeParse({ email, password, phone, otp });
+  loginUser: async ({ email, password, phone, otp, platform }: z.infer<typeof loginSchema>) => {
+    const parsedData = loginSchema.safeParse({ email, password, phone, otp, platform });
 
     if (!parsedData.success) {
       const errors = parsedData.error.errors.map((err: ZodIssue) => ({

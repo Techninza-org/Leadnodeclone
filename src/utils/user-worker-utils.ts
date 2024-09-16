@@ -88,6 +88,6 @@ export const verifyHash = async (hash: string, password: string): Promise<boolea
 }
 
 export const generateToken = async (data: any) => {
-    const token = JWT.sign(data, process.env.JWT_SECRET!, { algorithm: "HS384", expiresIn: '1d' });
+    const token = JWT.sign(data, process.env.JWT_SECRET!, { algorithm: "HS384", expiresIn: '7d' });
     return token;
 }

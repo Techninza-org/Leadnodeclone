@@ -147,6 +147,7 @@ model Location {
   locations         Json[]
   day               String
   batteryPercentage String?
+  apiHitTime        String?
   networkStrength   String?
   isLocationOff     Boolean @default(true)
 
@@ -382,6 +383,7 @@ model Member {
 
   otp       String?
   otpExpiry DateTime?
+  platform  String?
 
   deptId String?      @db.ObjectId
   Dept   CompanyDept? @relation(fields: [deptId], references: [id], onDelete: Cascade)

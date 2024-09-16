@@ -51,7 +51,7 @@ type Query {
 
     leadTransferTo(leadId: ID!, transferToId: ID!): Lead
     
-    loginUser(email: String, password: String, phone: String, otp: String): LoginUserResponse
+    loginUser(email: String, password: String, phone: String, otp: String, platform: String): LoginUserResponse
 
     appvedLead(leadId: ID!, status: Boolean): Lead
 

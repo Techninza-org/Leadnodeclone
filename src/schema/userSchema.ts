@@ -20,6 +20,7 @@ export const userSchema = `
   input LocationInput {
     latitude: Float!
     longitude: Float!
+    apiHitTime: String
     idleTime: String
     batteryPercentage: String
     networkStrength: String
@@ -39,6 +40,7 @@ export const userSchema = `
     longitude: Float!
     idleTime: String
     timestamp: String!
+    apiHitTime: String
     movingTime: String!
     batteryPercentage: String
     networkStrength: String

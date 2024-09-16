@@ -325,7 +325,7 @@ const loginUser = async (loginInfo: z.infer<typeof loginSchema>) => {
 
         user = await prisma.member.update({
             where: { id: user.id },
-            data: { sessionToken, otp: "", otpExpiry: null },
+            data: { sessionToken, otp: "", otpExpiry: null, platform: loginInfo.platform },
             include: { role: true },
         });
 
@@ -490,7 +490,7 @@ const getCompanyDeptMembers = async (companyId: string, deptId: string) => {
     }
 }
 
-const savedMemberLocation = async (memberId: string, locations: Array<{ latitude: number; longitude: number; idleTime?: string, movingTime: string, batteryPercentage: string, networkStrength: string, isLocationOff: boolean }>) => {
+const savedMemberLocation = async (memberId: string, locations: Array<{ apiHitTime: string, latitude: number; longitude: number; idleTime?: string, movingTime: string, batteryPercentage: string, networkStrength: string, isLocationOff: boolean }>) => {
     try {
         const today = format(new Date(), 'dd-MM-yyyy');
 
@@ -499,6 +499,7 @@ const savedMemberLocation = async (memberId: string, locations: Array<{ latitude
             longitude: location.longitude,
             movingTime: location.movingTime,
             idleTime: location?.idleTime,
+            apiHitTime: location.apiHitTime,
             batteryPercentage: location.batteryPercentage,
             networkStrength: location.networkStrength,
             isLocationOff: location.isLocationOff,
