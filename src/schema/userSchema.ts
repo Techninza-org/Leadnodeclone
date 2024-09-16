@@ -65,6 +65,7 @@ export const userSchema = `
     email: String!
     phone: String!
     deptId: String
+    platform: String
     role: Role!
     sessionToken: String
     token: String!
