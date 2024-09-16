@@ -79,7 +79,8 @@ input PlanInput {
   name: String!
   price: Float!
   duration: Int!
-  allowedDepts: [String!]
+  rank: Int!
+  defaultAllowedDeptsIds: [String!]
   description: String!
   isActive: Boolean!
 }
@@ -89,7 +90,7 @@ type Plan {
   name: String!
   price: Float!
   duration: Int!
-  allowedDepts: [String!]
+  defaultAllowedDeptsIds: [String!]
   description: String!
   isActive: Boolean!
   createdAt: String!

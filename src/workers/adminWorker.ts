@@ -234,7 +234,7 @@ const createNUpdateSubscriptionPlan = async (plan: Plan) => {
     try {
         const newPlan = await prisma.plan.upsert({
             where: {
-                id: plan.id,
+                name: plan.name,
             },
             update: {
                 name: plan.name,
@@ -243,9 +243,13 @@ const createNUpdateSubscriptionPlan = async (plan: Plan) => {
                 rank: plan.rank,
                 duration: plan.duration,
                 maxUsers: plan.maxUsers,
-                defaultAllowedDeptsIds: {
-                    set: plan.defaultAllowedDeptsIds
-                }
+                isActive: plan.isActive,
+                // Only update defaultAllowedDeptsIds if it's provided
+                ...(plan.defaultAllowedDeptsIds && {
+                    defaultAllowedDeptsIds: {
+                        set: plan.defaultAllowedDeptsIds
+                    }
+                })
             },
             create: {
                 name: plan.name,
@@ -254,17 +258,18 @@ const createNUpdateSubscriptionPlan = async (plan: Plan) => {
                 description: plan.description,
                 duration: plan.duration,
                 maxUsers: plan.maxUsers,
-                defaultAllowedDeptsIds: {
-                    set: plan.defaultAllowedDeptsIds
-                }
+                isActive: plan.isActive,
+                // Only set defaultAllowedDeptsIds if it's provided
+                defaultAllowedDeptsIds: plan.defaultAllowedDeptsIds ?? []
             },
         });
 
         return newPlan;
     } catch (error: any) {
-        throw new Error(`Error creating subscription plan: ${error.message}`);
+        throw new Error(`Error creating or updating subscription plan: ${error.message}`);
     }
-}
+};
+
 
 const updateCompanySubscription = async (companyId: string, planId: string, allowedDeptsIds: string[], startDate: Date, endDate: Date) => {
     try {
