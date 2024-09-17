@@ -1,11 +1,14 @@
 
 import { z, ZodIssue } from 'zod';
 import userWorker from '../workers/userWorker';
-import { loginSchema, signupSchema } from '../types/user';
+import { loggedUserSchema, loginSchema, signupSchema } from '../types/user';
 
 export const authResolvers = {
   generateOTP: async ({ phone }: { phone: string }) => {
     return await userWorker.generateOTP(phone);
+  },
+  getPlatform: async (_: any, { user }: { user: z.infer<typeof loggedUserSchema> }) => {
+    return await userWorker.getPlatform(user);
   },
   createUser: async ({
     name,

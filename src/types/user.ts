@@ -92,6 +92,7 @@ export const loggedUserSchema = z.object({
     name: z.string(),
     email: z.string(),
     sessionToken: z.string(),
+    platform: z.string().optional(),
     token: z.string(),
     phone: z.string(),
     role: z.object({

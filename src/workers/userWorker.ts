@@ -46,6 +46,10 @@ const generateOTP = async (phone: string) => {
     }
 }
 
+const getPlatform = async (ctxUser: z.infer<typeof loggedUserSchema>) => {
+    return ctxUser.platform;
+}
+
 const createUser = async (user: z.infer<typeof signupSchema>) => {
     try {
 
@@ -561,6 +565,7 @@ const getDriverLocationHistory = async (memberId: string, date: string) => {
 export default {
     // getAllUsers,
     // getUserById,
+    getPlatform,
     createUser,
     updateUser,
     generateOTP,

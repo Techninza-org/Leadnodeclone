@@ -28,6 +28,7 @@ type Query {
     getTransferedLeads(userId: String!): [Lead]
     getMembersByRole(role: String!): [Member]
     getFollowUpByLeadId(leadId: String!): [FollowUp]
+    getPlatform: String
   }
 
   type Mutation {
