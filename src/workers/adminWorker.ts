@@ -22,6 +22,19 @@ export const getDeptWFields = async () => {
     return dept;
 }
 
+const getPlans = async () => {
+    try {
+        const plans = await prisma.plan.findMany({
+            include: {
+                Subscriptions: true
+            }
+        });
+        return plans;
+    } catch (error: any) {
+        throw new Error('Error fetching plans');
+    }
+}
+
 export const getRootUsers = async () => {
     try {
         const rootUsers = await prisma.member.findMany({
@@ -299,6 +312,7 @@ const updateCompanySubscription = async (companyId: string, planId: string, allo
 export default {
     getDeptsAdmin,
     getRoles,
+    getPlans,
     getDeptWFields,
     getRootUsers,
     createRole,

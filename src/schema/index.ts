@@ -29,6 +29,7 @@ type Query {
     getMembersByRole(role: String!): [Member]
     getFollowUpByLeadId(leadId: String!): [FollowUp]
     getPlatform: String
+    getPlans: [Plan]
   }
 
   type Mutation {
