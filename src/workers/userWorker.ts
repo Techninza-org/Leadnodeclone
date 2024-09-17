@@ -8,6 +8,7 @@ import { generateHash, generateToken, getUserByIdEmailPhone, sendOTP, verifyHash
 import { format } from 'date-fns';
 import { getISTTime } from '../utils';
 import { createAdminDeptSchema } from '../types/dept';
+import { BroadcastMessage } from '@prisma/client';
 
 /*
 User: [Root, Telecaller, Exchanger, Financer, Manager]
@@ -562,11 +563,64 @@ const getDriverLocationHistory = async (memberId: string, date: string) => {
     }
 }
 
+const createNUpdateBroadcast = async (broadcast: any) => {
+    try {
+        let existingBroadcast: null | any = null
+        if (broadcast.id) {
+            existingBroadcast = await prisma.broadcastMessage.findFirst({
+                where: {
+                    id: broadcast.id,
+                },
+            });
+
+        }
+        delete broadcast.id;
+        if (existingBroadcast) {
+            return await prisma.broadcastMessage.update({
+                where: {
+                    id: (existingBroadcast).id,
+                },
+                data: {
+                    ...broadcast,
+                    updatedAt: new Date(),
+                },
+            });
+        } else {
+            return await prisma.broadcastMessage.create({
+                data: {
+                    ...broadcast,
+                },
+            });
+        }
+    } catch (error: any) {
+        logger.error('Error creating or updating broadcast:', error);
+        throw new Error(error?.message);
+    }
+}
+
+const getBroadcasts = async (companyId: string) => {
+    try {
+        const broadcasts = await prisma.broadcastMessage.findMany({
+            where: {
+                companyId,
+            },
+            orderBy: {
+                createdAt: 'desc',
+            },
+        });
+        return broadcasts;
+    } catch (error: any) {
+        logger.error('Error fetching broadcasts:', error);
+        throw new Error(error?.message);
+    }
+}
+
 export default {
     // getAllUsers,
     // getUserById,
     getPlatform,
     createUser,
+    getBroadcasts,
     updateUser,
     generateOTP,
     getUserByRole,
@@ -574,5 +628,6 @@ export default {
     createOrUpdateManager,
     getCompanyDeptMembers,
     getDriverLocationHistory,
-    savedMemberLocation
+    savedMemberLocation,
+    createNUpdateBroadcast
 };

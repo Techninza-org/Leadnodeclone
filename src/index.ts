@@ -8,7 +8,7 @@ import { middleware } from './middleware';
 import { createHandler } from 'graphql-http/lib/use/express';
 import { schema } from './schema';
 import { resolvers } from './resolvers';
-import { uploadImage } from './controller/image.controller';
+import { broadcastMessage, uploadImage } from './controller/image.controller';
 
 const app = express();
 const PORT = config.envProvider.PORT;
@@ -20,6 +20,7 @@ app.use(middleware.loggerMiddleware);
 app.use('/graphql/images', express.static(path.join(__dirname, 'uploads')));
 
 app.post('/graphql/upload', upload.any(), uploadImage);
+app.post('/graphql/broadcastMessage', middleware.userAuthMiddleware, upload.any(), broadcastMessage);
 
 app.use('/graphql', middleware.userAuthMiddleware, createHandler({
     schema: schema,

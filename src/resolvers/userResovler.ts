@@ -46,5 +46,8 @@ export const userResolvers = {
             throw new Error('Unauthorized');
         }
         return await userWorker.getUserByRole(role, user.companyId);
+    },
+    getBroadcasts: async (_: any, { user }: { user: z.infer<typeof loggedUserSchema> }) => {
+        return await userWorker.getBroadcasts(user.companyId);
     }
 }

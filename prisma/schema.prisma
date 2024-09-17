@@ -302,7 +302,7 @@ model CompanyDeptForm {
 model Plan {
   id String @id @default(auto()) @map("_id") @db.ObjectId
 
-  name        String @unique
+  name        String  @unique
   description String
   price       Float
   duration    Int
@@ -339,6 +339,23 @@ model Subscriptions {
   @@index([companyId])
 }
 
+model BroadcastMessage {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  isOffer    Boolean @default(false)
+  isTemplate Boolean @default(false)
+  isMessage  Boolean @default(false)
+
+  message String?
+  imgURL  Json?
+
+  companyId String?  @db.ObjectId
+  Company   Company? @relation(fields: [companyId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model Company {
   id               String  @id @default(auto()) @map("_id") @db.ObjectId
   rootId           String
@@ -355,8 +372,9 @@ model Company {
   Subscriptions Subscriptions[]
   Leads         Lead[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  BroadcastMessage BroadcastMessage[]
 
   @@index([rootId])
   @@index([companyManagerId])

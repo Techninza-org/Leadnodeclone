@@ -30,6 +30,7 @@ type Query {
     getFollowUpByLeadId(leadId: String!): [FollowUp]
     getPlatform: String
     getPlans: [Plan]
+    getBroadcasts: [Broadcast]
   }
 
   type Mutation {

@@ -130,4 +130,16 @@ export const userSchema = `
     deptId: String
     roleId: String
   }
+
+  type Broadcast { 
+    id: ID!
+    message: String
+    companyId: String!
+    isOffer: Boolean
+    isTemplate: Boolean
+    isMessage: Boolean
+    imgURL: [JSON]
+    createdAt: String!
+    updatedAt: String!
+  }
 `
