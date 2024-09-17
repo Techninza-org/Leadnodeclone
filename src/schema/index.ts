@@ -31,6 +31,7 @@ type Query {
     getPlatform: String
     getPlans: [Plan]
     getBroadcasts: [Broadcast]
+    getCompanySubscription(companyId: String!): Company
   }
 
   type Mutation {
@@ -74,6 +75,8 @@ type Query {
     createDept(input: CreateDeptInput!): CreateDeptResponse
 
     createNUpdateSubscriptionPlan(input: PlanInput!): Plan
+
+    updateCompanySubscription(companyId: String!, planId: String!, allowedDeptsIds: [String!], startDate: String!, endDate: String!): Company
 
     createLead(input: LeadInput!): LeadResponse
     

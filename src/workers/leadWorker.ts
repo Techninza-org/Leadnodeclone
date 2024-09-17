@@ -58,7 +58,11 @@ const getLeadsByDateRange = async (companyId: string, fromDateStr: string, toDat
                         }
                     }
                 },
-                bids: true
+                bids: {
+                    include: {
+                        Member: true
+                    }
+                }
             }
         });
 
@@ -158,7 +162,11 @@ const getAssignedLeads = async (userId: string, companyId?: string) => {
                     }
                 },
                 Feedbacks: true,
-                bids: true,
+                bids: {
+                    include: {
+                        Member: true
+                    }
+                },
             },
         });
 
@@ -190,7 +198,11 @@ const getCompanyLeads = async (companyId: string) => {
                         }
                     }
                 },
-                bids: true,
+                bids: {
+                    include: {
+                        Member: true
+                    }
+                },
             },
             orderBy: {
                 createdAt: 'desc',
@@ -263,7 +275,11 @@ const getCompanyLeadById = async (companyId: string, leadId: string) => {
                         }
                     }
                 },
-                bids: true,
+                bids: {
+                    include: {
+                        Member: true
+                    }
+                },
             },
         });
 
