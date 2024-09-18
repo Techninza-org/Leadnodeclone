@@ -238,7 +238,6 @@ const updateDept = async (deptId: string, deptUpdateInput: z.infer<typeof create
             }
         });
 
-        console.log('updatedDept:', updatedDept);
 
         return updatedDept;
     } catch (error: any) {
@@ -312,6 +311,24 @@ const updateCompanySubscription = async (companyId: string, planId: string, allo
     }
 }
 
+export const getCompanySubscription = async (companyId: string) => {
+    
+    try {
+        const company = await prisma.company.findUnique({
+            where: {
+                id: companyId,
+            },
+            include: {
+                Subscriptions: true
+            }
+        });
+        
+
+        return company;
+    } catch (error: any) {
+        throw new Error(`Error fetching company subscription: ${error.message}`);
+    }
+}
 
 export default {
     getDeptsAdmin,
@@ -323,5 +340,6 @@ export default {
     createDept,
     updateDept,
     createNUpdateSubscriptionPlan,
-    updateCompanySubscription
+    updateCompanySubscription,
+    getCompanySubscription,
 }

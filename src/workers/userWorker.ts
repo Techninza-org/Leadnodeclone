@@ -248,7 +248,6 @@ const updateUser = async (user: { name?: string, email?: string, phone: string, 
             };
         }
 
-        console.log(updateData, "updateData")
 
         const updatedUser = await prisma.member.update({
             where: { id: existingUser.id },

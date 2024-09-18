@@ -64,5 +64,8 @@ export const adminResolvers = {
   },
   updateCompanySubscription: async ({ companyId, planId, allowedDeptsIds, startDate, endDate }: { startDate: Date, endDate: Date, companyId: string, planId: string, allowedDeptsIds: string[] }) => {
     return await adminWorker.updateCompanySubscription(companyId, planId, allowedDeptsIds, startDate, endDate);
+  },
+  getCompanySubscription: async ({ companyId }: { companyId: string }) => {
+    return await adminWorker.getCompanySubscription(companyId);
   }
 }
