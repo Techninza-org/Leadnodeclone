@@ -46,7 +46,11 @@ export const getRootUsers = async () => {
             include: {
                 Company: {
                     include: {
-                        Subscriptions: true,
+                        Subscriptions: {
+                            include: {
+                                plan: true
+                            }
+                        },
                     },
                 },
             }
