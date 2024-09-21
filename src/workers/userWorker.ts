@@ -615,6 +615,20 @@ const getBroadcasts = async (companyId: string) => {
     }
 }
 
+const getBroadcastById = async (broadcastId: string) => {
+    try {
+        const broadcast = await prisma.broadcastMessage.findFirst({
+            where: {
+                id: broadcastId,
+            },
+        });
+        return broadcast;
+    } catch (error: any) {
+        logger.error('Error fetching broadcast:', error);
+        throw new Error(error?.message);
+    }
+}
+
 const deleteBroadcast = async (broadcastId: string) => {
     try {
         const b = await prisma.broadcastMessage.delete({
@@ -635,6 +649,7 @@ export default {
     getPlatform,
     createUser,
     getBroadcasts,
+    getBroadcastById,
     deleteBroadcast,
     updateUser,
     generateOTP,

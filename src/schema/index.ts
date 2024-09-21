@@ -31,6 +31,7 @@ type Query {
     getPlatform: String
     getPlans: [Plan]
     getBroadcasts: [Broadcast]
+    getBroadcastById(broadcastId: ID!): Broadcast
     getCompanySubscription(companyId: String!): Company
   }
 
