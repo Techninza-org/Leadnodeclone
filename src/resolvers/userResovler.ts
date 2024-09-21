@@ -49,5 +49,8 @@ export const userResolvers = {
     },
     getBroadcasts: async (_: any, { user }: { user: z.infer<typeof loggedUserSchema> }) => {
         return await userWorker.getBroadcasts(user.companyId);
+    },
+    deleteBroadcast: async ({ broadcastId }: { broadcastId: string }) => {
+        return await userWorker.deleteBroadcast(broadcastId);
     }
 }

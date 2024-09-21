@@ -18,6 +18,7 @@ export const uploadImage = (req: ExtendedRequest, res: Response) => {
 export const broadcastMessage = async (req: ExtendedRequest, res: Response) => {
     const user = req.user;
     const { id, isOffer, isTemplate, isMessage, message } = req.body;
+    
 
     if (!message) {
         return res.status(400).json({ error: 'ID and message are required fields.' });
@@ -36,9 +37,9 @@ export const broadcastMessage = async (req: ExtendedRequest, res: Response) => {
     try {
         const update = await userWorker.createNUpdateBroadcast({
             id,
-            isOffer: !!isOffer,
-            isTemplate: !!isTemplate,
-            isMessage: !!isMessage,
+            isOffer: isOffer === 'true' ? true : false,
+            isTemplate: isTemplate === 'true' ? true : false,
+            isMessage: isMessage === 'true' ? true : false,
             message,
             imgURL: fileInfos,
             companyId: user?.companyId,
