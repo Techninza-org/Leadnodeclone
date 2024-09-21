@@ -52,5 +52,8 @@ export const userResolvers = {
     },
     deleteBroadcast: async ({ broadcastId }: { broadcastId: string }) => {
         return await userWorker.deleteBroadcast(broadcastId);
+    },
+    getBroadcastById: async ({ broadcastId }: { broadcastId: string }) => {
+        return await userWorker.getBroadcastById(broadcastId);
     }
 }
