@@ -563,6 +563,7 @@ const getDriverLocationHistory = async (memberId: string, date: string) => {
 }
 
 const createNUpdateBroadcast = async (broadcast: any) => {
+    
     try {
         let existingBroadcast: null | any = null
         if (broadcast.id) {
@@ -614,12 +615,27 @@ const getBroadcasts = async (companyId: string) => {
     }
 }
 
+const deleteBroadcast = async (broadcastId: string) => {
+    try {
+        const b = await prisma.broadcastMessage.delete({
+            where: {
+                id: broadcastId,
+            },
+        });
+        return b;
+    } catch (error: any) {
+        logger.error('Error deleting broadcast:', error);
+        throw new Error(error?.message);
+    }
+}
+
 export default {
     // getAllUsers,
     // getUserById,
     getPlatform,
     createUser,
     getBroadcasts,
+    deleteBroadcast,
     updateUser,
     generateOTP,
     getUserByRole,

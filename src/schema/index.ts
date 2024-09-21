@@ -93,6 +93,8 @@ type Query {
     updateLeadPaymentStatus(leadId: String!, paymentStatus: String!): Lead
 
     createnUpdateCompanyDept(companyId: String!, deptId: String, input: CreateDeptInput!): CreateDeptResponse
+
+    deleteBroadcast(broadcastId: ID!): Broadcast
   }
 `
 const allSchemas = [authSchema, adminSchema, leadSchema, userSchema, queries_mutation];
