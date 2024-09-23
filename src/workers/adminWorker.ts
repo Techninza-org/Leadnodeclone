@@ -11,6 +11,9 @@ export const getDeptWFields = async () => {
             deptFields: {
                 include: {
                     subDeptFields: true
+                },
+                orderBy: {
+                    order: 'desc',
                 }
             },
         },
@@ -445,7 +448,11 @@ export const getCompanySubscription = async (companyId: string) => {
                 id: companyId,
             },
             include: {
-                Subscriptions: true
+                Subscriptions: {
+                    include: {
+                        plan: true
+                    }
+                }
             }
         });
 
