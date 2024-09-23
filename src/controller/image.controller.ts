@@ -22,7 +22,7 @@ export const uploadImage = (req: ExtendedRequest, res: Response) => {
 
 export const broadcastMessage = async (req: ExtendedRequest, res: Response) => {
     const user = req.user;
-    const { id, isOffer, isTemplate, isMessage, message } = req.body;
+    const { id, isOffer, isTemplate, isMessage, message, isMessage1, isMessage2, isMessage3 } = req.body;
 
 
     if (!message) {
@@ -45,6 +45,9 @@ export const broadcastMessage = async (req: ExtendedRequest, res: Response) => {
             isOffer: isOffer === 'true' ? true : false,
             isTemplate: isTemplate === 'true' ? true : false,
             isMessage: isMessage === 'true' ? true : false,
+            isMessage1: isMessage1 === 'true' ? true : false,
+            isMessage2: isMessage2 === 'true' ? true : false,
+            isMessage3: isMessage3 === 'true' ? true : false,
             message,
             imgURL: fileInfos,
             companyId: user?.companyId,

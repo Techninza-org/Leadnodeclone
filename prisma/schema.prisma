@@ -350,6 +350,9 @@ model BroadcastMessage {
   isOffer    Boolean @default(false)
   isTemplate Boolean @default(false)
   isMessage  Boolean @default(false)
+  isMessage1 Boolean @default(false)
+  isMessage2 Boolean @default(false)
+  isMessage3 Boolean @default(false)
 
   message String?
   imgURL  Json?
