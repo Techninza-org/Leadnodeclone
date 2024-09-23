@@ -292,6 +292,132 @@ const createNUpdateSubscriptionPlan = async (plan: Plan) => {
 
 const updateCompanySubscription = async (companyId: string, planId: string, allowedDeptsIds: string[], startDate: Date, endDate: Date) => {
     try {
+        const isCompanyExists = await prisma.company.findUnique({
+            where: {
+                id: companyId
+            },
+            include: {
+                Depts: {
+                    include: {
+                        companyDeptForms: true
+                    }
+                }
+            }
+        });
+
+        if (!isCompanyExists) {
+            throw new Error('Company not found.');
+        }
+
+        const alreadyAllowedDepts = await prisma.companyDeptForm.findMany({
+            where: {
+                companyDept: {
+                    companyId: companyId
+                },
+            },
+        });
+
+        const alreadyAllowedDeptsIdsArr = alreadyAllowedDepts.map(dept => dept.adminDeptFieldId).filter((id): id is string => id !== null);
+
+        // add or remove depts as allowedDeptsIds
+        const deptsToAdd = allowedDeptsIds.filter(deptId => !alreadyAllowedDeptsIdsArr.includes(deptId));
+        const deptsToRemove = alreadyAllowedDeptsIdsArr.filter((deptId: string) => !allowedDeptsIds.includes(deptId));
+
+        const existingDepts = await prisma.adminDept.findMany({
+            where: {
+                deptFields: {
+                    some: {
+                        id: {
+                            in: deptsToAdd || [],
+                        }
+                    }
+                }
+            },
+            include: {
+                deptFields: {
+                    where: {
+                        id: {
+                            in: deptsToAdd || [],
+                        }
+                    },
+                    include: {
+                        subDeptFields: true,
+                    },
+                },
+            },
+        });
+
+        const deptsArray = existingDepts.map(dept => ({
+            name: dept.name,
+            deptManagerId: isCompanyExists.companyManagerId,
+            companyDeptForms: {
+                create: dept.deptFields.map(field => ({
+                    name: field.name,
+                    order: field.order,
+                    adminDeptFieldId: field.id,
+                    subDeptFields: {
+                        create: field.subDeptFields.map(subField => ({
+                            name: subField.name,
+                            order: subField.order,
+                            fieldType: subField.fieldType,
+                            imgLimit: subField.imgLimit,
+                            isDisabled: subField.isDisabled,
+                            isRequired: subField.isRequired,
+                            options: subField.options ? (subField.options as any).map((option: any) => ({
+                                label: option.label,
+                                value: option.value,
+                            })) : [],
+                        })),
+                    },
+                })),
+            },
+        }));
+
+        // update or create depts
+        for (const dept of deptsArray) {
+            const matchingDept = isCompanyExists.Depts.find(
+                (existingDept) => existingDept.name === dept.name
+            );
+
+            if (matchingDept) {
+                await prisma.companyDept.update({
+                    where: {
+                        id: matchingDept.id,
+                    },
+                    data: {
+                        name: dept.name,
+                        deptManagerId: dept.deptManagerId,
+                        companyDeptForms: dept.companyDeptForms,
+                    },
+                });
+
+            } else {
+                const b = await prisma.companyDept.create({
+                    data: {
+                        name: dept.name,
+                        deptManagerId: dept.deptManagerId,
+                        companyDeptForms: dept.companyDeptForms,
+                        companyId,
+                    },
+                });
+
+                console.log(b, "b")
+            }
+        }
+
+        // remove depts
+        await prisma.companyDeptForm.deleteMany({
+            where: {
+                adminDeptFieldId: {
+                    in: deptsToRemove
+                },
+                companyDept: {
+                    companyId: companyId
+                }
+            }
+        });
+
+        // update company subscription
         const updatedCompany = await prisma.company.update({
             where: {
                 id: companyId,
@@ -315,7 +441,7 @@ const updateCompanySubscription = async (companyId: string, planId: string, allo
 }
 
 export const getCompanySubscription = async (companyId: string) => {
-    
+
     try {
         const company = await prisma.company.findUnique({
             where: {
@@ -329,7 +455,7 @@ export const getCompanySubscription = async (companyId: string) => {
                 }
             }
         });
-        
+
 
         return company;
     } catch (error: any) {

@@ -7,8 +7,6 @@ import { loginSchema, signupSchema, CreateOrUpdateManagerSchema, loggedUserSchem
 import { generateHash, generateToken, getUserByIdEmailPhone, sendOTP, verifyHash, verifyOtp } from '../utils/user-worker-utils';
 import { format } from 'date-fns';
 import { getISTTime } from '../utils';
-import { createAdminDeptSchema } from '../types/dept';
-import { BroadcastMessage } from '@prisma/client';
 
 /*
 User: [Root, Telecaller, Exchanger, Financer, Manager]
@@ -85,22 +83,33 @@ const createUser = async (user: z.infer<typeof signupSchema>) => {
                     },
                 });
 
-                // const freePlan = await prisma.plan.findFirst({
-                //     where: { rank: 0 },
-                // });
-
+                const freePlan = await prisma.plan.findFirst({
+                    where: { rank: 0 },
+                });
                 const existingDepts = await prisma.adminDept.findMany({
-                    // where: {
-                    //     id: { in: freePlan?.defaultAllowedDeptsIds || [] },
-                    // },
+                    where: {
+                        deptFields: {
+                            some: {
+                                id: {
+                                    in: freePlan?.defaultAllowedDeptsIds || [],
+                                },
+                            },
+                        },
+                    },
                     include: {
                         deptFields: {
+                            where: {
+                                id: {
+                                    in: freePlan?.defaultAllowedDeptsIds || [],
+                                }
+                            },
                             include: {
-                                subDeptFields: true
-                            }
+                                subDeptFields: true,
+                            },
                         },
-                    }
+                    },
                 });
+
 
                 const deptsArray = existingDepts.map(dept => ({
                     name: dept.name,
@@ -109,6 +118,7 @@ const createUser = async (user: z.infer<typeof signupSchema>) => {
                         create: dept.deptFields.map(field => ({
                             name: field.name,
                             order: field.order,
+                            adminDeptFieldId: field.id,
                             subDeptFields: {
                                 create: field.subDeptFields.map(subField => ({
                                     name: subField.name,
@@ -138,14 +148,14 @@ const createUser = async (user: z.infer<typeof signupSchema>) => {
                         Depts: {
                             create: deptsArray,
                         },
-                        // Subscriptions: {
-                        //     create: {
-                        //         planId: freePlan?.id || "",
-                        //         allowedDeptsIds: existingDepts.map(dept => dept.id),
-                        //         endDate: new Date(),
-                        //         startDate: new Date(),
-                        //     }
-                        // }
+                        Subscriptions: {
+                            create: {
+                                planId: freePlan?.id || "",
+                                allowedDeptsIds: existingDepts.map(dept => dept.id),
+                                endDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)),
+                                startDate: new Date(),
+                            }
+                        }
                     },
                 });
 
@@ -563,7 +573,7 @@ const getDriverLocationHistory = async (memberId: string, date: string) => {
 }
 
 const createNUpdateBroadcast = async (broadcast: any) => {
-    
+
     try {
         let existingBroadcast: null | any = null
         if (broadcast.id) {
