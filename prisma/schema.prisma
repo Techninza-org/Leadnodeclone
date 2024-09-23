@@ -230,6 +230,7 @@ model CompanyDept {
   updatedAt DateTime @updatedAt
 
   @@index([companyId])
+  @@index([companyId, name])
 }
 
 model DeptField {
@@ -240,7 +241,8 @@ model DeptField {
   adminDeptId String?    @db.ObjectId
   AdminDept   AdminDept? @relation(fields: [adminDeptId], references: [id])
 
-  subDeptFields SubDeptField[]
+  subDeptFields   SubDeptField[]
+  CompanyDeptForm CompanyDeptForm[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -290,6 +292,9 @@ model CompanyDeptForm {
 
   companyDeptId String      @db.ObjectId
   companyDept   CompanyDept @relation(fields: [companyDeptId], references: [id])
+
+  adminDeptFieldId String?    @db.ObjectId
+  adminDeptField   DeptField? @relation(fields: [adminDeptFieldId], references: [id])
 
   subDeptFields SubDeptField[]
 
