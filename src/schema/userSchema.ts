@@ -138,6 +138,9 @@ export const userSchema = `
     isOffer: Boolean
     isTemplate: Boolean
     isMessage: Boolean
+    isMessage1: Boolean
+    isMessage2: Boolean
+    isMessage3: Boolean
     imgURL: [JSON]
     createdAt: String!
     updatedAt: String!
