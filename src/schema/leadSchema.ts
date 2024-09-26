@@ -87,6 +87,7 @@ export const leadSchema = `
     zip: String!
     rating: Int!
     isLeadApproved: Boolean!
+    isFinancedApproved: Boolean!
     vehicleDate: String!
     vehicleName: String!
     vehicleModel: String!
