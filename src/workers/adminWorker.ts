@@ -1,7 +1,7 @@
 import logger from '../utils/logger';
 import prisma from '../config/database';
 import { z } from 'zod';
-import { createRoleSchema } from '../types/admin';
+import { Category, createRoleSchema } from '../types/admin';
 import { createAdminDeptSchema } from '../types/dept';
 import { Plan } from '@prisma/client';
 
@@ -188,7 +188,24 @@ const createDept = async (dept: z.infer<typeof createAdminDeptSchema>) => {
     }
 };
 
+const createBroadcastForm = async (form: Category) => {
+    const BroadcastForm = await prisma.broadcastForm.create({
+        data: {
+            name: form.name,
+            order: form.order,
+            subCategory: form.subCategory.map(subCategory => ({
+                name: subCategory.name,
+                options: subCategory.options
+            }))
+        }
+    });
+    return BroadcastForm;
+}
 
+const broadcastForm = async () => {
+    const BroadcastForm = await prisma.broadcastForm.findMany();
+    return BroadcastForm;
+}
 
 
 const updateDept = async (deptId: string, deptUpdateInput: z.infer<typeof createAdminDeptSchema>) => {
@@ -475,4 +492,6 @@ export default {
     createNUpdateSubscriptionPlan,
     updateCompanySubscription,
     getCompanySubscription,
+    createBroadcastForm,
+    broadcastForm
 }

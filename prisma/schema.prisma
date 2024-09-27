@@ -182,6 +182,13 @@ model LeadFeedback {
   @@unique([leadId, memberId])
 }
 
+model BroadcastForm {
+  id          String  @id @default(auto()) @map("_id") @db.ObjectId
+  name        String @unique
+  order       Int
+  subCategory Json?
+}
+
 model Feedbacks {
   id String @id @default(auto()) @map("_id") @db.ObjectId
 

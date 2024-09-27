@@ -67,5 +67,11 @@ export const adminResolvers = {
   },
   getCompanySubscription: async ({ companyId }: { companyId: string }) => {
     return await adminWorker.getCompanySubscription(companyId);
+  },
+  createBroadcastForm: async ({ input }: { input: any }) => {
+    return await adminWorker.createBroadcastForm(input);
+  },
+  broadcastForm: async () => {
+    return await adminWorker.broadcastForm();
   }
 }

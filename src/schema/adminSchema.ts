@@ -33,6 +33,33 @@ type Dept {
   updatedAt: String!
 }
 
+input CreateBroadcastInput {
+  name: String!
+  order : Int!
+  subCategory: [CreateSubCategoryInput!]
+}
+
+input CreateSubCategoryInput { 
+  name: String!
+  options: [String!]
+}
+
+type BroadcastForm {
+  id: ID!
+  name: String!
+  order: Int!
+  subCategory: [SubCategory!]
+  createdAt: String!
+  updatedAt: String!
+}
+
+type SubCategory {
+  name: String!
+  options: [String!]
+  createdAt: String!
+  updatedAt: String!
+}
+
 type CreateDeptResponse {
   dept: Dept
 }

@@ -33,6 +33,7 @@ type Query {
     getBroadcasts: [Broadcast]
     getBroadcastById(broadcastId: ID!): Broadcast
     getCompanySubscription(companyId: String!): Company
+    broadcastForm: [BroadcastForm]
   }
 
   type Mutation {
@@ -96,6 +97,8 @@ type Query {
     createnUpdateCompanyDept(companyId: String!, deptId: String, input: CreateDeptInput!): CreateDeptResponse
 
     deleteBroadcast(broadcastId: ID!): Broadcast
+
+    createBroadcastForm(input: CreateBroadcastInput!): BroadcastForm
   }
 `
 const allSchemas = [authSchema, adminSchema, leadSchema, userSchema, queries_mutation];
