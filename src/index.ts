@@ -23,8 +23,7 @@ app.post('/graphql/upload', upload.any(), uploadImage);
 app.post('/graphql/broadcastMessage', middleware.userAuthMiddleware, upload.any(), broadcastMessage);
 app.post('/graphql/bulk-upload-lead', middleware.userAuthMiddleware, readOnlyupload.single('leads'), bulkUploadLead);
 
-//  middleware.userAuthMiddleware,
-app.use('/graphql', createHandler({
+app.use('/graphql', middleware.userAuthMiddleware, createHandler({
     schema: schema,
     rootValue: resolvers,
     context: (req: any) => ({ user: req.raw.user }),
