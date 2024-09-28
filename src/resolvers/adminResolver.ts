@@ -71,6 +71,9 @@ export const adminResolvers = {
   createBroadcastForm: async ({ input }: { input: any }) => {
     return await adminWorker.createBroadcastForm(input);
   },
+  updateBroadcastForm: async ({ input }: { input: any }) => {
+    return await adminWorker.updateBroadcastForm(input);
+  },
   broadcastForm: async () => {
     return await adminWorker.broadcastForm();
   }

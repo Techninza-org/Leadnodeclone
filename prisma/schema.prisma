@@ -10,7 +10,6 @@ datasource db {
 model Lead {
   id String @id @default(auto()) @map("_id") @db.ObjectId
 
-  // Customer Info
   name           String
   email          String
   phone          String
@@ -21,7 +20,6 @@ model Lead {
   zip            String?
   rating         Int?
 
-  // Lead Info
   vehicleDate  DateTime?
   vehicleName  String?
   vehicleModel String?
@@ -63,8 +61,8 @@ model FollowUp {
 
   nextFollowUpDate String
   remark           String
-  customerResponse String? // Hot/Warm/Cold
-  rating           String? // 1-10
+  customerResponse String?
+  rating           String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -183,10 +181,56 @@ model LeadFeedback {
 }
 
 model BroadcastForm {
-  id          String  @id @default(auto()) @map("_id") @db.ObjectId
-  name        String @unique
-  order       Int
-  subCategory Json?
+  id            String        @id @default(auto()) @map("_id") @db.ObjectId
+  name          String        @unique
+  order         Int
+  subCategories SubCategory[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model SubCategory {
+  id              String        @id @default(auto()) @map("_id") @db.ObjectId
+  name            String        @unique
+  order           Int
+  broadcastFormId String        @db.ObjectId
+  broadcastForm   BroadcastForm @relation(fields: [broadcastFormId], references: [id])
+
+  options Option[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Option {
+  id            String      @id @default(auto()) @map("_id") @db.ObjectId
+  name          String      @unique
+  type          FieldType
+  order         Int
+  subCategoryId String      @db.ObjectId
+  subCategory   SubCategory @relation(fields: [subCategoryId], references: [id])
+
+  values OptionValue[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model OptionValue {
+  id   String @id @default(auto()) @map("_id") @db.ObjectId
+  name String @unique
+
+  optionId String? @db.ObjectId
+  option   Option? @relation(fields: [optionId], references: [id])
+
+  subOptionValues OptionValue[] @relation("OptionToSubOptionValues")
+
+  parentValue   OptionValue? @relation("OptionToSubOptionValues", fields: [parentValueId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  parentValueId String?      @db.ObjectId
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Feedbacks {
@@ -231,7 +275,7 @@ model CompanyDept {
   members          Member[]
   Bid              Bid[]
 
-  LeadFeedback LeadFeedback[] // All Lead Feedbacks
+  LeadFeedback LeadFeedback[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -323,7 +367,7 @@ model Plan {
 
   rank Int
 
-  defaultAllowedDeptsIds String[] // AdminDept Ids
+  defaultAllowedDeptsIds String[]
 
   Subscriptions Subscriptions[]
 
@@ -340,7 +384,7 @@ model Subscriptions {
   planId String @db.ObjectId
   plan   Plan   @relation(fields: [planId], references: [id])
 
-  allowedDeptsIds String[] // Allowed Dept Ids
+  allowedDeptsIds String[]
 
   startDate DateTime
   endDate   DateTime
@@ -434,7 +478,7 @@ model Member {
   LeadTransferBy LeadTransferTo[] @relation("TransferBy")
   FollowUp       FollowUp[]
 
-  sessionToken String? // Device Login Token at a time
+  sessionToken String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

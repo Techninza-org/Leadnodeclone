@@ -35,27 +35,54 @@ type Dept {
 
 input CreateBroadcastInput {
   name: String!
-  order : Int!
-  subCategory: [CreateSubCategoryInput!]
+  order: Int!
+  subCategories: [CreateSubCategoryInput!]!
 }
 
-input CreateSubCategoryInput { 
+input CreateSubCategoryInput {
   name: String!
-  options: [String!]
+  order: Int!
+  options: [CreateOptionInput!]!
+}
+  
+input CreateOptionInput {
+  name: String!
+  type: FieldType!
+  order: Int!
+  values: [CreateOptionValueInput!]!
+}
+
+input CreateOptionValueInput {
+  name: String!
+  subOptionValues: [CreateOptionValueInput!] # Recursive input for sub-option values
+}
+
+type Option {
+  id: ID!
+  name: String!
+  type: FieldType!
+  order: Int!
+  values: [OptionValue!]!
+}
+
+type OptionValue {
+  id: ID!
+  name: String!
+  subOptionValues: [OptionValue!]
+}
+
+type SubCategory {
+  id: ID!
+  name: String!
+  order: Int!
+  options: [Option!]
 }
 
 type BroadcastForm {
   id: ID!
   name: String!
   order: Int!
-  subCategory: [SubCategory!]
-  createdAt: String!
-  updatedAt: String!
-}
-
-type SubCategory {
-  name: String!
-  options: [String!]
+  subCategories: [SubCategory!]
   createdAt: String!
   updatedAt: String!
 }
@@ -75,8 +102,9 @@ enum FieldType {
 }
 
 type Options {
-  label: String!
-  value: String!
+  name: String!
+  type: FieldType!
+  
 }
 
 input OptionsInput {

@@ -99,6 +99,7 @@ type Query {
     deleteBroadcast(broadcastId: ID!): Broadcast
 
     createBroadcastForm(input: CreateBroadcastInput!): BroadcastForm
+    updateBroadcastForm(input: CreateBroadcastInput!): BroadcastForm
   }
 `
 const allSchemas = [authSchema, adminSchema, leadSchema, userSchema, queries_mutation];

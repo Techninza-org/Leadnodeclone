@@ -1,9 +1,10 @@
 import logger from '../utils/logger';
 import prisma from '../config/database';
 import { z } from 'zod';
-import { Category, createRoleSchema } from '../types/admin';
+import { createRoleSchema } from '../types/admin';
 import { createAdminDeptSchema } from '../types/dept';
 import { Plan } from '@prisma/client';
+import { createOptionValues } from '../utils/admin-worker-utils';
 
 export const getDeptWFields = async () => {
     const dept = await prisma.adminDept.findMany({
@@ -188,22 +189,176 @@ const createDept = async (dept: z.infer<typeof createAdminDeptSchema>) => {
     }
 };
 
-const createBroadcastForm = async (form: Category) => {
-    const BroadcastForm = await prisma.broadcastForm.create({
-        data: {
-            name: form.name,
-            order: form.order,
-            subCategory: form.subCategory.map(subCategory => ({
-                name: subCategory.name,
-                options: subCategory.options
-            }))
-        }
-    });
-    return BroadcastForm;
-}
+const createBroadcastForm = async (form: any) => {
+    try {
+        const broadcastForm = await prisma.broadcastForm.create({
+            data: {
+                name: form.name,
+                order: form.order,
+                subCategories: {
+                    create: form.subCategories.map((subCategory: any) => ({
+                        name: subCategory.name,
+                        order: subCategory.order,
+                        options: {
+                            create: subCategory.options.map((option: any) => ({
+                                name: option.name,
+                                type: option.type,
+                                order: option.order,
+                                values: {
+                                    create: createOptionValues(option.values)
+                                }
+                            }))
+                        }
+                    }))
+                }
+            },
+            include: {
+                subCategories: {
+                    include: {
+                        options: {
+                            include: {
+                                values: {
+                                    include: {
+                                        subOptionValues: true
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        return broadcastForm;
+    } catch (error) {
+        logger.error(error instanceof Error ? error.message : String(error), "error")
+    }
+};
+
+const updateBroadcastForm = async (form: any) => {
+    try {
+        const updatedForm = await prisma.broadcastForm.update({
+            where: { name: form.name },
+            data: {
+                name: form.name,
+                order: form.order,
+                subCategories: {
+                    upsert: form.subCategories.map((subCategory: any) => ({
+                        where: { name: subCategory.name },
+                        create: {
+                            name: subCategory.name,
+                            order: subCategory.order,
+                            options: {
+                                create: subCategory.options.map((option: any) => ({
+                                    name: option.name,
+                                    type: option.type,
+                                    order: option.order,
+                                    values: {
+                                        create: option.values.map((value: any) => ({
+                                            name: value.name,
+                                            subOptionValues: {
+                                                create: value.subOptionValues ? value.subOptionValues.map((subOption: any) => ({
+                                                    name: subOption.name,
+                                                })) : [],
+                                            },
+                                        })),
+                                    },
+                                })),
+                            },
+                        },
+                        update: {
+                            order: subCategory.order,
+                            options: {
+                                upsert: subCategory.options.map((option: any) => ({
+                                    where: { name: option.name },
+                                    create: {
+                                        name: option.name,
+                                        type: option.type,
+                                        order: option.order,
+                                        values: {
+                                            create: option.values.map((value: any) => ({
+                                                name: value.name,
+                                                subOptionValues: {
+                                                    create: value.subOptionValues ? value.subOptionValues.map((subOption: any) => ({
+                                                        name: subOption.name,
+                                                    })) : [],
+                                                },
+                                            })),
+                                        },
+                                    },
+                                    update: {
+                                        type: option.type,
+                                        order: option.order,
+                                        values: {
+                                            upsert: option.values.map((value: any) => ({
+                                                where: { name: value.name },
+                                                create: {
+                                                    name: value.name,
+                                                    subOptionValues: {
+                                                        create: value.subOptionValues ? value.subOptionValues.map((subOption: any) => ({
+                                                            name: subOption.name,
+                                                        })) : [],
+                                                    },
+                                                },
+                                                update: {
+                                                    subOptionValues: {
+                                                        upsert: value.subOptionValues ? value.subOptionValues.map((subOption: any) => ({
+                                                            where: { name: subOption.name },
+                                                            create: { name: subOption.name },
+                                                            update: { name: subOption.name },
+                                                        })) : [],
+                                                    },
+                                                },
+                                            })),
+                                        },
+                                    },
+                                })),
+                            },
+                        },
+                    })),
+                },
+            },
+            include: {
+                subCategories: {
+                    include: {
+                        options: {
+                            include: {
+                                values: {
+                                    include: {
+                                        subOptionValues: true,
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        });
+        return updatedForm;
+    } catch (error) {
+        console.error("Error updating broadcast form:", error);
+        throw error;
+    }
+};
 
 const broadcastForm = async () => {
-    const BroadcastForm = await prisma.broadcastForm.findMany();
+    const BroadcastForm = await prisma.broadcastForm.findMany({
+        include: {
+            subCategories: {
+                include: {
+                    options: {
+                        include: {
+                            values: {
+                                include: {
+                                    subOptionValues: true
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    });
     return BroadcastForm;
 }
 
@@ -417,8 +572,6 @@ const updateCompanySubscription = async (companyId: string, planId: string, allo
                         companyId,
                     },
                 });
-
-                console.log(b, "b")
             }
         }
 
@@ -493,5 +646,6 @@ export default {
     updateCompanySubscription,
     getCompanySubscription,
     createBroadcastForm,
+    updateBroadcastForm,
     broadcastForm
 }

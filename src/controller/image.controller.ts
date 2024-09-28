@@ -134,14 +134,11 @@ export const bulkUploadLead = async (req: ExtendedRequest, res: Response) => {
             return res.end();
         }
 
-        console.log(leads, "leads");
-
         const createdLeads = await prisma.lead.createMany({ data: leads });
 
         return res.status(200).json({ valid: true, message: "Leads uploaded successfully", createdLeads });
 
     } catch (error: any) {
-        console.log(error, "error");
         return res.status(500).json({ error: 'Failed to upload lead.', details: error.message });
     }
 };
