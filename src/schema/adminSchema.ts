@@ -103,10 +103,11 @@ enum FieldType {
 
 type Options {
   name: String!
+  label: String
+  value: String
   type: FieldType!
-  
 }
-
+  
 input OptionsInput {
   label: String!
   value: String!
