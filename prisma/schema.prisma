@@ -224,7 +224,8 @@ model OptionValue {
   optionId String? @db.ObjectId
   option   Option? @relation(fields: [optionId], references: [id])
 
-  subOptionValues OptionValue[] @relation("OptionToSubOptionValues")
+  values           OptionValue[]      @relation("OptionToSubOptionValues")
+  BroadcastMessage BroadcastMessage[]
 
   parentValue   OptionValue? @relation("OptionToSubOptionValues", fields: [parentValueId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   parentValueId String?      @db.ObjectId
@@ -398,18 +399,15 @@ model Subscriptions {
 model BroadcastMessage {
   id String @id @default(auto()) @map("_id") @db.ObjectId
 
-  isOffer    Boolean @default(false)
-  isTemplate Boolean @default(false)
-  isMessage  Boolean @default(false)
-  isMessage1 Boolean @default(false)
-  isMessage2 Boolean @default(false)
-  isMessage3 Boolean @default(false)
+  subCategory String
+  option      String
+  valueId     String? @db.ObjectId
+  value       OptionValue? @relation(fields: [valueId], references: [id])
 
-  message String?
-  imgURL  Json?
+  imgURL Json?
 
-  companyId String?  @db.ObjectId
-  Company   Company? @relation(fields: [companyId], references: [id])
+  companyId String  @db.ObjectId
+  Company   Company @relation(fields: [companyId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

@@ -54,7 +54,7 @@ input CreateOptionInput {
 
 input CreateOptionValueInput {
   name: String!
-  subOptionValues: [CreateOptionValueInput!] # Recursive input for sub-option values
+  values: [CreateOptionValueInput!] # Recursive input for sub-option values
 }
 
 type Option {
@@ -68,7 +68,7 @@ type Option {
 type OptionValue {
   id: ID!
   name: String!
-  subOptionValues: [OptionValue!]
+  values: [OptionValue!]
 }
 
 type SubCategory {

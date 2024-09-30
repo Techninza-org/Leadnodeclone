@@ -22,34 +22,31 @@ export const uploadImage = (req: ExtendedRequest, res: Response) => {
 
 export const broadcastMessage = async (req: ExtendedRequest, res: Response) => {
     const user = req.user;
-    const { id, isOffer, isTemplate, isMessage, message, isMessage1, isMessage2, isMessage3 } = req.body;
+    const { id, subCategory, option, value } = req.body;
 
 
-    if (!message) {
-        return res.status(400).json({ error: 'ID and message are required fields.' });
+    if (!subCategory) {
+        return res.status(400).json({ error: 'ID or subCategory are required fields.' });
     }
 
-    const files = req.files as Express.Multer.File[];
-    if (!files || files.length === 0) {
-        return res.status(400).json({ error: 'No file uploaded.' });
-    }
+    // Uncomment this block if you want to save the image URL
+    // const files = req.files as Express.Multer.File[];
+    // if (!files || files.length === 0) {
+    //     return res.status(400).json({ error: 'No file uploaded.' });
+    // }
+    // const fileInfos = files.map(file => ({
+    //     fieldname: file.fieldname,
+    //     url: `${req.protocol}://${req.get('host')}/graphql/images/${file.filename}`
+    // }));
 
-    const fileInfos = files.map(file => ({
-        fieldname: file.fieldname,
-        url: `${req.protocol}://${req.get('host')}/graphql/images/${file.filename}`
-    }));
 
     try {
         const update = await userWorker.createNUpdateBroadcast({
             id,
-            isOffer: isOffer === 'true' ? true : false,
-            isTemplate: isTemplate === 'true' ? true : false,
-            isMessage: isMessage === 'true' ? true : false,
-            isMessage1: isMessage1 === 'true' ? true : false,
-            isMessage2: isMessage2 === 'true' ? true : false,
-            isMessage3: isMessage3 === 'true' ? true : false,
-            message,
-            imgURL: fileInfos,
+            subCategory,
+            option,
+            valueId: value,
+            // imgURL: fileInfos, // uncomment this line if you want to save the image URL
             companyId: user?.companyId,
         });
 

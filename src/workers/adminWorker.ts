@@ -219,7 +219,7 @@ const createBroadcastForm = async (form: any) => {
                             include: {
                                 values: {
                                     include: {
-                                        subOptionValues: true
+                                        values: true
                                     }
                                 }
                             }
@@ -235,16 +235,44 @@ const createBroadcastForm = async (form: any) => {
     }
 };
 
+// upserting broadcast form: updateBroadcastForm
 const updateBroadcastForm = async (form: any) => {
     try {
-        const updatedForm = await prisma.broadcastForm.update({
-            where: { name: form.name },
-            data: {
+        const updatedForm = await prisma.broadcastForm.upsert({
+            where: { name: form.name },  // Assuming `name` is unique
+            create: {
+                name: form.name,
+                order: form.order,
+                subCategories: {
+                    create: form.subCategories.map((subCategory: any) => ({
+                        name: subCategory.name,
+                        order: subCategory.order,
+                        options: {
+                            create: subCategory.options.map((option: any) => ({
+                                name: option.name,
+                                type: option.type,
+                                order: option.order,
+                                values: {
+                                    create: option.values.map((value: any) => ({
+                                        name: value.name,
+                                        values: {
+                                            create: value.values ? value.values.map((subOption: any) => ({
+                                                name: subOption.name,
+                                            })) : [],
+                                        },
+                                    })),
+                                },
+                            })),
+                        },
+                    })),
+                },
+            },
+            update: {
                 name: form.name,
                 order: form.order,
                 subCategories: {
                     upsert: form.subCategories.map((subCategory: any) => ({
-                        where: { name: subCategory.name },
+                        where: { name: subCategory.name }, // Use the unique field of subCategory
                         create: {
                             name: subCategory.name,
                             order: subCategory.order,
@@ -256,8 +284,8 @@ const updateBroadcastForm = async (form: any) => {
                                     values: {
                                         create: option.values.map((value: any) => ({
                                             name: value.name,
-                                            subOptionValues: {
-                                                create: value.subOptionValues ? value.subOptionValues.map((subOption: any) => ({
+                                            values: {
+                                                create: value.values ? value.values.map((subOption: any) => ({
                                                     name: subOption.name,
                                                 })) : [],
                                             },
@@ -270,7 +298,7 @@ const updateBroadcastForm = async (form: any) => {
                             order: subCategory.order,
                             options: {
                                 upsert: subCategory.options.map((option: any) => ({
-                                    where: { name: option.name },
+                                    where: { name: option.name }, // Use the unique field of option
                                     create: {
                                         name: option.name,
                                         type: option.type,
@@ -278,8 +306,8 @@ const updateBroadcastForm = async (form: any) => {
                                         values: {
                                             create: option.values.map((value: any) => ({
                                                 name: value.name,
-                                                subOptionValues: {
-                                                    create: value.subOptionValues ? value.subOptionValues.map((subOption: any) => ({
+                                                values: {
+                                                    create: value.values ? value.values.map((subOption: any) => ({
                                                         name: subOption.name,
                                                     })) : [],
                                                 },
@@ -291,19 +319,19 @@ const updateBroadcastForm = async (form: any) => {
                                         order: option.order,
                                         values: {
                                             upsert: option.values.map((value: any) => ({
-                                                where: { name: value.name },
+                                                where: { name: value.name }, // Use the unique field of value
                                                 create: {
                                                     name: value.name,
-                                                    subOptionValues: {
-                                                        create: value.subOptionValues ? value.subOptionValues.map((subOption: any) => ({
+                                                    values: {
+                                                        create: value.values ? value.values.map((subOption: any) => ({
                                                             name: subOption.name,
                                                         })) : [],
                                                     },
                                                 },
                                                 update: {
-                                                    subOptionValues: {
-                                                        upsert: value.subOptionValues ? value.subOptionValues.map((subOption: any) => ({
-                                                            where: { name: subOption.name },
+                                                    values: {
+                                                        upsert: value.values ? value.values.map((subOption: any) => ({
+                                                            where: { name: subOption.name }, // Unique field of subOption
                                                             create: { name: subOption.name },
                                                             update: { name: subOption.name },
                                                         })) : [],
@@ -325,7 +353,7 @@ const updateBroadcastForm = async (form: any) => {
                             include: {
                                 values: {
                                     include: {
-                                        subOptionValues: true,
+                                        values: true,
                                     },
                                 },
                             },
@@ -350,7 +378,7 @@ const broadcastForm = async () => {
                         include: {
                             values: {
                                 include: {
-                                    subOptionValues: true
+                                    values: true
                                 }
                             }
                         }

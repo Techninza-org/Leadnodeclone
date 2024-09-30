@@ -1,8 +1,8 @@
 export const createOptionValues = (values: any): any => {
     return values.map((value: any) => ({
         name: value.name,
-        subOptionValues: value.subOptionValues ? {
-            create: createOptionValues(value.subOptionValues)
+        values: value.values ? {
+            create: createOptionValues(value.values)
         } : undefined,
     }));
 };
