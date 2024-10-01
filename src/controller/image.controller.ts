@@ -29,15 +29,14 @@ export const broadcastMessage = async (req: ExtendedRequest, res: Response) => {
         return res.status(400).json({ error: 'ID or subCategory are required fields.' });
     }
 
-    // Uncomment this block if you want to save the image URL
-    // const files = req.files as Express.Multer.File[];
-    // if (!files || files.length === 0) {
-    //     return res.status(400).json({ error: 'No file uploaded.' });
-    // }
-    // const fileInfos = files.map(file => ({
-    //     fieldname: file.fieldname,
-    //     url: `${req.protocol}://${req.get('host')}/graphql/images/${file.filename}`
-    // }));
+    const files = req.files as Express.Multer.File[];
+    if (!files || files.length === 0) {
+        return res.status(400).json({ error: 'No file uploaded.' });
+    }
+    const fileInfos = files.map(file => ({
+        fieldname: file.fieldname,
+        url: `${req.protocol}://${req.get('host')}/graphql/images/${file.filename}`
+    }));
 
 
     try {
@@ -46,7 +45,7 @@ export const broadcastMessage = async (req: ExtendedRequest, res: Response) => {
             subCategory,
             option,
             valueId: value,
-            // imgURL: fileInfos, // uncomment this line if you want to save the image URL
+            imgURL: fileInfos,
             companyId: user?.companyId,
         });
 
