@@ -11,7 +11,7 @@ export const userSchema = `
     fieldType: String!
     value: String
     imgLimit: Int
-    options: [String]
+    options: [OptionsInput]
     order: Int!
     isDisabled: Boolean
     isRequired: Boolean
