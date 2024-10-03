@@ -110,6 +110,9 @@ const createNUpdateCompanyDeptForm = async (deptForm: any, ctxUser: z.infer<type
                         isRequired: field.isRequired
                     }))
                 }
+            },
+            include: {
+                subDeptFields: true
             }
         });
 
