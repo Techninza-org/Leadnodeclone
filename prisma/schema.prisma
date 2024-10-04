@@ -401,7 +401,8 @@ model BroadcastMessage {
 
   subCategory String
   option      String
-  valueId     String? @db.ObjectId
+  desc        String?
+  valueId     String?      @db.ObjectId
   value       OptionValue? @relation(fields: [valueId], references: [id])
 
   imgURL Json?

@@ -134,6 +134,7 @@ export const userSchema = `
   type Broadcast { 
     id: ID!
     subCategory: String!
+    desc: String
     option: String!
     valueId: String!
     imgURL: [ImageURL]

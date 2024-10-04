@@ -22,7 +22,7 @@ export const uploadImage = (req: ExtendedRequest, res: Response) => {
 
 export const broadcastMessage = async (req: ExtendedRequest, res: Response) => {
     const user = req.user;
-    const { id, subCategory, option, value } = req.body;
+    const { id, subCategory, option, value, desc } = req.body;
 
 
     if (!subCategory) {
@@ -44,6 +44,7 @@ export const broadcastMessage = async (req: ExtendedRequest, res: Response) => {
             id,
             subCategory,
             option,
+            desc,
             valueId: value,
             imgURL: fileInfos,
             companyId: user?.companyId,
