@@ -133,16 +133,17 @@ export const userSchema = `
 
   type Broadcast { 
     id: ID!
-    message: String
+    subCategory: String!
+    option: String!
+    valueId: String!
+    imgURL: [ImageURL]
     companyId: String!
-    isOffer: Boolean
-    isTemplate: Boolean
-    isMessage: Boolean
-    isMessage1: Boolean
-    isMessage2: Boolean
-    isMessage3: Boolean
-    imgURL: [JSON]
     createdAt: String!
     updatedAt: String!
+  }
+
+  type ImageURL {
+    fieldname: String!
+    url: String!
   }
 `
