@@ -13,6 +13,7 @@ export const createAdminDeptSchema = z.object({
         imgLimit: z.number().int().positive().optional(),
         isDisabled: z.boolean().optional(),
         isRequired: z.boolean().optional(),
+        ddOptionId: z.string().optional(),
         options: z.array(z.object({
             label: z.string().min(2, "Option Label must be at least 3 characters long").max(30),
             value: z.string().min(2, "Option Value must be at least 3 characters long").max(30),

@@ -50,14 +50,7 @@ export const adminResolvers = {
     return await adminWorker.createRole(parsedData.data);
   },
   createDept: async ({ input }: { input: z.infer<typeof createAdminDeptSchema> }) => {
-    const parsedData = createAdminDeptSchema.safeParse(input);
-
-    if (!parsedData.success) {
-      const errors = parsedData.error.errors.map((err: ZodIssue) => (`${err.message} ${err.path} `));
-      throw new Error(errors.join(', '))
-    }
-
-    return await adminWorker.createDept(parsedData.data);
+    return await adminWorker.createDept(input);
   },
   createNUpdateSubscriptionPlan: async ({ input }: { input: any }) => {
     return await adminWorker.createNUpdateSubscriptionPlan(input);

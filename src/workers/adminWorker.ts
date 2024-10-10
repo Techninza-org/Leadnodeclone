@@ -3,7 +3,7 @@ import prisma from '../config/database';
 import { z } from 'zod';
 import { createRoleSchema } from '../types/admin';
 import { createAdminDeptSchema } from '../types/dept';
-import { Plan } from '@prisma/client';
+import { FieldType, Plan } from '@prisma/client';
 import { createOptionValues } from '../utils/admin-worker-utils';
 
 export const getDeptWFields = async () => {
@@ -125,6 +125,7 @@ const createDept = async (dept: z.infer<typeof createAdminDeptSchema>) => {
             value: field.value,
             imgLimit: field.imgLimit,
             options: field.options,
+            ddOptionId: field.ddOptionId,
             order: field.order,
             isDisabled: field.isDisabled,
             isRequired: field.isRequired
@@ -139,7 +140,11 @@ const createDept = async (dept: z.infer<typeof createAdminDeptSchema>) => {
                 name: dept.name,
             },
             include: {
-                deptFields: true,
+                deptFields: {
+                    include: {
+                        subDeptFields: true
+                    }
+                },
             }
         });
 
@@ -236,73 +241,24 @@ const createBroadcastForm = async (form: any) => {
 };
 
 // upserting broadcast form: updateBroadcastForm
-const updateBroadcastForm = async (form: any) => {
+const updateBroadcastForm = async (forms: any[]) => {
     try {
-        const updatedForm = await prisma.broadcastForm.upsert({
-            where: { name: form.name },  // Assuming `name` is unique
-            create: {
-                name: form.name,
-                order: form.order,
-                subCategories: {
-                    create: form.subCategories.map((subCategory: any) => ({
-                        name: subCategory.name,
-                        order: subCategory.order,
-                        options: {
-                            create: subCategory.options.map((option: any) => ({
-                                name: option.name,
-                                type: option.type,
-                                order: option.order,
-                                values: {
-                                    create: option.values.map((value: any) => ({
-                                        name: value.name,
-                                        values: {
-                                            create: value.values ? value.values.map((subOption: any) => ({
-                                                name: subOption.name,
-                                            })) : [],
-                                        },
-                                    })),
-                                },
-                            })),
-                        },
-                    })),
-                },
-            },
-            update: {
-                name: form.name,
-                order: form.order,
-                subCategories: {
-                    upsert: form.subCategories.map((subCategory: any) => ({
-                        where: { name: subCategory.name }, // Use the unique field of subCategory
-                        create: {
-                            name: subCategory.name,
-                            order: subCategory.order,
-                            options: {
-                                create: subCategory.options.map((option: any) => ({
-                                    name: option.name,
-                                    type: option.type,
-                                    order: option.order,
-                                    values: {
-                                        create: option.values.map((value: any) => ({
-                                            name: value.name,
-                                            values: {
-                                                create: value.values ? value.values.map((subOption: any) => ({
-                                                    name: subOption.name,
-                                                })) : [],
-                                            },
-                                        })),
-                                    },
-                                })),
-                            },
-                        },
-                        update: {
-                            order: subCategory.order,
-                            options: {
-                                upsert: subCategory.options.map((option: any) => ({
-                                    where: { name: option.name }, // Use the unique field of option
-                                    create: {
+        const updatedForms = await Promise.all(
+            forms.map(async (form: any, fIdx: number) => {
+                const updatedForm = await prisma.broadcastForm.upsert({
+                    where: { id: form.id },
+                    create: {
+                        name: form.name,
+                        order: form?.order ?? fIdx + 1,
+                        subCategories: {
+                            create: form.subCategories.map((subCategory: any, sCIdx: number) => ({
+                                name: subCategory.name,
+                                order: subCategory?.order ?? sCIdx + 1,
+                                options: {
+                                    create: subCategory.options.map((option: any, sCOIdx: number) => ({
                                         name: option.name,
-                                        type: option.type,
-                                        order: option.order,
+                                        type: option?.type ?? "SELECT",
+                                        order: option?.order ?? sCOIdx + 1,
                                         values: {
                                             create: option.values.map((value: any) => ({
                                                 name: value.name,
@@ -313,62 +269,120 @@ const updateBroadcastForm = async (form: any) => {
                                                 },
                                             })),
                                         },
+                                    })),
+                                },
+                            })),
+                        },
+                    },
+                    update: {
+                        name: form.name,
+                        order: form?.order ?? fIdx + 1,
+                        subCategories: {
+                            update: form.subCategories.map((subCategory: any, sCIdx: number) => ({
+                                where: { id: subCategory.id },
+                                data: {
+                                    name: subCategory.name,
+                                    order: subCategory?.order ?? sCIdx + 1,
+                                    options: {
+                                        upsert: subCategory.options.map((option: any, idx: number) => ({
+                                            where: { id: option.id },
+                                            create: {
+                                                name: option.name,
+                                                type: option?.type ?? "SELECT",
+                                                order: option?.order ?? idx + 1,
+                                                values: {
+                                                    create: option.values.map((value: any) => ({
+                                                        name: value.name,
+                                                        values: {
+                                                            create: value.values ? value.values.map((subOption: any) => ({
+                                                                name: subOption.name,
+                                                            })) : [],
+                                                        },
+                                                    })),
+                                                },
+                                            },
+                                            update: {
+                                                name: option.name,
+                                                type: option?.type ?? "SELECT",
+                                                order: option?.order ?? idx + 1,
+                                                values: {
+                                                    upsert: option.values.map((value: any) => ({
+                                                        where: { id: value.id },
+                                                        create: {
+                                                            name: value.name,
+                                                            values: {
+                                                                create: value.values ? value.values.map((subOption: any) => ({
+                                                                    name: subOption.name,
+                                                                })) : [],
+                                                            },
+                                                        },
+                                                        update: {
+                                                            name: value.name,
+                                                            values: {
+                                                                upsert: value.values ? value.values.map((subOption: any) => ({
+                                                                    where: { id: subOption.id },
+                                                                    create: { name: subOption.name },
+                                                                    update: { name: subOption.name },
+                                                                })) : [],
+                                                            },
+                                                        },
+                                                    })),
+                                                },
+                                            },
+                                        })),
                                     },
-                                    update: {
-                                        type: option.type,
-                                        order: option.order,
-                                        values: {
-                                            upsert: option.values.map((value: any) => ({
-                                                where: { name: value.name }, // Use the unique field of value
-                                                create: {
+                                },
+                            })),
+                            create: form.subCategories
+                                .filter((subCategory: any) => !subCategory.id)
+                                .map((subCategory: any, sCIdx: number) => ({
+                                    name: subCategory.name,
+                                    order: subCategory?.order ?? sCIdx + 1,
+                                    options: {
+                                        create: subCategory.options.map((option: any, idx: number) => ({
+                                            name: option.name,
+                                            type: option?.type ?? "SELECT",
+                                            order: option?.order ?? idx + 1,
+                                            values: {
+                                                create: option.values.map((value: any) => ({
                                                     name: value.name,
                                                     values: {
                                                         create: value.values ? value.values.map((subOption: any) => ({
                                                             name: subOption.name,
                                                         })) : [],
                                                     },
-                                                },
-                                                update: {
-                                                    values: {
-                                                        upsert: value.values ? value.values.map((subOption: any) => ({
-                                                            where: { name: subOption.name }, // Unique field of subOption
-                                                            create: { name: subOption.name },
-                                                            update: { name: subOption.name },
-                                                        })) : [],
-                                                    },
-                                                },
-                                            })),
-                                        },
+                                                })),
+                                            },
+                                        })),
                                     },
                                 })),
-                            },
                         },
-                    })),
-                },
-            },
-            include: {
-                subCategories: {
+                    },
                     include: {
-                        options: {
+                        subCategories: {
                             include: {
-                                values: {
+                                options: {
                                     include: {
-                                        values: true,
+                                        values: {
+                                            include: {
+                                                values: true,
+                                            },
+                                        },
                                     },
                                 },
                             },
                         },
                     },
-                },
-            },
-        });
-        return updatedForm;
+                });
+                return updatedForm;
+            })
+        );
+        return updatedForms;
     } catch (error) {
-        console.error("Error updating broadcast form:", error);
+        console.error("Error updating broadcast forms:", error);
         throw error;
     }
 };
-
 const broadcastForm = async () => {
     const BroadcastForm = await prisma.broadcastForm.findMany({
         include: {

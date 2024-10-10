@@ -4,6 +4,7 @@ type SubDeptField {
   name: String!
   fieldType: FieldType!
   value: String
+  ddOptionId: String
   options: [Options!]
   imgLimit: Int
 
@@ -34,25 +35,29 @@ type Dept {
 }
 
 input CreateBroadcastInput {
+  id: ID
   name: String!
   order: Int!
   subCategories: [CreateSubCategoryInput!]!
 }
 
 input CreateSubCategoryInput {
+  id: ID
   name: String!
-  order: Int!
+  order: Int
   options: [CreateOptionInput!]!
 }
   
 input CreateOptionInput {
+  id: ID
   name: String!
-  type: FieldType!
-  order: Int!
+  type: FieldType
+  order: Int
   values: [CreateOptionValueInput!]!
 }
 
 input CreateOptionValueInput {
+  id: ID
   name: String!
   values: [CreateOptionValueInput!] # Recursive input for sub-option values
 }
@@ -99,12 +104,13 @@ enum FieldType {
   SELECT
   RADIO
   CHECKBOX
+  DD
 }
 
 type Options {
   name: String!
   label: String
-  value: String
+  value: JSON
   type: FieldType!
 }
   
@@ -121,7 +127,8 @@ input DeptFieldsInput {
   imgLimit: Int
   isDisabled: Boolean
   isRequired: Boolean
-  options: [OptionsInput]
+  ddOptionId: String
+  options: JSON 
 }
 
 input CreateDeptInput {

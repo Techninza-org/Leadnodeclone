@@ -201,6 +201,8 @@ model SubCategory {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@unique([name, broadcastFormId])
 }
 
 model Option {
@@ -224,14 +226,16 @@ model OptionValue {
   optionId String? @db.ObjectId
   option   Option? @relation(fields: [optionId], references: [id])
 
-  values           OptionValue[]      @relation("OptionToSubOptionValues")
+  values           OptionValue[]      @relation("OptionToOptionValues")
   BroadcastMessage BroadcastMessage[]
 
-  parentValue   OptionValue? @relation("OptionToSubOptionValues", fields: [parentValueId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  parentValue   OptionValue? @relation("OptionToOptionValues", fields: [parentValueId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   parentValueId String?      @db.ObjectId
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@unique([name, optionId])
 }
 
 model Feedbacks {
@@ -315,6 +319,8 @@ model SubDeptField {
   isDisabled Boolean @default(false)
   isRequired Boolean @default(false)
 
+  ddOptionId String?
+
   deptFieldId String?    @db.ObjectId
   DeptField   DeptField? @relation(fields: [deptFieldId], references: [id])
 
@@ -335,6 +341,7 @@ enum FieldType {
   RADIO
   CHECKBOX
   SELECT
+  DD
 }
 
 model CompanyDeptForm {

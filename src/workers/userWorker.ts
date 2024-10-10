@@ -7,6 +7,7 @@ import { loginSchema, signupSchema, CreateOrUpdateManagerSchema, loggedUserSchem
 import { generateHash, generateToken, getUserByIdEmailPhone, sendOTP, verifyHash, verifyOtp } from '../utils/user-worker-utils';
 import { format } from 'date-fns';
 import { getISTTime } from '../utils';
+import { FieldType } from '@prisma/client';
 
 /*
 User: [Root, Telecaller, Exchanger, Financer, Manager]
@@ -127,10 +128,11 @@ const createUser = async (user: z.infer<typeof signupSchema>) => {
                                     imgLimit: subField.imgLimit,
                                     isDisabled: subField.isDisabled,
                                     isRequired: subField.isRequired,
-                                    options: subField.options ? (subField.options as any).map((option: any) => ({
+                                    ddOptionId : subField?.ddOptionId || null,
+                                    options: (subField.fieldType === FieldType.DD ? subField.options : (subField.options as any).map((option: any) => ({
                                         label: option.label,
                                         value: option.value,
-                                    })) : [],
+                                    }))) ?? [],
                                 })),
                             },
                         })),
