@@ -105,6 +105,7 @@ enum FieldType {
   RADIO
   CHECKBOX
   DD
+  DD_IMG
 }
 
 type Options {
