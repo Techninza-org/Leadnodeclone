@@ -40,6 +40,7 @@ export const leadSchema = `
     bidAmount: Float!
     description: String
     Member: Member!
+    isApproved: Boolean!
     createdAt: String!
     updatedAt: String!
   }

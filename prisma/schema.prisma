@@ -7,6 +7,41 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Prospect {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  name           String
+  email          String
+  phone          String
+  alternatePhone String?
+  address        String?
+  city           String?
+  state          String?
+  zip            String?
+  rating         Int?
+
+  callStatus    CallStatus    @default(PENDING)
+  paymentStatus PaymentStatus @default(PENDING)
+
+  LeadMember LeadMember[]
+
+  nextFollowUpDate String?
+  followUps        FollowUp[]
+
+  companyId String?  @db.ObjectId
+  Company   Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([companyId])
+}
+
+enum Status {
+  OPEN
+  CLOSED
+}
+
 model Lead {
   id String @id @default(auto()) @map("_id") @db.ObjectId
 
@@ -25,9 +60,10 @@ model Lead {
   vehicleModel String?
 
   isLeadApproved Boolean @default(false)
+  status         Status  @default(OPEN)
 
-  callStatus    CallStatus
-  paymentStatus PaymentStatus
+  callStatus    CallStatus    @default(PENDING)
+  paymentStatus PaymentStatus @default(PENDING)
 
   LeadFeedback   LeadFeedback[]
   LeadMember     LeadMember[]
@@ -64,8 +100,10 @@ model FollowUp {
   customerResponse String?
   rating           String?
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  Prospect   Prospect? @relation(fields: [prospectId], references: [id])
+  prospectId String?   @db.ObjectId
 }
 
 model Bid {
@@ -116,8 +154,10 @@ model LeadMember {
 
   Location Location[]
 
-  memberId String @db.ObjectId
-  Member   Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  memberId   String    @db.ObjectId
+  Member     Member    @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  Prospect   Prospect? @relation(fields: [prospectId], references: [id])
+  prospectId String?   @db.ObjectId
 
   @@unique([leadId, memberId])
 }
@@ -441,6 +481,7 @@ model Company {
   createdAt        DateTime           @default(now())
   updatedAt        DateTime           @updatedAt
   BroadcastMessage BroadcastMessage[]
+  Prospect         Prospect[]
 
   @@index([rootId])
   @@index([companyManagerId])

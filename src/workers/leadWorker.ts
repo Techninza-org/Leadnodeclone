@@ -23,6 +23,21 @@ const getAllLeads = async () => {
     }
 }
 
+const getAllProspects = async () => {
+    try {
+        const prospects = await prisma.prospect.findMany({
+            include: {
+                Company: true,
+            },
+        });
+
+        return prospects;
+    } catch (error) {
+        logger.error('Error fetching Prospects:', error);
+        return [];
+    }
+}
+
 const getLeadsByDateRange = async (companyId: string, fromDateStr: string, toDateStr: string): Promise<{
     callCount: number,
     totalPayCollectedCount: number
@@ -325,7 +340,7 @@ const getTransferedLeads = async (userId: string) => {
     }
 }
 
-const createLead = async (lead: z.infer<typeof createLeadSchema>) => {
+const createProspect = async (lead: z.infer<typeof createLeadSchema>) => {
     try {
         const company = await prisma.company.findFirst({
             where: { id: lead.companyId },
@@ -333,6 +348,19 @@ const createLead = async (lead: z.infer<typeof createLeadSchema>) => {
 
         if (!company) {
             throw new Error("Company not found");
+        }
+
+        const isProspectExists = await prisma.prospect.findFirst({
+            where: {
+                OR: [
+                    { email: lead.email },
+                    { phone: lead.phone },
+                ]
+            },
+        });
+
+        if (isProspectExists) {
+            throw new Error("Prospect already exists with the same email or phone number");
         }
 
         const companyManager = await prisma.member.findFirst({
@@ -350,7 +378,7 @@ const createLead = async (lead: z.infer<typeof createLeadSchema>) => {
             ? formatISO(parse(lead.vehicleDate, 'dd-MM-yyyy', new Date()))
             : null;
 
-        const newLead = await prisma.lead.create({
+        const newLead = await prisma.prospect.create({
             data: {
                 Company: {
                     connect: { id: lead.companyId },
@@ -364,15 +392,12 @@ const createLead = async (lead: z.infer<typeof createLeadSchema>) => {
                 state: lead.state,
                 zip: lead.zip,
                 rating: lead.rating,
-                vehicleDate: formattedVehicleDate,
-                vehicleName: lead.vehicleName,
-                vehicleModel: lead.vehicleModel,
                 callStatus: CallStatus.PENDING, // or PENDING
                 paymentStatus: PaymentStatus.PENDING, // or PENDING
                 LeadMember: {
-                    create: {
-                        memberId: companyManager.id,
-                    },
+                  connect: {
+                    id: companyManager.id,
+                  }
                 },
             },
         });
@@ -890,7 +915,7 @@ export default {
     getCompanyLeads,
     getCompanyLeadById,
     getAssignedLeads,
-    createLead,
+    createProspect,
     updateLead,
     approveLead,
     leadAssignTo,
@@ -902,5 +927,6 @@ export default {
     leadTransferTo,
     getTransferedLeads,
     updateLeadPaymentStatus,
-    getFollowUpByLeadId
+    getFollowUpByLeadId,
+    getAllProspects
 }

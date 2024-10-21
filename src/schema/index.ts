@@ -34,6 +34,8 @@ type Query {
     getBroadcastById(broadcastId: ID!): Broadcast
     getCompanySubscription(companyId: String!): Company
     broadcastForm: [BroadcastForm]
+    getFollowUps: [FollowUp]
+    getCompanyXchangerBids: [Bid]
   }
 
   type Mutation {

@@ -69,7 +69,7 @@ export const leadResolvers = {
                 return { user: null, errors };
             }
 
-            return await leadWorker.createLead(parsedData.data);
+            return await leadWorker.createProspect(parsedData.data);
         } catch (error) {
             logger.error('Error Creating lead:', error);
             throw new Error('Error Creating lead');

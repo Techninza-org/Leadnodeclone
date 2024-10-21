@@ -2,10 +2,15 @@
 import { z, ZodIssue } from 'zod';
 import companyWorker from '../workers/companyWorker';
 import { createRoleSchema } from '../types/admin';
-import { createAdminDeptSchema } from '../types/dept';
 import { loggedUserSchema } from '../types/user';
 
 export const companyResolvers = {
+  getCompanyXchangerBids: async (_: any, { user }: { user: z.infer<typeof loggedUserSchema> }) => {
+    return await companyWorker.getCompanyXchangerBids(user.companyId);
+  },
+  getFollowUps: async (_: any, { user }: { user: z.infer<typeof loggedUserSchema> }) => {
+    return await companyWorker.getFollowUps(user.companyId);
+  },
   getAllCompanyMembers: async () => {
     // try {
     //   return await prisma.member.findMany();

@@ -6,7 +6,7 @@ import { createAdminDeptSchema } from '../types/dept';
 import { CompanyDeptForm } from '@prisma/client';
 import { loggedUserSchema } from '../types/user';
 
-export const getCompanyDeptFields = async (deptId: string) => {
+const getCompanyDeptFields = async (deptId: string) => {
     try {
         const deptFields = await prisma.companyDeptForm.findMany({
             where: {
@@ -26,7 +26,51 @@ export const getCompanyDeptFields = async (deptId: string) => {
     }
 }
 
-export const getDepts = async (companyId: string) => {
+const getFollowUps = async (companyId: string) => {
+    try {
+        const followUps = await prisma.followUp.findMany({
+            where: {
+                lead: {
+                    companyId
+                }
+            },
+            include: {
+                followUpBy: {
+                    include: {
+                        role: true
+                    }
+                },
+            }
+        });
+        return followUps;
+    } catch (error: any) {
+        logger.log(error.message, 'error')
+        throw new Error('Error fetching departments');
+    }
+}
+
+const getCompanyXchangerBids = async (companyId: string) => {
+    try {
+        const bids = await prisma.bid.findMany({
+            where: {
+                lead: {
+                    companyId
+                }
+            },
+            include: {
+                Member: true,
+                lead: true
+            }
+        });
+        return bids;
+    }
+    catch (error: any) {
+        logger.log(error.message, 'error')
+        throw new Error('Error fetching departments');
+    }
+}
+
+const getDepts = async (companyId: string) => {
     try {
         const depts = await prisma.companyDept.findMany({
             where: {
@@ -43,7 +87,7 @@ export const getDepts = async (companyId: string) => {
     }
 }
 
-export const createRole = async (role: z.infer<typeof createRoleSchema>) => {
+const createRole = async (role: z.infer<typeof createRoleSchema>) => {
     const existingRole = await prisma.role.findFirst({
         where: {
             name: role.name,
@@ -186,6 +230,8 @@ const createnUpdateCompanyDept = async (companyId: string, dept: z.infer<typeof 
 
 
 export default {
+    getFollowUps,
+    getCompanyXchangerBids,
     getDepts,
     getCompanyDeptFields,
     createnUpdateCompanyDept,
