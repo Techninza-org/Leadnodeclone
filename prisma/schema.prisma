@@ -200,7 +200,7 @@ model Location {
 
 model LeadFeedback {
   id       String  @id @default(auto()) @map("_id") @db.ObjectId
-  formName String?
+  formName String 
 
   deptId String?      @db.ObjectId
   dept   CompanyDept? @relation(fields: [deptId], references: [id])
@@ -217,7 +217,7 @@ model LeadFeedback {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([leadId, memberId])
+  @@unique([formName, leadId, memberId])
 }
 
 model BroadcastForm {

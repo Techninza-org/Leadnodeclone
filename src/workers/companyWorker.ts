@@ -3,7 +3,6 @@ import prisma from '../config/database';
 import { z } from 'zod';
 import { createRoleSchema } from '../types/admin';
 import { createAdminDeptSchema } from '../types/dept';
-import { CompanyDeptForm } from '@prisma/client';
 import { loggedUserSchema } from '../types/user';
 
 const getCompanyDeptFields = async (deptId: string) => {

@@ -32,6 +32,14 @@ export const leadResolvers = {
             throw new Error('Error fetching lead');
         }
     },
+    getCompanyProspects: async ({ companyId }: { companyId: string }, ctx: any) => {
+        try {
+            return await leadWorker.getCompanyProspects(companyId);
+        } catch (error) {
+            logger.error('Error fetching lead [getCompanyProspects]:', error);
+            throw new Error('Error fetching lead');
+        }
+    },
 
     getAssignedLeads: async ({ userId }: { userId: string }, { user }: { user: z.infer<typeof loggedUserSchema> }) => {
         try {
@@ -171,5 +179,38 @@ export const leadResolvers = {
             logger.error('Error fetching follow up:', error);
             throw new Error(`Error fetching follow up: ${error}`);
         }
-    }
+    },
+    xChangerCustomerList: async (_:any, { user }: { user: z.infer<typeof loggedUserSchema> }) => {
+        try {
+            return await leadWorker.xChangerCustomerList(user.companyId);
+        } catch (error) {
+            logger.error('Error fetching follow up:', error);
+            throw new Error(`Error fetching follow up: ${error}`);
+        }
+    },
+    getLeadPhotos: async (_:any, { user }: { user: z.infer<typeof loggedUserSchema> }) => {
+        try {
+            return await leadWorker.getLeadPhotos(user.companyId);
+        } catch (error) {
+            logger.error('Error fetching follow up:', error);
+            throw new Error(`Error fetching follow up: ${error}`);
+        }
+    },
+    getExchangeLeadImgs: async (_:any, { user }: { user: z.infer<typeof loggedUserSchema> }) => {
+        try {
+            return await leadWorker.getExchangeLeadImgs(user.companyId);
+        } catch (error) {
+            logger.error('Error fetching follow up:', error);
+            throw new Error(`Error fetching follow up: ${error}`);
+        }
+    },
+    paymentList: async (_:any, { user }: { user: z.infer<typeof loggedUserSchema> }) => {
+        try {
+            return await leadWorker.paymentList(user.companyId);
+        } catch (error) {
+            logger.error('Error fetching follow up:', error);
+            throw new Error(`Error fetching follow up: ${error}`);
+        }
+    },
+    
 };

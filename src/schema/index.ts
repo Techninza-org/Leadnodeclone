@@ -7,6 +7,10 @@ import { userSchema } from "./userSchema";
 const queries_mutation = `
 scalar JSON
 
+type jsonType { 
+  data: JSON
+}
+
 type Query {
     getAllUsers: [User]
     getUser(id: ID!): User
@@ -36,6 +40,11 @@ type Query {
     broadcastForm: [BroadcastForm]
     getFollowUps: [FollowUp]
     getCompanyXchangerBids: [Bid]
+    xChangerCustomerList: jsonType
+    getLeadPhotos: jsonType
+    getExchangeLeadImgs: jsonType
+    paymentList: jsonType    
+    getCompanyProspects: [Lead]
   }
 
   type Mutation {

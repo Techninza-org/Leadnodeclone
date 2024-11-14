@@ -14,9 +14,18 @@ const storage = multer.diskStorage({
     },
     filename: (req, file, cb) => {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, file.fieldname + '-' + uniqueSuffix + (path.extname(file.originalname) || '.jpg'));
+        
+        // Remove "between" (case-insensitive) and then remove all spaces from fieldname and originalname
+        const sanitizedFieldname = file.fieldname.replace(/between/gi, "").replace(/\s+/g, "");
+        const sanitizedOriginalname = file.originalname.replace(/between/gi, "").replace(/\s+/g, "");
+        
+        // Generate the final filename without spaces
+        const finalFilename = `${sanitizedFieldname}-${uniqueSuffix}${path.extname(sanitizedOriginalname) || '.jpg'}`;
+        
+        cb(null, finalFilename);
     }
 });
+
 
 const upload = multer({ storage: storage });
 

@@ -14,10 +14,15 @@ export const uploadImage = (req: ExtendedRequest, res: Response) => {
     }
     const fileInfos = files.map(file => ({
         fieldname: file.fieldname, // Capturing the original field name
-        url: `${req.protocol}://${req.get('host')}/graphql/images/${file.filename}`
+        url: `${req.protocol}://${req.get('host')}/graphql/images/${file.filename
+            .replace(/between/gi, "") // Remove "between" in any case
+            .replace(/\s+/g, "")      // Remove any spaces left in the filename
+            }`
     }));
 
-    res.status(200).json({ files: fileInfos });
+    console.log(fileInfos)
+
+    return res.status(200).json({ files: fileInfos });
 };
 
 export const broadcastMessage = async (req: ExtendedRequest, res: Response) => {
@@ -35,9 +40,13 @@ export const broadcastMessage = async (req: ExtendedRequest, res: Response) => {
     }
     const fileInfos = files.map(file => ({
         fieldname: file.fieldname,
-        url: `${req.protocol}://${req.get('host')}/graphql/images/${file.filename}`
+        url: `${req.protocol}://${req.get('host')}/graphql/images/${file.filename
+            .replace(/between/gi, "") // Remove "between" in any case
+            .replace(/\s+/g, "")      // Remove any spaces left in the filename
+            }`
     }));
 
+    console.log(fileInfos)
 
     try {
         const update = await userWorker.createNUpdateBroadcast({

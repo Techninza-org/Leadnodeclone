@@ -3,9 +3,10 @@ import { formatISO, parse } from "date-fns";
 import prisma from "../config/database";
 import logger from "../utils/logger";
 import { leadUtils } from "../utils";
-import { CallStatus, Feedbacks, PaymentStatus } from "@prisma/client";
+import { CallStatus, Feedbacks, FieldType, PaymentStatus, Status } from "@prisma/client";
 import { createLeadSchema, leadAssignToSchema, leadBidSchema, submitFeedbackSchema } from "../types/lead";
 import { loggedUserSchema } from "../types/user";
+import { formatReturnOfDB } from "../utils/lead-worker-utils";
 
 const getAllLeads = async () => {
     try {
@@ -266,6 +267,23 @@ const getCompanyLeads = async (companyId: string) => {
     }
 };
 
+const getCompanyProspects = async (companyId: string) => {
+    try {
+        const prospects = await prisma.prospect.findMany({
+            where: {
+                companyId
+            },
+            include: {
+                followUps: true,
+            }
+        })
+        return prospects;
+    } catch (error: any) {
+        throw new Error(`Error getCompanyProspects leads: ${error.message}`);
+
+    }
+}
+
 const getCompanyLeadById = async (companyId: string, leadId: string) => {
     try {
         const lead = await prisma.lead.findFirst({
@@ -394,11 +412,6 @@ const createProspect = async (lead: z.infer<typeof createLeadSchema>) => {
                 rating: lead.rating,
                 callStatus: CallStatus.PENDING, // or PENDING
                 paymentStatus: PaymentStatus.PENDING, // or PENDING
-                LeadMember: {
-                  connect: {
-                    id: companyManager.id,
-                  }
-                },
             },
         });
 
@@ -440,16 +453,64 @@ const updateLead = async (lead: z.infer<typeof createLeadSchema>) => {
 }
 
 const approveLead = async (leadId: string, status: boolean) => {
-    const lead = await prisma.lead.update({
+    const prospect = await prisma.prospect.findFirst({
         where: {
-            id: leadId,
+            id: leadId
+        }
+    })
+
+    if (!prospect) throw new Error("Prospect not found!");
+
+    const companyOwner = await prisma.member.findFirst({
+        where: {
+            companyId: prospect.companyId,
+            role: {
+                name: "Root"
+            }
+        }
+    })
+
+    if (!companyOwner) throw new Error("Company Not found!")
+
+    const prospectToLead = await prisma.lead.create({
+        data: {
+            name: prospect.name,
+            email: prospect.email,
+            phone: prospect.phone,
+            alternatePhone: prospect.alternatePhone,
+            address: prospect.address,
+            city: prospect.city,
+            state: prospect.state,
+            zip: prospect.zip,
+            rating: prospect.rating,
+            companyId: prospect.companyId,
+            isLeadApproved: true,
+        }
+    })
+
+    await prisma.lead.update({
+        where: {
+            id: prospectToLead.id
         },
         data: {
-            isLeadApproved: status,
-        },
-    });
+            LeadMember: { 
+                connect: { 
+                    leadId_memberId: { 
+                        memberId: companyOwner.id,
+                        leadId: prospectToLead.id
+                    }
+                }
+            }
+        }
+    })
 
-    return lead;
+    await prisma.prospect.delete({
+        where: {
+            id: prospect.id
+        }
+    })
+
+    return prospectToLead;
 }
 
 const leadAssignTo = async ({ companyId, leadIds, deptId, userIds, description }: z.infer<typeof leadAssignToSchema>) => {
@@ -647,7 +708,8 @@ const submitFeedback = async ({ deptId, leadId, callStatus, paymentStatus, feedb
         // Upsert lead feedback
         const newFeedback = await prisma.leadFeedback.upsert({
             where: {
-                leadId_memberId: {
+                formName_leadId_memberId: {
+                    formName,
                     leadId: leadId,
                     memberId: userId,
                 },
@@ -663,10 +725,11 @@ const submitFeedback = async ({ deptId, leadId, callStatus, paymentStatus, feedb
                         data: feedbackData,
                     },
                 },
+                formName: formName,
                 imageUrls: urls
             },
             create: {
-                formName,
+                formName: formName,
                 feedback: {
                     createMany: {
                         data: feedbackData,
@@ -908,11 +971,155 @@ const updateLeadPaymentStatus = async (leadId: string, paymentStatus: PaymentSta
     }
 }
 
+const xChangerCustomerList = async (companyId: string) => {
+    try {
+        const leads = await prisma.lead.findMany({
+            where: {
+                AND: [
+                    { companyId },
+                    // { status: Status.OPEN },
+                    {
+                        LeadFeedback: {
+                            some: { formName: "Exchange" }
+                        }
+                    }
+                ]
+            },
+            include: {
+                LeadFeedback: {
+                    where: { formName: "Exchange" },
+                    include: {
+                        member: true,
+                        feedback: true
+                    }
+                }
+            }
+        })
+        return formatReturnOfDB(leads as any)
+    } catch (error: any) {
+        logger.error('Error xChangerCustomerList:', error);
+        throw new Error(`Error xChangerCustomerList: ${error.message}`);
+    }
+}
+
+const getLeadPhotos = async (companyId: string) => {
+    try {
+        const leads = await prisma.lead.findMany({
+            where: {
+                companyId,
+                LeadFeedback: {
+                    some: {
+                        feedback: {
+                            some: {
+                                fieldType:"DD_IMG"
+                            }
+                        }
+                    }
+                }
+            },
+            select: {
+                LeadFeedback: {
+                    where: {
+                        feedback: {
+                            some: {
+                                 fieldType:"DD_IMG"
+                            }
+                        }
+                    },
+                    include: {
+                        feedback: {
+                            where: {
+                                 fieldType:"DD_IMG"
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        console.log(JSON.stringify(leads, null, 2), "leads-----")
+        return formatReturnOfDB(leads as any)
+    } catch (error: any) {
+        logger.error('Error getLeadPhotos:', error);
+        throw new Error(`Error getLeadPhotos: ${error.message}`);
+    }
+}
+
+const getExchangeLeadImgs = async (companyId: string) => {
+    try {
+        const exchangeLeads = await prisma.lead.findMany({
+            where: {
+                companyId,
+                LeadFeedback: {
+                    some: {
+                        formName: "Exchange",
+                        feedback: {
+                            some: {
+                                fieldType: "IMAGE"
+                            }
+                        }
+                    }
+                }
+            },
+            select: {
+                LeadFeedback: {
+                    where: {
+                        formName: "Exchange",
+                        feedback: {
+                            some: {
+                                fieldType: "IMAGE"
+                            }
+                        }
+                    },
+                    include: {
+                        member: true,
+                        feedback: {
+                            where: {
+                                fieldType: "IMAGE"
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        return formatReturnOfDB(exchangeLeads as any);
+    } catch (error: any) {
+        logger.error('Error getExchangeLeadImgs:', error);
+        throw new Error(`Error getExchangeLeadImgs: ${error.message}`);
+    }
+}
+
+const paymentList = async (companyId: string) => {
+    try {
+        const leads = await prisma.lead.findMany({
+            where: {
+                companyId,
+                LeadFeedback: {
+                    some: { formName: {in: ["Payments"]} }
+                }
+            },
+            select: {
+                LeadFeedback: {
+                    where: { formName: {in: ["Payments"]} },
+                    include: {
+                        member: true,
+                        feedback: true
+                    }
+                }
+            }
+        })
+        return formatReturnOfDB(leads as any)
+    } catch (error: any) {
+        logger.error('Error paymentList:', error);
+        throw new Error(`Error paymentList: ${error.message}`);
+    }
+}
 
 export default {
     getAllLeads,
     getLeadBids,
     getCompanyLeads,
+    getCompanyProspects,
     getCompanyLeadById,
     getAssignedLeads,
     createProspect,
@@ -928,5 +1135,9 @@ export default {
     getTransferedLeads,
     updateLeadPaymentStatus,
     getFollowUpByLeadId,
-    getAllProspects
+    getAllProspects,
+    xChangerCustomerList,
+    getLeadPhotos,
+    paymentList,
+    getExchangeLeadImgs
 }

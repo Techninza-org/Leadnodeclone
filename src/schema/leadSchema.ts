@@ -40,6 +40,7 @@ export const leadSchema = `
     bidAmount: Float!
     description: String
     Member: Member!
+    lead: Lead!
     isApproved: Boolean!
     createdAt: String!
     updatedAt: String!
@@ -89,9 +90,9 @@ export const leadSchema = `
     rating: Int!
     isLeadApproved: Boolean!
     isFinancedApproved: Boolean!
-    vehicleDate: String!
-    vehicleName: String!
-    vehicleModel: String!
+    vehicleDate: String
+    vehicleName: String
+    vehicleModel: String
     callStatus: String!
     paymentStatus: String!
     LeadMember: [LeadMember]
