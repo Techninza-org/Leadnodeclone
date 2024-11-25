@@ -34,8 +34,11 @@ export const companyResolvers = {
   getCompanyDepts: async ({ companyId }: { companyId: string }) => {
     return await companyWorker.getDepts(companyId);
   },
-  getCompanyDeptFields: async ({ deptId }: { deptId: string }) => {
-    return await companyWorker.getCompanyDeptFields(deptId);
+  getCompanyDeptFields: async ({ deptId }: { deptId: string },  { user }: { user: z.infer<typeof loggedUserSchema> }) => {
+    return await companyWorker.getCompanyDeptFields(deptId, user);
+  },
+  getCompanyDeptOptFields: async (_: any, { user }: { user: z.infer<typeof loggedUserSchema> }) => {
+    return await companyWorker.getCompanyDeptOptFields(user.companyId);
   },
   createUserRole: async ({ name }: z.infer<typeof createRoleSchema>) => {
     const parsedData = createRoleSchema.safeParse({ name });
@@ -61,5 +64,8 @@ export const companyResolvers = {
     // }
 
     return await companyWorker.createNUpdateCompanyDeptForm(input, user);
+  },
+  createNUpdateCompanyDeptOptForm: async ({ input }: { input: any }, { user }: { user: z.infer<typeof loggedUserSchema> }) => {
+    return await companyWorker.createNUpdateCompanyDeptOptForm(input, user);
   },
 }

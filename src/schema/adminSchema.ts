@@ -98,6 +98,7 @@ type CreateDeptResponse {
 
 enum FieldType {
   INPUT
+  TAG
   DATE
   TEXTAREA
   IMAGE
@@ -106,6 +107,8 @@ enum FieldType {
   CHECKBOX
   DD
   DD_IMG
+  PHONE
+  CURRENCY
 }
 
 type Options {

@@ -1,6 +1,7 @@
 export const userSchema = `
   input CreateDeptFormInput { 
     companyDeptId: ID
+    companyId: ID
     name: String!
     order: Int
     subDeptFields: [CreateDeptFieldInput!]!
@@ -95,7 +96,9 @@ export const userSchema = `
     members: [Member!]
     Subscriptions: [Subscription!]
     leads: [Lead!]
+    Leads: [Lead!]
     depts: [Dept!]
+    Depts: [Dept!]
     createdAt: String!
     updatedAt: String!
   }

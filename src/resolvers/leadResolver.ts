@@ -95,14 +95,14 @@ export const leadResolvers = {
 
     leadAssignTo: async ({ companyId, leadIds, deptId, userIds, description }: z.infer<typeof leadAssignToSchema>) => {
         try {
-            const parsedData = leadAssignToSchema.safeParse({ companyId, leadIds, deptId, userIds, description });
-            if (!parsedData.success) {
-                const errors = parsedData.error.errors.map((err: ZodIssue) => ({
-                    message: err.message,
-                    path: err.path,
-                }));
-                return { user: null, errors };
-            }
+            // const parsedData = leadAssignToSchema.safeParse({ companyId, leadIds, deptId, userIds, description });
+            // if (!parsedData.success) {
+            //     const errors = parsedData.error.errors.map((err: ZodIssue) => ({
+            //         message: err.message,
+            //         path: err.path,
+            //     }));
+            //     return { user: null, errors };
+            // }
             return await leadWorker.leadAssignTo({ companyId, leadIds, deptId, userIds, description });
         } catch (error) {
             logger.error('Error Assigning lead [leadAssignTo]:', error);

@@ -26,7 +26,8 @@ type Query {
     getRootUsers: [Member]
     getDepts(companyId: String!): [Dept]
     getCompanyDepts(companyId: String!): [Dept]
-    getCompanyDeptFields(deptId: String!): [CompanyDeptForm]
+    getCompanyDeptFields(deptId: String): [CompanyDeptForm]
+    getCompanyDeptOptFields: [CompanyDeptForm]
     getLeadBids(leadId: String!): [Bid]
     getMemberLocation(memberId: String!, date: String!): MemberLocation
     getTransferedLeads(userId: String!): [Lead]
@@ -49,6 +50,8 @@ type Query {
 
   type Mutation {
     createNUpdateCompanyDeptForm(input: CreateDeptFormInput!): Dept
+    createNUpdateCompanyDeptOptForm(input: CreateDeptFormInput!): Dept
+
     updateUser(updateUserInput: UpdateUserInput!): User
     generateOTP(phone: String!): GenerateOTPResponse
     savedMemberLocation(memberId: String!, locations: [LocationInput]): MemberLocation
@@ -93,7 +96,7 @@ type Query {
 
     createLead(input: LeadInput!): LeadResponse
     
-    leadAssignTo(companyId: String!, leadIds: [String!]!, deptId: String!, userIds: [String!]!, description: String): [Lead]
+    leadAssignTo(companyId: String!, leadIds: [String!]!, deptId: String, userIds: [String!]!, description: String): [Lead]
 
     submitFeedback(nextFollowUpDate: String, deptId: String!, leadId: String!, callStatus: String!, paymentStatus: String!, feedback: [FeedbackInput!]!, urls: [String], submitType: String, formName: String): LeadResponse
 

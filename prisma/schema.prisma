@@ -20,6 +20,8 @@ model Prospect {
   zip            String?
   rating         Int?
 
+  isLeadConverted Boolean @default(false)
+
   callStatus    CallStatus    @default(PENDING)
   paymentStatus PaymentStatus @default(PENDING)
 
@@ -27,6 +29,7 @@ model Prospect {
 
   nextFollowUpDate String?
   followUps        FollowUp[]
+  dynamicFieldValues Json?
 
   companyId String?  @db.ObjectId
   Company   Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
@@ -35,6 +38,7 @@ model Prospect {
   updatedAt DateTime @updatedAt
 
   @@index([companyId])
+  @@unique([email, phone])
 }
 
 enum Status {
@@ -84,6 +88,7 @@ model Lead {
   updatedAt DateTime @updatedAt
 
   @@index([companyId])
+  @@unique([email, phone])
 }
 
 model FollowUp {
@@ -199,8 +204,8 @@ model Location {
 }
 
 model LeadFeedback {
-  id       String  @id @default(auto()) @map("_id") @db.ObjectId
-  formName String 
+  id       String @id @default(auto()) @map("_id") @db.ObjectId
+  formName String
 
   deptId String?      @db.ObjectId
   dept   CompanyDept? @relation(fields: [deptId], references: [id])
@@ -320,7 +325,8 @@ model CompanyDept {
   members          Member[]
   Bid              Bid[]
 
-  LeadFeedback LeadFeedback[]
+  LeadFeedback       LeadFeedback[]
+  CompanyDeptOptForm CompanyDeptOptForm[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -367,6 +373,9 @@ model SubDeptField {
   CompanyDeptForm   CompanyDeptForm? @relation(fields: [companyDeptFormId], references: [id])
   companyDeptFormId String?          @db.ObjectId
 
+  CompanyDeptOptForm   CompanyDeptOptForm? @relation(fields: [companyDeptOptFormId], references: [id])
+  companyDeptOptFormId String?             @db.ObjectId
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -375,6 +384,9 @@ model SubDeptField {
 
 enum FieldType {
   INPUT
+  PHONE
+  TAG
+  CURRENCY
   IMAGE
   DATE
   TEXTAREA
@@ -402,6 +414,25 @@ model CompanyDeptForm {
   updatedAt DateTime @updatedAt
 
   @@unique([companyDeptId, name])
+}
+
+model CompanyDeptOptForm {
+  id    String @id @default(auto()) @map("_id") @db.ObjectId
+  name  String
+  order Int
+
+  companyDeptId String?      @db.ObjectId
+  companyDept   CompanyDept? @relation(fields: [companyDeptId], references: [id])
+
+  companyId String  @db.ObjectId
+  company   Company @relation(fields: [companyId], references: [id])
+
+  subDeptFields SubDeptField[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([companyId, name])
 }
 
 model Plan {
@@ -478,10 +509,11 @@ model Company {
   Subscriptions Subscriptions[]
   Leads         Lead[]
 
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
-  BroadcastMessage BroadcastMessage[]
-  Prospect         Prospect[]
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  BroadcastMessage   BroadcastMessage[]
+  Prospect           Prospect[]
+  CompanyDeptOptForm CompanyDeptOptForm[]
 
   @@index([rootId])
   @@index([companyManagerId])

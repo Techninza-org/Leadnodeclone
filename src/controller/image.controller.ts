@@ -6,6 +6,9 @@ import exceljs from "exceljs";
 import csvtojson from "csvtojson";
 import { validateLeadCSV } from "../utils/validator";
 import { format, parse } from "date-fns";
+import { createLeadSchema } from "../types/lead";
+import { z } from "zod";
+import logger from "../utils/logger";
 
 export const uploadImage = (req: ExtendedRequest, res: Response) => {
     const files = req.files as Express.Multer.File[];
@@ -147,4 +150,103 @@ export const bulkUploadLead = async (req: ExtendedRequest, res: Response) => {
     } catch (error: any) {
         return res.status(500).json({ error: 'Failed to upload lead.', details: error.message });
     }
+};
+
+const validateProspect = (data: any) => {
+    try {
+        createLeadSchema.parse(data);
+        return null; // No error
+    } catch (error: any) {
+        return error.errors.map((e: any) => e.message).join(", ");
+    }
+};
+
+const createBulkProspect = async (leads: z.infer<typeof createLeadSchema>[], companyId: string) => {
+    try {
+        const errorWorkbook = new exceljs.Workbook();
+        const errorWorksheet = errorWorkbook.addWorksheet('Error Sheet');
+
+        errorWorksheet.columns = [
+            { header: 'Email', key: 'email', width: 30 },
+            { header: 'Error Message', key: 'errors', width: 50 },
+        ];
+
+        const errorRows: any[] = [];
+        const validLeads: any[] = [];
+
+        for (const lead of leads) {
+            const errors: string[] = [];
+
+            // Validation for each field (add more validation as needed)
+            // if (!lead.name) errors.push('Name is required');
+            // if (!lead.email || !/^[\w-]+(\.[\w-]+)*@([\w-]+\.)+[a-zA-Z]{2,7}$/.test(lead.email)) {
+            //     errors.push('Invalid email address');
+            // }
+            // if (!lead.phone) errors.push('Phone number is required');
+            // if (!lead.city) errors.push('City is required');
+
+            // Here you can add more custom validation logic if necessary
+
+            // console.log(errors, "errors")
+            // if (errors.length > 0) {
+            //     errorRows.push({ email: lead.email, errors: errors.join(', ') });
+            // } else {
+            // If no errors, prepare the lead for saving
+            if (lead.name.length > 3) {
+                validLeads.push({
+                    companyId,
+                    name: lead.name,
+                    email: lead.email,
+                    phone: String(lead.phone),
+                    alternatePhone: lead.alternatePhone,
+                    address: lead.address,
+                    city: String(lead.city),
+                    state: lead.state,
+                    zip: lead.zip,
+                    rating: lead.rating,
+                    callStatus: 'PENDING', // or some default value
+                    paymentStatus: 'PENDING', // or some default value
+                    dynamicFieldValues: lead.dynamicFieldValues
+                });
+            }
+
+            // }
+        }
+
+        // if (errorRows.length > 0) {
+        //     errorWorksheet.addRows(errorRows);
+        //     return { valid: false, message: 'Validation errors found', errorReport: errorWorkbook };
+        // }
+
+
+        // If no errors, save valid leads to the database
+        const createdLeads = await prisma.prospect.createMany({
+            data: validLeads,
+        });
+
+        return { valid: true, message: 'Leads created successfully', leads: {} };
+    } catch (error: any) {
+        logger.error('Error creating leads:', error);
+        throw new Error(`Error creating leads: ${error.message}`);
+    }
+};
+
+
+export const handleCreateBulkProspect = async (req: ExtendedRequest, res: Response) => {
+    const body = await req.body;
+    console.log(body, "body")
+
+    // @ts-ignore
+    const result = await createBulkProspect(body, req.user.companyId);
+    console.log(result, "result")
+
+    if (!result.valid) {
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', 'attachment; filename=error_report.csv');
+        // await result?.errorReport?.xlsx.write(res);
+        return res.end();
+    }
+
+    // Return a response with the result (assuming valid data in the future)
+    return res.status(200).json({ message: 'Leads processed successfully' });
 };

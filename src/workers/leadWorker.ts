@@ -275,6 +275,19 @@ const getCompanyProspects = async (companyId: string) => {
             },
             include: {
                 followUps: true,
+                Company: {
+                    include: {
+                        Depts: {
+                            include: {
+                                companyDeptForms: {
+                                    include: {
+                                        subDeptFields: true
+                                    }
+                                }
+                            }
+                        },
+                    }
+                }
             }
         })
         return prospects;
@@ -412,6 +425,7 @@ const createProspect = async (lead: z.infer<typeof createLeadSchema>) => {
                 rating: lead.rating,
                 callStatus: CallStatus.PENDING, // or PENDING
                 paymentStatus: PaymentStatus.PENDING, // or PENDING
+                dynamicFieldValues: lead.dynamicFieldValues
             },
         });
 
@@ -453,9 +467,12 @@ const updateLead = async (lead: z.infer<typeof createLeadSchema>) => {
 }
 
 const approveLead = async (leadId: string, status: boolean) => {
-    const prospect = await prisma.prospect.findFirst({
+    const prospect = await prisma.prospect.update({
         where: {
             id: leadId
+        },
+        data: {
+            isLeadConverted: true,
         }
     })
 
@@ -472,8 +489,14 @@ const approveLead = async (leadId: string, status: boolean) => {
 
     if (!companyOwner) throw new Error("Company Not found!")
 
-    const prospectToLead = await prisma.lead.create({
-        data: {
+    const prospectToLead = await prisma.lead.upsert({
+        where: {
+            email_phone: { 
+                email: prospect.email,
+                phone: prospect.phone
+            }
+        },
+        create: {
             name: prospect.name,
             email: prospect.email,
             phone: prospect.phone,
@@ -485,30 +508,36 @@ const approveLead = async (leadId: string, status: boolean) => {
             rating: prospect.rating,
             companyId: prospect.companyId,
             isLeadApproved: true,
-        }
-    })
-
-    await prisma.lead.update({
-        where: {
-            id: prospectToLead.id
         },
-        data: {
-            LeadMember: { 
-                connect: { 
-                    leadId_memberId: { 
-                        memberId: companyOwner.id,
-                        leadId: prospectToLead.id
-                    }
-                }
-            }
+        update : { 
+            name: prospect.name,
+            email: prospect.email,
+            phone: prospect.phone,
+            alternatePhone: prospect.alternatePhone,
+            address: prospect.address,
+            city: prospect.city,
+            state: prospect.state,
+            zip: prospect.zip,
+            rating: prospect.rating,
+            companyId: prospect.companyId,
+            isLeadApproved: true,
+            // Follow up add krna baki h abhi !!!
         }
     })
 
-    await prisma.prospect.delete({
-        where: {
-            id: prospect.id
-        }
-    })
+    await prisma.leadMember.create({
+        data: {
+            leadId: prospectToLead.id,
+            memberId: companyOwner.id,
+        },
+    });
+
+
+    // await prisma.prospect.delete({
+    //     where: {
+    //         id: prospect.id
+    //     }
+    // })
 
     return prospectToLead;
 }
@@ -541,7 +570,6 @@ const leadAssignTo = async ({ companyId, leadIds, deptId, userIds, description }
         const members = await prisma.member.findMany({
             where: {
                 companyId,
-                deptId,
                 id: {
                     in: userIds,
                 },
@@ -1011,7 +1039,7 @@ const getLeadPhotos = async (companyId: string) => {
                     some: {
                         feedback: {
                             some: {
-                                fieldType:"DD_IMG"
+                                fieldType: "DD_IMG"
                             }
                         }
                     }
@@ -1022,14 +1050,14 @@ const getLeadPhotos = async (companyId: string) => {
                     where: {
                         feedback: {
                             some: {
-                                 fieldType:"DD_IMG"
+                                fieldType: "DD_IMG"
                             }
                         }
                     },
                     include: {
                         feedback: {
                             where: {
-                                 fieldType:"DD_IMG"
+                                fieldType: "DD_IMG"
                             }
                         }
                     }
@@ -1095,12 +1123,12 @@ const paymentList = async (companyId: string) => {
             where: {
                 companyId,
                 LeadFeedback: {
-                    some: { formName: {in: ["Payments"]} }
+                    some: { formName: { in: ["Payments"] } }
                 }
             },
             select: {
                 LeadFeedback: {
-                    where: { formName: {in: ["Payments"]} },
+                    where: { formName: { in: ["Payments"] } },
                     include: {
                         member: true,
                         feedback: true

@@ -85,10 +85,11 @@ export const leadSchema = `
     alternatePhone: String
     address: String!
     city: String!
-    state: String!
+    state: String
     zip: String!
     rating: Int!
     isLeadApproved: Boolean!
+    isLeadConverted: Boolean!
     isFinancedApproved: Boolean!
     vehicleDate: String
     vehicleName: String
@@ -130,11 +131,8 @@ export const leadSchema = `
     city: String!
     state: String!
     zip: String!
-    rating: Int
-    vehicleDate: String
-    vehicleName: String
-    vehicleModel: String
     department: String
+    dynamicFieldValues: JSON
   }
 
   input FeedbackInput {
