@@ -83,10 +83,6 @@ export const leadSchema = `
     email: String!
     phone: String!
     alternatePhone: String
-    address: String!
-    city: String!
-    state: String
-    zip: String!
     rating: Int!
     isLeadApproved: Boolean!
     isLeadConverted: Boolean!
@@ -127,10 +123,7 @@ export const leadSchema = `
     email: String!
     phone: String!
     alternatePhone: String
-    address: String!
-    city: String!
-    state: String!
-    zip: String!
+    remark: String!
     department: String
     dynamicFieldValues: JSON
   }

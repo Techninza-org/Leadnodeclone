@@ -68,89 +68,90 @@ export const broadcastMessage = async (req: ExtendedRequest, res: Response) => {
     }
 };
 
-export const bulkUploadLead = async (req: ExtendedRequest, res: Response) => {
+// Not in use
+// export const bulkUploadLead = async (req: ExtendedRequest, res: Response) => {
 
-    const user = req.user;
-    if (!req.file || !req.file.buffer) {
-        return res.status(400).send({ valid: false, message: "No file uploaded" });
-    }
+//     const user = req.user;
+//     if (!req.file || !req.file.buffer) {
+//         return res.status(400).send({ valid: false, message: "No file uploaded" });
+//     }
 
-    const json = await csvtojson().fromString(req.file.buffer.toString('utf8'));
+//     const json = await csvtojson().fromString(req.file.buffer.toString('utf8'));
 
-    const csvLeads = json.map((lead: any) => {
-        let formattedVehicleDate = null;
-        if (lead["Vehicle Date"]) {
-            const parsedDate = parse(lead["Vehicle Date"], 'dd-MM-yyyy', new Date());
-            formattedVehicleDate = format(parsedDate, 'yyyy-MM-dd');
-        }
+//     const csvLeads = json.map((lead: any) => {
+//         let formattedVehicleDate = null;
+//         if (lead["Vehicle Date"]) {
+//             const parsedDate = parse(lead["Vehicle Date"], 'dd-MM-yyyy', new Date());
+//             formattedVehicleDate = format(parsedDate, 'yyyy-MM-dd');
+//         }
 
-        return {
-            name: lead["Name"],
-            email: lead["Email"],
-            phone: lead["Phone"],
-            address: lead["Address"],
-            city: lead["City"],
-            zip: lead["Zip"],
-            state: lead["State"],
-            vehicleName: lead["Vehicle Name"],
-            vehicleModel: lead["Vehicle Model"],
-            vehicleDate: formattedVehicleDate ? `${formattedVehicleDate}T00:00:00.000Z` : null,
-            callStatus: lead["Call Status"] || "PENDING",
-            paymentStatus: lead["Payment Status"] || "PENDING",
-            companyId: user?.companyId,
-            isFinancedApproved: false,
-        };
-    });
+//         return {
+//             name: lead["Name"],
+//             email: lead["Email"],
+//             phone: lead["Phone"],
+//             address: lead["Address"],
+//             city: lead["City"],
+//             zip: lead["Zip"],
+//             state: lead["State"],
+//             vehicleName: lead["Vehicle Name"],
+//             vehicleModel: lead["Vehicle Model"],
+//             vehicleDate: formattedVehicleDate ? `${formattedVehicleDate}T00:00:00.000Z` : null,
+//             callStatus: lead["Call Status"] || "PENDING",
+//             paymentStatus: lead["Payment Status"] || "PENDING",
+//             companyId: user?.companyId,
+//             isFinancedApproved: false,
+//         };
+//     });
 
-    const leads = csvLeads.filter((lead: any) => lead.email && lead.phone);
+//     const leads = csvLeads.filter((lead: any) => lead.email && lead.phone);
 
-    if (leads.length < 1) {
-        return res.status(200).send({ valid: false, message: "empty payload" });
-    }
+//     if (leads.length < 1) {
+//         return res.status(200).send({ valid: false, message: "empty payload" });
+//     }
 
-    try {
-        const errorWorkbook = new exceljs.Workbook();
-        const errorWorksheet = errorWorkbook.addWorksheet('Error Sheet');
+//     try {
+//         const errorWorkbook = new exceljs.Workbook();
+//         const errorWorksheet = errorWorkbook.addWorksheet('Error Sheet');
 
-        errorWorksheet.columns = [
-            { header: 'Email', key: 'email', width: 20 },
-            { header: 'Phone', key: 'phone', width: 20 },
-            { header: 'Error Message', key: 'errors', width: 40 },
-        ];
+//         errorWorksheet.columns = [
+//             { header: 'Email', key: 'email', width: 20 },
+//             { header: 'Phone', key: 'phone', width: 20 },
+//             { header: 'Error Message', key: 'errors', width: 40 },
+//         ];
 
-        const errorRows: any = [];
-        leads.forEach((lead) => {
-            const errors: string[] = [];
-            Object.entries(lead).forEach(([fieldName, value]) => {
-                const error = validateLeadCSV(value, fieldName);
-                if (error) {
-                    errors.push(error);
-                }
-            });
+//         const errorRows: any = [];
+//         leads.forEach((lead) => {
+//             const errors: string[] = [];
+//             Object.entries(lead).forEach(([fieldName, value]) => {
+//                 const error = validateLeadCSV(value, fieldName);
+//                 if (error) {
+//                     errors.push(error);
+//                 }
+//             });
 
-            if (errors.length > 0) {
-                errorRows.push({ email: lead.email, phone: lead.phone, errors: errors.join(", ") });
-            }
-        });
+//             if (errors.length > 0) {
+//                 errorRows.push({ email: lead.email, phone: lead.phone, errors: errors.join(", ") });
+//             }
+//         });
 
-        if (errorRows.length > 0) {
-            errorWorksheet.addRows(errorRows);
+//         if (errorRows.length > 0) {
+//             errorWorksheet.addRows(errorRows);
 
-            res.setHeader('Content-Type', 'text/csv');
-            res.setHeader('Content-Disposition', 'attachment; filename=error_report.csv');
+//             res.setHeader('Content-Type', 'text/csv');
+//             res.setHeader('Content-Disposition', 'attachment; filename=error_report.csv');
 
-            await errorWorkbook.csv.write(res);
-            return res.end();
-        }
+//             await errorWorkbook.csv.write(res);
+//             return res.end();
+//         }
 
-        const createdLeads = await prisma.lead.createMany({ data: leads });
+//         const createdLeads = await prisma.lead.createMany({ data: leads });
 
-        return res.status(200).json({ valid: true, message: "Leads uploaded successfully", createdLeads });
+//         return res.status(200).json({ valid: true, message: "Leads uploaded successfully", createdLeads });
 
-    } catch (error: any) {
-        return res.status(500).json({ error: 'Failed to upload lead.', details: error.message });
-    }
-};
+//     } catch (error: any) {
+//         return res.status(500).json({ error: 'Failed to upload lead.', details: error.message });
+//     }
+// };
 
 const validateProspect = (data: any) => {
     try {
@@ -161,7 +162,7 @@ const validateProspect = (data: any) => {
     }
 };
 
-const createBulkProspect = async (leads: z.infer<typeof createLeadSchema>[], companyId: string) => {
+const createBulkProspect = async (leads: z.infer<typeof createLeadSchema>[], companyId: string, user: any) => {
     try {
         const errorWorkbook = new exceljs.Workbook();
         const errorWorksheet = errorWorkbook.addWorksheet('Error Sheet');
@@ -177,50 +178,103 @@ const createBulkProspect = async (leads: z.infer<typeof createLeadSchema>[], com
         for (const lead of leads) {
             const errors: string[] = [];
 
-            // Validation for each field (add more validation as needed)
-            // if (!lead.name) errors.push('Name is required');
-            // if (!lead.email || !/^[\w-]+(\.[\w-]+)*@([\w-]+\.)+[a-zA-Z]{2,7}$/.test(lead.email)) {
-            //     errors.push('Invalid email address');
-            // }
-            // if (!lead.phone) errors.push('Phone number is required');
-            // if (!lead.city) errors.push('City is required');
-
-            // Here you can add more custom validation logic if necessary
-
-            // console.log(errors, "errors")
-            // if (errors.length > 0) {
-            //     errorRows.push({ email: lead.email, errors: errors.join(', ') });
-            // } else {
-            // If no errors, prepare the lead for saving
-            if (lead.name.length > 3) {
-                validLeads.push({
-                    companyId,
-                    name: lead.name,
-                    email: lead.email,
-                    phone: String(lead.phone),
-                    alternatePhone: lead.alternatePhone,
-                    address: lead.address,
-                    city: String(lead.city),
-                    state: lead.state,
-                    zip: lead.zip,
-                    rating: lead.rating,
-                    callStatus: 'PENDING', // or some default value
-                    paymentStatus: 'PENDING', // or some default value
-                    dynamicFieldValues: lead.dynamicFieldValues
-                });
+            if (!lead.name) errors.push('Name is required');
+            if (!lead.email) {
+                errors.push('Invalid email address');
             }
+            if (!lead.phone) errors.push('Phone number is required');
 
-            // }
+            if (errors.length > 0) {
+                errorRows.push({ email: lead.email, errors: errors.join(', ') });
+            } else {
+                console.log("aarha h kya yaha pr +=======")
+                if (lead.name.length > 3) {
+                    validLeads.push({
+                        companyId,
+                        name: lead.name,
+                        email: lead.email,
+                        phone: String(lead.phone),
+                        alternatePhone: String(lead.alternatePhone),
+                        rating: lead.rating,
+                        callStatus: 'PENDING',
+                        paymentStatus: 'PENDING',
+                        dynamicFieldValues: lead.dynamicFieldValues,
+                        remark: lead.remark,
+                        via: `CSV: ${user.name}`,
+                    });
+                }
+
+            }
         }
 
-        // if (errorRows.length > 0) {
-        //     errorWorksheet.addRows(errorRows);
-        //     return { valid: false, message: 'Validation errors found', errorReport: errorWorkbook };
-        // }
+        if (errorRows.length > 0) {
+            errorRows.forEach((row) => {
+                errorWorksheet.addRow(row);
+            });
+            return { valid: false, message: 'Validation errors found', errorReport: errorWorkbook };
+        }
 
 
-        // If no errors, save valid leads to the database
         const createdLeads = await prisma.prospect.createMany({
+            data: validLeads,
+        });
+
+        return { valid: true, message: 'Leads created successfully', leads: {} };
+    } catch (error: any) {
+        logger.error('Error creating leads:', error);
+        throw new Error(`Error creating leads: ${error.message}`);
+    }
+};
+
+const createBulkLead = async (leads: z.infer<typeof createLeadSchema>[], companyId: string, user: any) => {
+    try {
+        const errorWorkbook = new exceljs.Workbook();
+        const errorWorksheet = errorWorkbook.addWorksheet('Error Sheet');
+
+        errorWorksheet.columns = [
+            { header: 'Email', key: 'email', width: 30 },
+            { header: 'Error Message', key: 'errors', width: 50 },
+        ];
+
+        const errorRows: any[] = [];
+        const validLeads: any[] = [];
+
+        for (const lead of leads) {
+            const errors: string[] = [];
+
+            if (!lead.name) errors.push('Name is required');
+            if (!lead.email) {
+                errors.push('Invalid email address');
+            }
+            if (!lead.phone) errors.push('Phone number is required');
+
+            if (errors.length > 0) {
+                errorRows.push({ email: lead.email, errors: errors.join(', ') });
+            } else {
+                if (lead.name.length > 3) {
+                    validLeads.push({
+                        companyId,
+                        name: lead.name,
+                        email: lead.email,
+                        phone: String(lead.phone),
+                        alternatePhone: String(lead.alternatePhone),
+                        rating: lead.rating,
+                        callStatus: 'PENDING',
+                        paymentStatus: 'PENDING',
+                        dynamicFieldValues: lead.dynamicFieldValues,
+                        remark: lead.remark,
+                        via: `CSV: ${user.name}`,
+                    });
+                }
+            }
+        }
+
+        if (errorRows.length > 0) {
+            errorWorksheet.addRows(errorRows);
+            return { valid: false, message: 'Validation errors found', errorReport: errorWorkbook };
+        }
+
+        const createdLeads = await prisma.lead.createMany({
             data: validLeads,
         });
 
@@ -234,16 +288,31 @@ const createBulkProspect = async (leads: z.infer<typeof createLeadSchema>[], com
 
 export const handleCreateBulkProspect = async (req: ExtendedRequest, res: Response) => {
     const body = await req.body;
-    console.log(body, "body")
 
     // @ts-ignore
-    const result = await createBulkProspect(body, req.user.companyId);
-    console.log(result, "result")
+    const result = await createBulkProspect(body, req.user.companyId, req.user);
 
     if (!result.valid) {
         res.setHeader('Content-Type', 'text/csv');
         res.setHeader('Content-Disposition', 'attachment; filename=error_report.csv');
-        // await result?.errorReport?.xlsx.write(res);
+        await result?.errorReport?.xlsx.write(res);
+        return res.end();
+    }
+
+    // Return a response with the result (assuming valid data in the future)
+    return res.status(200).json({ message: 'Leads processed successfully' });
+};
+
+export const handleCreateBulkLead = async (req: ExtendedRequest, res: Response) => {
+    const body = await req.body;
+
+    // @ts-ignore
+    const result = await createBulkLead(body, req.user.companyId, req.user);
+
+    if (!result.valid) {
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', 'attachment; filename=error_report.csv');
+        await result?.errorReport?.xlsx.write(res);
         return res.end();
     }
 

@@ -7,7 +7,7 @@ export const createAdminDeptSchema = z.object({
     order: z.number().int().positive(),
     deptFields: z.array(z.object({
         name: z.string().min(3, "Field Name must be at least 3 characters long").max(30),
-        fieldType: z.enum(["INPUT", "SELECT", "RADIO", "CHECKBOX", "IMAGE", "TEXTAREA", "DATE"]),
+        fieldType: z.enum(["INPUT", "SELECT", "RADIO", "CHECKBOX", "IMAGE", "TEXTAREA", "DATE", "DATETIME"]),
         value: z.string().optional(),
         order: z.number().int().positive(),
         imgLimit: z.number().int().positive().optional(),
@@ -17,6 +17,7 @@ export const createAdminDeptSchema = z.object({
         options: z.array(z.object({
             label: z.string().min(2, "Option Label must be at least 3 characters long").max(30),
             value: z.string().min(2, "Option Value must be at least 3 characters long").max(30),
+            colorCode: z.string().optional(),
         })).optional().default([]),
     })),
 });

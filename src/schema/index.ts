@@ -95,6 +95,7 @@ type Query {
     updateCompanySubscription(companyId: String!, planId: String!, allowedDeptsIds: [String!], startDate: String!, endDate: String!): Company
 
     createLead(input: LeadInput!): LeadResponse
+    createProspect(input: LeadInput!): LeadResponse
     
     leadAssignTo(companyId: String!, leadIds: [String!]!, deptId: String, userIds: [String!]!, description: String): [Lead]
 

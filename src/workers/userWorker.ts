@@ -132,6 +132,7 @@ const createUser = async (user: z.infer<typeof signupSchema>) => {
                                     options: (subField.fieldType === FieldType.DD ? subField.options : (subField.options as any).map((option: any) => ({
                                         label: option.label,
                                         value: option.value,
+                                        colorCode: option.colorCode
                                     }))) ?? [],
                                 })),
                             },

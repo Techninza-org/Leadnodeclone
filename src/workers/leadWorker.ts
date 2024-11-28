@@ -371,10 +371,10 @@ const getTransferedLeads = async (userId: string) => {
     }
 }
 
-const createProspect = async (lead: z.infer<typeof createLeadSchema>) => {
+const createProspect = async (prspct: z.infer<typeof createLeadSchema>, userName: string) => {
     try {
         const company = await prisma.company.findFirst({
-            where: { id: lead.companyId },
+            where: { id: prspct.companyId },
         });
 
         if (!company) {
@@ -384,8 +384,8 @@ const createProspect = async (lead: z.infer<typeof createLeadSchema>) => {
         const isProspectExists = await prisma.prospect.findFirst({
             where: {
                 OR: [
-                    { email: lead.email },
-                    { phone: lead.phone },
+                    { email: prspct.email },
+                    { phone: prspct.phone },
                 ]
             },
         });
@@ -397,7 +397,7 @@ const createProspect = async (lead: z.infer<typeof createLeadSchema>) => {
         const companyManager = await prisma.member.findFirst({
             where: {
                 id: company.companyManagerId,
-                companyId: lead.companyId,
+                companyId: prspct.companyId,
             },
         });
 
@@ -405,27 +405,25 @@ const createProspect = async (lead: z.infer<typeof createLeadSchema>) => {
             throw new Error("Company manager not found");
         }
 
-        const formattedVehicleDate = lead.vehicleDate
-            ? formatISO(parse(lead.vehicleDate, 'dd-MM-yyyy', new Date()))
+        const formattedVehicleDate = prspct.vehicleDate
+            ? formatISO(parse(prspct.vehicleDate, 'dd-MM-yyyy', new Date()))
             : null;
 
         const newLead = await prisma.prospect.create({
             data: {
                 Company: {
-                    connect: { id: lead.companyId },
+                    connect: { id: prspct.companyId },
                 },
-                name: lead.name,
-                email: lead.email,
-                phone: lead.phone,
-                alternatePhone: lead.alternatePhone,
-                address: lead.address,
-                city: lead.city,
-                state: lead.state,
-                zip: lead.zip,
-                rating: lead.rating,
+                name: prspct.name,
+                email: prspct.email,
+                phone: prspct.phone,
+                alternatePhone: prspct.alternatePhone,
+                rating: prspct.rating,
                 callStatus: CallStatus.PENDING, // or PENDING
                 paymentStatus: PaymentStatus.PENDING, // or PENDING
-                dynamicFieldValues: lead.dynamicFieldValues
+                remark: prspct.remark,
+                dynamicFieldValues: prspct.dynamicFieldValues,
+                via: `API: ${userName}`
             },
         });
 
@@ -436,6 +434,30 @@ const createProspect = async (lead: z.infer<typeof createLeadSchema>) => {
     }
 };
 
+const createLead = async (lead: z.infer<typeof createLeadSchema>, userName: String) => {
+    try {
+        const newLead = await prisma.lead.create({
+            data: {
+                name: lead.name,
+                email: lead.email,
+                phone: lead.phone,
+                alternatePhone: lead.alternatePhone,
+                rating: lead.rating,
+                vehicleDate: formatISO(parse(lead.vehicleDate || "", 'dd/MM/yyyy', new Date())),
+                vehicleName: lead.vehicleName,
+                vehicleModel: lead.vehicleModel,
+                nextFollowUpDate: lead.nextFollowUpDate,
+                remark: lead.remark,
+                via: `API: ${userName}`
+            },
+        });
+
+        return newLead;
+    } catch (error: any) {
+        logger.error('Error updating Lead:', error);
+        throw new Error(`Error updating Lead: ${error.message}`);
+    }
+}
 const updateLead = async (lead: z.infer<typeof createLeadSchema>) => {
     try {
         const updatedLead = await prisma.lead.update({
@@ -447,10 +469,6 @@ const updateLead = async (lead: z.infer<typeof createLeadSchema>) => {
                 email: lead.email,
                 phone: lead.phone,
                 alternatePhone: lead.alternatePhone,
-                address: lead.address,
-                city: lead.city,
-                state: lead.state,
-                zip: lead.zip,
                 rating: lead.rating,
                 vehicleDate: formatISO(parse(lead.vehicleDate || "", 'dd/MM/yyyy', new Date())),
                 vehicleName: lead.vehicleName,
@@ -501,23 +519,17 @@ const approveLead = async (leadId: string, status: boolean) => {
             email: prospect.email,
             phone: prospect.phone,
             alternatePhone: prospect.alternatePhone,
-            address: prospect.address,
-            city: prospect.city,
-            state: prospect.state,
-            zip: prospect.zip,
             rating: prospect.rating,
             companyId: prospect.companyId,
             isLeadApproved: true,
+            remark: prospect.remark,
+            via: `API`
         },
         update : { 
             name: prospect.name,
             email: prospect.email,
             phone: prospect.phone,
             alternatePhone: prospect.alternatePhone,
-            address: prospect.address,
-            city: prospect.city,
-            state: prospect.state,
-            zip: prospect.zip,
             rating: prospect.rating,
             companyId: prospect.companyId,
             isLeadApproved: true,
@@ -1151,6 +1163,7 @@ export default {
     getCompanyLeadById,
     getAssignedLeads,
     createProspect,
+    createLead,
     updateLead,
     approveLead,
     leadAssignTo,

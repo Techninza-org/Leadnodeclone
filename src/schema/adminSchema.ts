@@ -100,6 +100,7 @@ enum FieldType {
   INPUT
   TAG
   DATE
+  DATETIME
   TEXTAREA
   IMAGE
   SELECT
@@ -115,6 +116,7 @@ type Options {
   name: String!
   label: String
   value: JSON
+  colorCode: String
   type: FieldType!
 }
   

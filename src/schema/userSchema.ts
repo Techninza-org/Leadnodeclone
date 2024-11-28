@@ -3,6 +3,7 @@ export const userSchema = `
     companyDeptId: ID
     companyId: ID
     name: String!
+    deptName: String
     order: Int
     subDeptFields: [CreateDeptFieldInput!]!
   }

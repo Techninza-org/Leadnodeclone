@@ -8,10 +8,7 @@ export const createLeadSchema = z.object({
     email: z.string().email("Invalid email address."),
     phone: z.string().min(10, "Phone number must be at least 10 characters long."),
     alternatePhone: z.string().optional(),
-    address: z.string().min(10, "Address must be at least 10 characters long."),
-    city: z.string().min(3, "City must be at least 3 characters long."),
-    state: z.string().min(3, "State must be at least 3 characters long."),
-    zip: z.string().min(6, "Zip code must be at least 6 characters long."),
+    remark: z.string().min(3, "Remark must be at least 3 characters long."),
     rating: z.number().int().optional(),
 
     vehicleDate: z.string().optional(),

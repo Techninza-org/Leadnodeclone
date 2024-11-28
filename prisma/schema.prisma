@@ -14,11 +14,10 @@ model Prospect {
   email          String
   phone          String
   alternatePhone String?
-  address        String?
-  city           String?
-  state          String?
-  zip            String?
   rating         Int?
+  remark         String
+
+  via String
 
   isLeadConverted Boolean @default(false)
 
@@ -27,8 +26,8 @@ model Prospect {
 
   LeadMember LeadMember[]
 
-  nextFollowUpDate String?
-  followUps        FollowUp[]
+  nextFollowUpDate   String?
+  followUps          ProspectFollowUp[]
   dynamicFieldValues Json?
 
   companyId String?  @db.ObjectId
@@ -37,8 +36,24 @@ model Prospect {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([companyId])
   @@unique([email, phone])
+  @@index([companyId])
+}
+
+model ProspectFollowUp {
+  id                 String  @id @default(auto()) @map("_id") @db.ObjectId
+  followUpBy         String
+  nextFollowUpDate   String
+  remark             String
+  customerResponse   String?
+  rating             String?
+  dynamicFieldValues Json?
+
+  Prospect   Prospect? @relation(fields: [prospectId], references: [id])
+  prospectId String?   @db.ObjectId
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 enum Status {
@@ -53,15 +68,14 @@ model Lead {
   email          String
   phone          String
   alternatePhone String?
-  address        String?
-  city           String?
-  state          String?
-  zip            String?
   rating         Int?
+  remark         String
 
   vehicleDate  DateTime?
   vehicleName  String?
   vehicleModel String?
+
+  via String
 
   isLeadApproved Boolean @default(false)
   status         Status  @default(OPEN)
@@ -77,8 +91,9 @@ model Lead {
 
   isFinancedApproved Boolean @default(false)
 
-  nextFollowUpDate String?
-  followUps        FollowUp[]
+  nextFollowUpDate   String?
+  followUps          LeadFollowUp[]
+  dynamicFieldValues Json?
 
   companyId  String?  @db.ObjectId
   Company    Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
@@ -87,28 +102,24 @@ model Lead {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([companyId])
   @@unique([email, phone])
+  @@index([companyId])
 }
 
-model FollowUp {
-  id String @id @default(auto()) @map("_id") @db.ObjectId
-
-  leadId String @db.ObjectId
-  lead   Lead   @relation(fields: [leadId], references: [id])
-
-  followUpById String @db.ObjectId
-  followUpBy   Member @relation(fields: [followUpById], references: [id])
-
+model LeadFollowUp {
+  id               String  @id @default(auto()) @map("_id") @db.ObjectId
+  leadId           String  @db.ObjectId
+  lead             Lead    @relation(fields: [leadId], references: [id])
+  followUpBy       String
   nextFollowUpDate String
   remark           String
   customerResponse String?
   rating           String?
 
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-  Prospect   Prospect? @relation(fields: [prospectId], references: [id])
-  prospectId String?   @db.ObjectId
+  dynamicFieldValues Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Bid {
@@ -331,7 +342,7 @@ model CompanyDept {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([companyId])
+  @@unique([companyId])
   @@index([companyId, name])
 }
 
@@ -389,6 +400,7 @@ enum FieldType {
   CURRENCY
   IMAGE
   DATE
+  DATETIME
   TEXTAREA
   RADIO
   CHECKBOX
@@ -556,7 +568,6 @@ model Member {
   LeadFeedback   LeadFeedback[]
   LeadTransferTo LeadTransferTo[] @relation("TransferTo")
   LeadTransferBy LeadTransferTo[] @relation("TransferBy")
-  FollowUp       FollowUp[]
 
   sessionToken String?
 

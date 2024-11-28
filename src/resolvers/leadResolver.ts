@@ -65,7 +65,7 @@ export const leadResolvers = {
             throw new Error('Error fetching lead');
         }
     },
-    createLead: async ({ input }: { input: z.infer<typeof createLeadSchema> }) => {
+    createLead: async ({ input }: { input: z.infer<typeof createLeadSchema> }, { user }: { user: z.infer<typeof loggedUserSchema> }) => {
         try {
             const parsedData = createLeadSchema.safeParse(input);
 
@@ -77,7 +77,26 @@ export const leadResolvers = {
                 return { user: null, errors };
             }
 
-            return await leadWorker.createProspect(parsedData.data);
+            return await leadWorker.createLead(parsedData.data, user.name);
+        } catch (error) {
+            logger.error('Error Creating lead:', error);
+            throw new Error('Error Creating lead');
+        }
+    },
+    createProspect: async ({ input }: { input: z.infer<typeof createLeadSchema> }, { user }: { user: z.infer<typeof loggedUserSchema> }) => {
+        try {
+            const parsedData = createLeadSchema.safeParse(input);
+            console.log(input, "input")
+
+            if (!parsedData.success) {
+                const errors = parsedData.error.errors.map((err: ZodIssue) => ({
+                    message: err.message,
+                    path: err.path,
+                }));
+                return { user: null, errors };
+            }
+            
+            return await leadWorker.createProspect(parsedData.data, user.name);
         } catch (error) {
             logger.error('Error Creating lead:', error);
             throw new Error('Error Creating lead');

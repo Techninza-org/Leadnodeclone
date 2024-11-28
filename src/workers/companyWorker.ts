@@ -8,31 +8,13 @@ import { loggedUserSchema } from '../types/user';
 const getCompanyDeptFields = async (deptId: string, ctxUser: z.infer<typeof loggedUserSchema>) => {
     try {
 
-        console.log("GetCompanyDeptFields", )
         // For Root Only
-        if (ctxUser.role.name === "Root") {
-            const deptFieldsRoot = await prisma.companyDeptForm.findMany({
-                where: {
-                    companyDept: {
-                        companyId: ctxUser.companyId
-                    }
-                },
-                include: {
-                    subDeptFields: true
-                },
-                orderBy: {
-                    order: 'desc',
-                }
-            });
-            console.log(JSON.stringify(deptFieldsRoot, null, 2), "JSON.stringify(deptFieldsRoot, null, 2)")
-            return deptFieldsRoot;
-        }
-
-
-        // For EMP only
-        const deptFields = await prisma.companyDeptForm.findMany({
+        // if (ctxUser.role.name === "Root") {
+        const deptFieldsRoot = await prisma.companyDeptForm.findMany({
             where: {
-                companyDeptId: deptId
+                companyDept: {
+                    companyId: ctxUser.companyId
+                }
             },
             include: {
                 subDeptFields: true
@@ -41,7 +23,23 @@ const getCompanyDeptFields = async (deptId: string, ctxUser: z.infer<typeof logg
                 order: 'desc',
             }
         });
-        return deptFields;
+        return deptFieldsRoot;
+        // }
+
+
+        // For EMP only
+        // const deptFields = await prisma.companyDeptForm.findMany({
+        //     where: {
+        //         companyDeptId: deptId
+        //     },
+        //     include: {
+        //         subDeptFields: true
+        //     },
+        //     orderBy: {
+        //         order: 'desc',
+        //     }
+        // });
+        // return deptFields;
     } catch (error: any) {
         logger.log(error.message, 'error')
         throw new Error('Error fetching departments');
@@ -156,6 +154,39 @@ const createRole = async (role: z.infer<typeof createRoleSchema>) => {
 
 const createNUpdateCompanyDeptForm = async (deptForm: any, ctxUser: z.infer<typeof loggedUserSchema>) => {
     try {
+
+        const upsertDept = await prisma.companyDept.upsert({
+            where: {
+              companyId: ctxUser.companyId,
+            },
+            create: {
+              name: deptForm.deptName,
+              deptManagerId: ctxUser.id,
+              companyId: ctxUser.companyId,
+              companyDeptForms: {
+                connectOrCreate: {
+                  where: {
+                    companyDeptId_name: {
+                      companyDeptId: deptForm.companyDeptId,
+                      name: deptForm.name,
+                    },
+                  },
+                  create: {
+                    name: deptForm.name,
+                    order: deptForm.order,
+                    subDeptFields: {
+                      create: []
+                    },
+                  },
+                },
+              },
+            },
+            update: {},
+          });
+          
+
+        console.log(upsertDept, 'upsertDept')
+
         const newDept = await prisma.companyDeptForm.upsert({
             where: {
                 companyDeptId_name: {
@@ -261,8 +292,6 @@ const createNUpdateCompanyDeptOptForm = async (deptForm: any, ctxUser: z.infer<t
                 subDeptFields: true
             }
         });
-        console.log(JSON.stringify(newDept, null, 2), "newDept")
-
         return newDept;
     } catch (error: any) {
         logger.error('Error creating department:', error);
