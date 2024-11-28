@@ -68,21 +68,21 @@ const getCompanyDeptOptFields = async (companyId: string) => {
 
 const getFollowUps = async (companyId: string) => {
     try {
-        const followUps = await prisma.followUp.findMany({
-            where: {
-                lead: {
-                    companyId
-                }
-            },
-            include: {
-                followUpBy: {
-                    include: {
-                        role: true
-                    }
-                },
-            }
-        });
-        return followUps;
+        // const followUps = await prisma.followUp.findMany({
+        //     where: {
+        //         lead: {
+        //             companyId
+        //         }
+        //     },
+        //     include: {
+        //         followUpBy: {
+        //             include: {
+        //                 role: true
+        //             }
+        //         },
+        //     }
+        // });
+        // return followUps;
     } catch (error: any) {
         logger.log(error.message, 'error')
         throw new Error('Error fetching departments');

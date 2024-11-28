@@ -977,16 +977,16 @@ const updateLeadFollowUpDate = async (leadId: string, nextFollowUpDate: string, 
 
 const getFollowUpByLeadId = async (leadId: string) => {
     try {
-        const followUps = await prisma.followUp.findMany({
-            where: {
-                leadId,
-            },
-            include: {
-                followUpBy: true,
-            },
-        });
+        // const followUps = await prisma.followUp.findMany({
+        //     where: {
+        //         leadId,
+        //     },
+        //     include: {
+        //         followUpBy: true,
+        //     },
+        // });
 
-        return followUps;
+        // return followUps;
     } catch (error: any) {
         logger.error('Error fetching followups:', error);
         throw new Error(`Error fetching followups: ${error.message}`);
