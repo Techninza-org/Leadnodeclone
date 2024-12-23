@@ -944,7 +944,7 @@ const updateLeadFinanceStatus = async (leadId: string, financeStatus: boolean, u
     }
 }
 
-const updateLeadFollowUpDate = async (leadId: string, nextFollowUpDate: string, remark: string, customerResponse: string, rating: string, memberId: string) => {
+const updateLeadFollowUpDate = async (leadId: string, nextFollowUpDate: string, remark: string, customerResponse: string, rating: string, memberName: string) => {
     try {
         const updatedLead = await prisma.lead.update({
             where: {
@@ -955,11 +955,7 @@ const updateLeadFollowUpDate = async (leadId: string, nextFollowUpDate: string, 
                 followUps: {
                     create: {
                         nextFollowUpDate: nextFollowUpDate,
-                        followUpBy: {
-                            connect: {
-                                id: memberId,
-                            },
-                        },
+                        followUpBy: memberName,
                         remark,
                         customerResponse,
                         rating,
