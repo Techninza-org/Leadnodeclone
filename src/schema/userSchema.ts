@@ -72,7 +72,7 @@ export const userSchema = `
     role: Role!
     sessionToken: String
     token: String!
-    companyId: String!
+    companyId: String
   }
 
   type Member {
@@ -82,8 +82,8 @@ export const userSchema = `
     phone: String!
     dept: Dept!
     role: Role
-    companyId: String!
-    Company: Company!
+    companyId: String
+    Company: Company
     createdAt: String!
     updatedAt: String!
   }
