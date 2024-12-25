@@ -14,12 +14,21 @@ type SubDeptField {
 
   createdAt: String!
   updatedAt: String!
-
 }
+
+type Category {
+  id: ID!
+  name: String!
+  createdAt: String!
+  updatedAt: String!
+}
+
 type CompanyDeptForm {
   id: ID!
   name: String!
-  subDeptFields: [SubDeptField!]
+  dependentOnId: String
+  fields: [SubDeptField!]
+  category: Category!
   createdAt: String!
   updatedAt: String!
 }
@@ -28,8 +37,8 @@ type Dept {
   id: ID!
   name: String!
   members: [Member!]
-  companyDeptForms: [CompanyDeptForm!]
-  deptFields: [CompanyDeptForm!]
+  companyForms: [CompanyDeptForm!]
+  adminDeptForm: [CompanyDeptForm!]
   createdAt: String!
   updatedAt: String!
 }

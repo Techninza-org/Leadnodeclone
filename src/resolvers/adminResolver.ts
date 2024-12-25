@@ -26,7 +26,11 @@ export const adminResolvers = {
   getDeptsAdmin: async () => {
     return await adminWorker.getDeptsAdmin();
   },
-  getDeptWFields: async () => {
+  getDeptWFields: async (_: any, {user}: any) => {
+    if(user.role.name !== "Admin") {
+      throw new Error("You are not authorized to perform this action");
+    }
+
     return await adminWorker.getDeptWFields();
   },
   getRootUsers: async () => {

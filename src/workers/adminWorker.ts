@@ -9,13 +9,10 @@ import { createOptionValues } from '../utils/admin-worker-utils';
 export const getDeptWFields = async () => {
     const dept = await prisma.adminDept.findMany({
         include: {
-            deptFields: {
+            adminDeptForm: {
                 include: {
-                    subDeptFields: true
+                    formFields: true
                 },
-                orderBy: {
-                    order: 'desc',
-                }
             },
         },
     });
@@ -67,7 +64,13 @@ export const getRootUsers = async () => {
 
 export const getRoles = async () => {
     try {
-        const roles = await prisma.role.findMany();
+        const roles = await prisma.role.findMany({
+            where: { 
+                name: { 
+                    notIn: ['Root', 'Admin'] 
+                }
+            }
+        });
         return roles;
     } catch (error: any) {
         throw new Error('Error fetching roles');
@@ -78,9 +81,9 @@ export const getDeptsAdmin = async () => {
     try {
         const depts = await prisma.adminDept.findMany({
             include: {
-                deptFields: {
+                adminDeptForm: {
                     include: {
-                        subDeptFields: true
+                        formFields: true
                     }
                 }
             }
@@ -124,7 +127,9 @@ const createDept = async (dept: z.infer<typeof createAdminDeptSchema>) => {
             fieldType: field.fieldType,
             value: field.value,
             imgLimit: field.imgLimit,
-            options: field.options,
+            options: {
+                create: field.options
+            },
             ddOptionId: field.ddOptionId,
             order: field.order,
             isDisabled: field.isDisabled,
@@ -140,16 +145,16 @@ const createDept = async (dept: z.infer<typeof createAdminDeptSchema>) => {
                 name: dept.name,
             },
             include: {
-                deptFields: {
+                adminDeptForm: {
                     include: {
-                        subDeptFields: true
+                        formFields: true
                     }
                 },
             }
         });
 
 
-        const existingDeptField = await prisma.deptField.findFirst({
+        const existingDeptField = await prisma.adminDeptForm.findFirst({
             where: {
                 name: dept.subDeptName,
                 adminDeptId: newDept.id
@@ -158,29 +163,30 @@ const createDept = async (dept: z.infer<typeof createAdminDeptSchema>) => {
 
 
         if (existingDeptField) {
-            await prisma.subDeptField.deleteMany({
-                where: {
-                    deptFieldId: existingDeptField.id
-                }
-            });
+            // Need to update : Not able to understand now [07-12-24]
+            // await prisma.subDeptField.deleteMany({
+            //     where: {
+            //         deptFieldId: existingDeptField.id
+            //     }
+            // });
 
-            const updatedSubDept = await prisma.deptField.update({
+            const updatedSubDept = await prisma.adminDeptForm.update({
                 where: {
                     id: existingDeptField.id,
                 },
                 data: {
-                    subDeptFields: {
+                    formFields: {
                         create: fieldsToCreate
                     }
                 }
             });
         } else {
-            const createdSubDept = await prisma.deptField.create({
+            const createdSubDept = await prisma.adminDeptForm.create({
                 data: {
                     name: dept.subDeptName,
-                    order: dept.order,
                     adminDeptId: newDept.id,
-                    subDeptFields: {
+                    deptOrder: dept.order,
+                    formFields: {
                         create: fieldsToCreate
                     }
                 }
@@ -195,272 +201,271 @@ const createDept = async (dept: z.infer<typeof createAdminDeptSchema>) => {
 };
 
 const createBroadcastForm = async (form: any) => {
-    try {
-        const broadcastForm = await prisma.broadcastForm.create({
-            data: {
-                name: form.name,
-                order: form.order,
-                subCategories: {
-                    create: form.subCategories.map((subCategory: any) => ({
-                        name: subCategory.name,
-                        order: subCategory.order,
-                        options: {
-                            create: subCategory.options.map((option: any) => ({
-                                name: option.name,
-                                type: option.type,
-                                order: option.order,
-                                values: {
-                                    create: createOptionValues(option.values)
-                                }
-                            }))
-                        }
-                    }))
-                }
-            },
-            include: {
-                subCategories: {
-                    include: {
-                        options: {
-                            include: {
-                                values: {
-                                    include: {
-                                        values: true
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        });
+    // try {
+    //     const broadcastForm = await prisma.broadcastForm.create({
+    //         data: {
+    //             name: form.name,
+    //             order: form.order,
+    //             subCategories: {
+    //                 create: form.subCategories.map((subCategory: any) => ({
+    //                     name: subCategory.name,
+    //                     order: subCategory.order,
+    //                     options: {
+    //                         create: subCategory.options.map((option: any) => ({
+    //                             name: option.name,
+    //                             type: option.type,
+    //                             order: option.order,
+    //                             values: {
+    //                                 create: createOptionValues(option.values)
+    //                             }
+    //                         }))
+    //                     }
+    //                 }))
+    //             }
+    //         },
+    //         include: {
+    //             subCategories: {
+    //                 include: {
+    //                     options: {
+    //                         include: {
+    //                             values: {
+    //                                 include: {
+    //                                     values: true
+    //                                 }
+    //                             }
+    //                         }
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //     });
 
-        return broadcastForm;
-    } catch (error) {
-        logger.error(error instanceof Error ? error.message : String(error), "error")
-    }
+    //     return broadcastForm;
+    // } catch (error) {
+    //     logger.error(error instanceof Error ? error.message : String(error), "error")
+    // }
 };
 
 // upserting broadcast form: updateBroadcastForm
 const updateBroadcastForm = async (forms: any[]) => {
-    try {
-        const updatedForms = await Promise.all(
-            forms.map(async (form: any, fIdx: number) => {
-                const updatedForm = await prisma.broadcastForm.upsert({
-                    where: { id: form.id },
-                    create: {
-                        name: form.name,
-                        order: form?.order ?? fIdx + 1,
-                        subCategories: {
-                            create: form.subCategories.map((subCategory: any, sCIdx: number) => ({
-                                name: subCategory.name,
-                                order: subCategory?.order ?? sCIdx + 1,
-                                options: {
-                                    create: subCategory.options.map((option: any, sCOIdx: number) => ({
-                                        name: option.name,
-                                        type: option?.type ?? "SELECT",
-                                        order: option?.order ?? sCOIdx + 1,
-                                        values: {
-                                            create: option.values.map((value: any) => ({
-                                                name: value.name,
-                                                values: {
-                                                    create: value.values ? value.values.map((subOption: any) => ({
-                                                        name: subOption.name,
-                                                    })) : [],
-                                                },
-                                            })),
-                                        },
-                                    })),
-                                },
-                            })),
-                        },
-                    },
-                    update: {
-                        name: form.name,
-                        order: form?.order ?? fIdx + 1,
-                        subCategories: {
-                            update: form.subCategories.map((subCategory: any, sCIdx: number) => ({
-                                where: { id: subCategory.id },
-                                data: {
-                                    name: subCategory.name,
-                                    order: subCategory?.order ?? sCIdx + 1,
-                                    options: {
-                                        upsert: subCategory.options.map((option: any, idx: number) => ({
-                                            where: { id: option.id },
-                                            create: {
-                                                name: option.name,
-                                                type: option?.type ?? "SELECT",
-                                                order: option?.order ?? idx + 1,
-                                                values: {
-                                                    create: option.values.map((value: any) => ({
-                                                        name: value.name,
-                                                        values: {
-                                                            create: value.values ? value.values.map((subOption: any) => ({
-                                                                name: subOption.name,
-                                                            })) : [],
-                                                        },
-                                                    })),
-                                                },
-                                            },
-                                            update: {
-                                                name: option.name,
-                                                type: option?.type ?? "SELECT",
-                                                order: option?.order ?? idx + 1,
-                                                values: {
-                                                    upsert: option.values.map((value: any) => ({
-                                                        where: { id: value.id },
-                                                        create: {
-                                                            name: value.name,
-                                                            values: {
-                                                                create: value.values ? value.values.map((subOption: any) => ({
-                                                                    name: subOption.name,
-                                                                })) : [],
-                                                            },
-                                                        },
-                                                        update: {
-                                                            name: value.name,
-                                                            values: {
-                                                                upsert: value.values ? value.values.map((subOption: any) => ({
-                                                                    where: { id: subOption.id },
-                                                                    create: { name: subOption.name },
-                                                                    update: { name: subOption.name },
-                                                                })) : [],
-                                                            },
-                                                        },
-                                                    })),
-                                                },
-                                            },
-                                        })),
-                                    },
-                                },
-                            })),
-                            create: form.subCategories
-                                .filter((subCategory: any) => !subCategory.id)
-                                .map((subCategory: any, sCIdx: number) => ({
-                                    name: subCategory.name,
-                                    order: subCategory?.order ?? sCIdx + 1,
-                                    options: {
-                                        create: subCategory.options.map((option: any, idx: number) => ({
-                                            name: option.name,
-                                            type: option?.type ?? "SELECT",
-                                            order: option?.order ?? idx + 1,
-                                            values: {
-                                                create: option.values.map((value: any) => ({
-                                                    name: value.name,
-                                                    values: {
-                                                        create: value.values ? value.values.map((subOption: any) => ({
-                                                            name: subOption.name,
-                                                        })) : [],
-                                                    },
-                                                })),
-                                            },
-                                        })),
-                                    },
-                                })),
-                        },
-                    },
-                    include: {
-                        subCategories: {
-                            include: {
-                                options: {
-                                    include: {
-                                        values: {
-                                            include: {
-                                                values: true,
-                                            },
-                                        },
-                                    },
-                                },
-                            },
-                        },
-                    },
-                });
-                return updatedForm;
-            })
-        );
-        return updatedForms;
-    } catch (error) {
-        console.error("Error updating broadcast forms:", error);
-        throw error;
-    }
+    // try {
+    //     const updatedForms = await Promise.all(
+    //         forms.map(async (form: any, fIdx: number) => {
+    //             const updatedForm = await prisma.broadcastForm.upsert({
+    //                 where: { id: form.id },
+    //                 create: {
+    //                     name: form.name,
+    //                     order: form?.order ?? fIdx + 1,
+    //                     subCategories: {
+    //                         create: form.subCategories.map((subCategory: any, sCIdx: number) => ({
+    //                             name: subCategory.name,
+    //                             order: subCategory?.order ?? sCIdx + 1,
+    //                             options: {
+    //                                 create: subCategory.options.map((option: any, sCOIdx: number) => ({
+    //                                     name: option.name,
+    //                                     type: option?.type ?? "SELECT",
+    //                                     order: option?.order ?? sCOIdx + 1,
+    //                                     values: {
+    //                                         create: option.values.map((value: any) => ({
+    //                                             name: value.name,
+    //                                             values: {
+    //                                                 create: value.values ? value.values.map((subOption: any) => ({
+    //                                                     name: subOption.name,
+    //                                                 })) : [],
+    //                                             },
+    //                                         })),
+    //                                     },
+    //                                 })),
+    //                             },
+    //                         })),
+    //                     },
+    //                 },
+    //                 update: {
+    //                     name: form.name,
+    //                     order: form?.order ?? fIdx + 1,
+    //                     subCategories: {
+    //                         update: form.subCategories.map((subCategory: any, sCIdx: number) => ({
+    //                             where: { id: subCategory.id },
+    //                             data: {
+    //                                 name: subCategory.name,
+    //                                 order: subCategory?.order ?? sCIdx + 1,
+    //                                 options: {
+    //                                     upsert: subCategory.options.map((option: any, idx: number) => ({
+    //                                         where: { id: option.id },
+    //                                         create: {
+    //                                             name: option.name,
+    //                                             type: option?.type ?? "SELECT",
+    //                                             order: option?.order ?? idx + 1,
+    //                                             values: {
+    //                                                 create: option.values.map((value: any) => ({
+    //                                                     name: value.name,
+    //                                                     values: {
+    //                                                         create: value.values ? value.values.map((subOption: any) => ({
+    //                                                             name: subOption.name,
+    //                                                         })) : [],
+    //                                                     },
+    //                                                 })),
+    //                                             },
+    //                                         },
+    //                                         update: {
+    //                                             name: option.name,
+    //                                             type: option?.type ?? "SELECT",
+    //                                             order: option?.order ?? idx + 1,
+    //                                             values: {
+    //                                                 upsert: option.values.map((value: any) => ({
+    //                                                     where: { id: value.id },
+    //                                                     create: {
+    //                                                         name: value.name,
+    //                                                         values: {
+    //                                                             create: value.values ? value.values.map((subOption: any) => ({
+    //                                                                 name: subOption.name,
+    //                                                             })) : [],
+    //                                                         },
+    //                                                     },
+    //                                                     update: {
+    //                                                         name: value.name,
+    //                                                         values: {
+    //                                                             upsert: value.values ? value.values.map((subOption: any) => ({
+    //                                                                 where: { id: subOption.id },
+    //                                                                 create: { name: subOption.name },
+    //                                                                 update: { name: subOption.name },
+    //                                                             })) : [],
+    //                                                         },
+    //                                                     },
+    //                                                 })),
+    //                                             },
+    //                                         },
+    //                                     })),
+    //                                 },
+    //                             },
+    //                         })),
+    //                         create: form.subCategories
+    //                             .filter((subCategory: any) => !subCategory.id)
+    //                             .map((subCategory: any, sCIdx: number) => ({
+    //                                 name: subCategory.name,
+    //                                 order: subCategory?.order ?? sCIdx + 1,
+    //                                 options: {
+    //                                     create: subCategory.options.map((option: any, idx: number) => ({
+    //                                         name: option.name,
+    //                                         type: option?.type ?? "SELECT",
+    //                                         order: option?.order ?? idx + 1,
+    //                                         values: {
+    //                                             create: option.values.map((value: any) => ({
+    //                                                 name: value.name,
+    //                                                 values: {
+    //                                                     create: value.values ? value.values.map((subOption: any) => ({
+    //                                                         name: subOption.name,
+    //                                                     })) : [],
+    //                                                 },
+    //                                             })),
+    //                                         },
+    //                                     })),
+    //                                 },
+    //                             })),
+    //                     },
+    //                 },
+    //                 include: {
+    //                     subCategories: {
+    //                         include: {
+    //                             options: {
+    //                                 include: {
+    //                                     values: {
+    //                                         include: {
+    //                                             values: true,
+    //                                         },
+    //                                     },
+    //                                 },
+    //                             },
+    //                         },
+    //                     },
+    //                 },
+    //             });
+    //             return updatedForm;
+    //         })
+    //     );
+    //     return updatedForms;
+    // } catch (error) {
+    //     console.error("Error updating broadcast forms:", error);
+    //     throw error;
+    // }
 };
 const broadcastForm = async () => {
-    const BroadcastForm = await prisma.broadcastForm.findMany({
-        include: {
-            subCategories: {
-                include: {
-                    options: {
-                        include: {
-                            values: {
-                                include: {
-                                    values: true
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    });
-    return BroadcastForm;
+    // const BroadcastForm = await prisma.broadcastForm.findMany({
+    //     include: {
+    //         subCategories: {
+    //             include: {
+    //                 options: {
+    //                     include: {
+    //                         values: {
+    //                             include: {
+    //                                 values: true
+    //                             }
+    //                         }
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //     }
+    // });
+    // return BroadcastForm;
 }
 
 
 const updateDept = async (deptId: string, deptUpdateInput: z.infer<typeof createAdminDeptSchema>) => {
-    try {
-        // Prepare fields for update
-        const fieldsToUpdateOrCreate = deptUpdateInput.deptFields.map(field => ({
-            where: { name: field.name },
-            update: {
-                fieldType: field.fieldType,
-                order: field.order,
-                isDisabled: field.isDisabled,
-                isRequired: field.isRequired
-            },
-            create: {
-                name: field.name,
-                fieldType: field.fieldType,
-                order: field.order,
-                isDisabled: field.isDisabled,
-                isRequired: field.isRequired,
-                SubDeptField: {
-                    // @ts-ignore
-                    create: field.SubDeptField?.map(subField => ({
-                        name: subField.name,
-                        fieldType: subField.fieldType,
-                        order: subField.order,
-                        isDisabled: subField.isDisabled,
-                        isRequired: subField.isRequired
-                    })) || []
-                }
-            }
-        }));
+    // try {
+    //     // Prepare fields for update
+    //     const fieldsToUpdateOrCreate = deptUpdateInput.deptFields.map(field => ({
+    //         where: { name: field.name },
+    //         update: {
+    //             fieldType: field.fieldType,
+    //             order: field.order,
+    //             isDisabled: field.isDisabled,
+    //             isRequired: field.isRequired
+    //         },
+    //         create: {
+    //             name: field.name,
+    //             fieldType: field.fieldType,
+    //             order: field.order,
+    //             isDisabled: field.isDisabled,
+    //             isRequired: field.isRequired,
+    //             SubDeptField: {
+    //                 // @ts-ignore
+    //                 create: field.SubDeptField?.map(subField => ({
+    //                     name: subField.name,
+    //                     fieldType: subField.fieldType,
+    //                     order: subField.order,
+    //                     isDisabled: subField.isDisabled,
+    //                     isRequired: subField.isRequired
+    //                 })) || []
+    //             }
+    //         }
+    //     }));
 
-        const updatedDept = await prisma.adminDept.update({
-            where: {
-                id: deptId,
-            },
-            data: {
-                name: deptUpdateInput.name,
-                deptFields: {
-                    // @ts-ignore
-                    upsert: fieldsToUpdateOrCreate
-                }
-            },
-            include: {
-                deptFields: {
-                    include: {
-                        subDeptFields: true
-                    }
-                }
-            }
-        });
+    //     const updatedDept = await prisma.adminDept.update({
+    //         where: {
+    //             id: deptId,
+    //         },
+    //         data: {
+    //             name: deptUpdateInput.name,
+    //             adminDeptForm: {
+    //                 upsert: fieldsToUpdateOrCreate
+    //             }
+    //         },
+    //         include: {
+    //             deptFields: {
+    //                 include: {
+    //                     subDeptFields: true
+    //                 }
+    //             }
+    //         }
+    //     });
 
 
-        return updatedDept;
-    } catch (error: any) {
-        console.error('Error updating department:', error);
-        throw new Error(`Error updating department: ${error.message}`);
-    }
+    //     return updatedDept;
+    // } catch (error: any) {
+    //     console.error('Error updating department:', error);
+    //     throw new Error(`Error updating department: ${error.message}`);
+    // }
 };
 
 const createNUpdateSubscriptionPlan = async (plan: Plan) => {
@@ -505,151 +510,151 @@ const createNUpdateSubscriptionPlan = async (plan: Plan) => {
 
 
 const updateCompanySubscription = async (companyId: string, planId: string, allowedDeptsIds: string[], startDate: Date, endDate: Date) => {
-    try {
-        const isCompanyExists = await prisma.company.findUnique({
-            where: {
-                id: companyId
-            },
-            include: {
-                Depts: {
-                    include: {
-                        companyDeptForms: true
-                    }
-                }
-            }
-        });
+    // try {
+    //     const isCompanyExists = await prisma.company.findUnique({
+    //         where: {
+    //             id: companyId
+    //         },
+    //         include: {
+    //             Depts: {
+    //                 include: {
+    //                     companyForms: true
+    //                 }
+    //             }
+    //         }
+    //     });
 
-        if (!isCompanyExists) {
-            throw new Error('Company not found.');
-        }
+    //     if (!isCompanyExists) {
+    //         throw new Error('Company not found.');
+    //     }
 
-        const alreadyAllowedDepts = await prisma.companyDeptForm.findMany({
-            where: {
-                companyDept: {
-                    companyId: companyId
-                },
-            },
-        });
+    //     const alreadyAllowedDepts = await prisma.companyDeptForm.findMany({
+    //         where: {
+    //             companyDept: {
+    //                 companyId: companyId
+    //             },
+    //         },
+    //     });
 
-        const alreadyAllowedDeptsIdsArr = alreadyAllowedDepts.map(dept => dept.adminDeptFieldId).filter((id): id is string => id !== null);
+    //     const alreadyAllowedDeptsIdsArr = alreadyAllowedDepts.map(dept => dept.adminDeptFieldId).filter((id): id is string => id !== null);
 
-        // add or remove depts as allowedDeptsIds
-        const deptsToAdd = allowedDeptsIds.filter(deptId => !alreadyAllowedDeptsIdsArr.includes(deptId));
-        const deptsToRemove = alreadyAllowedDeptsIdsArr.filter((deptId: string) => !allowedDeptsIds.includes(deptId));
+    //     // add or remove depts as allowedDeptsIds
+    //     const deptsToAdd = allowedDeptsIds.filter(deptId => !alreadyAllowedDeptsIdsArr.includes(deptId));
+    //     const deptsToRemove = alreadyAllowedDeptsIdsArr.filter((deptId: string) => !allowedDeptsIds.includes(deptId));
 
-        const existingDepts = await prisma.adminDept.findMany({
-            where: {
-                deptFields: {
-                    some: {
-                        id: {
-                            in: deptsToAdd || [],
-                        }
-                    }
-                }
-            },
-            include: {
-                deptFields: {
-                    where: {
-                        id: {
-                            in: deptsToAdd || [],
-                        }
-                    },
-                    include: {
-                        subDeptFields: true,
-                    },
-                },
-            },
-        });
+    //     const existingDepts = await prisma.adminDept.findMany({
+    //         where: {
+    //             deptFields: {
+    //                 some: {
+    //                     id: {
+    //                         in: deptsToAdd || [],
+    //                     }
+    //                 }
+    //             }
+    //         },
+    //         include: {
+    //             deptFields: {
+    //                 where: {
+    //                     id: {
+    //                         in: deptsToAdd || [],
+    //                     }
+    //                 },
+    //                 include: {
+    //                     subDeptFields: true,
+    //                 },
+    //             },
+    //         },
+    //     });
 
-        const deptsArray = existingDepts.map(dept => ({
-            name: dept.name,
-            deptManagerId: isCompanyExists.companyManagerId,
-            companyDeptForms: {
-                create: dept.deptFields.map(field => ({
-                    name: field.name,
-                    order: field.order,
-                    adminDeptFieldId: field.id,
-                    subDeptFields: {
-                        create: field.subDeptFields.map(subField => ({
-                            name: subField.name,
-                            order: subField.order,
-                            fieldType: subField.fieldType,
-                            imgLimit: subField.imgLimit,
-                            isDisabled: subField.isDisabled,
-                            isRequired: subField.isRequired,
-                            options: subField.options ? (subField.options as any).map((option: any) => ({
-                                label: option.label,
-                                value: option.value,
-                            })) : [],
-                        })),
-                    },
-                })),
-            },
-        }));
+    //     const deptsArray = existingDepts.map(dept => ({
+    //         name: dept.name,
+    //         deptManagerId: isCompanyExists.companyManagerId,
+    //         companyDeptForms: {
+    //             create: dept.deptFields.map(field => ({
+    //                 name: field.name,
+    //                 order: field.order,
+    //                 adminDeptFieldId: field.id,
+    //                 subDeptFields: {
+    //                     create: field.subDeptFields.map(subField => ({
+    //                         name: subField.name,
+    //                         order: subField.order,
+    //                         fieldType: subField.fieldType,
+    //                         imgLimit: subField.imgLimit,
+    //                         isDisabled: subField.isDisabled,
+    //                         isRequired: subField.isRequired,
+    //                         options: subField.options ? (subField.options as any).map((option: any) => ({
+    //                             label: option.label,
+    //                             value: option.value,
+    //                         })) : [],
+    //                     })),
+    //                 },
+    //             })),
+    //         },
+    //     }));
 
-        // update or create depts
-        for (const dept of deptsArray) {
-            const matchingDept = isCompanyExists.Depts.find(
-                (existingDept) => existingDept.name === dept.name
-            );
+    //     // update or create depts
+    //     for (const dept of deptsArray) {
+    //         const matchingDept = isCompanyExists.depts.find(
+    //             (existingDept) => existingDept.name === dept.name
+    //         );
 
-            if (matchingDept) {
-                await prisma.companyDept.update({
-                    where: {
-                        id: matchingDept.id,
-                    },
-                    data: {
-                        name: dept.name,
-                        deptManagerId: dept.deptManagerId,
-                        companyDeptForms: dept.companyDeptForms,
-                    },
-                });
+    //         if (matchingDept) {
+    //             await prisma.companyDept.update({
+    //                 where: {
+    //                     id: matchingDept.id,
+    //                 },
+    //                 data: {
+    //                     name: dept.name,
+    //                     deptManagerId: dept.deptManagerId,
+    //                     companyDeptForms: dept.companyDeptForms,
+    //                 },
+    //             });
 
-            } else {
-                const b = await prisma.companyDept.create({
-                    data: {
-                        name: dept.name,
-                        deptManagerId: dept.deptManagerId,
-                        companyDeptForms: dept.companyDeptForms,
-                        companyId,
-                    },
-                });
-            }
-        }
+    //         } else {
+    //             const b = await prisma.companyDept.create({
+    //                 data: {
+    //                     name: dept.name,
+    //                     deptManagerId: dept.deptManagerId,
+    //                     companyDeptForms: dept.companyDeptForms,
+    //                     companyId,
+    //                 },
+    //             });
+    //         }
+    //     }
 
-        // remove depts
-        await prisma.companyDeptForm.deleteMany({
-            where: {
-                adminDeptFieldId: {
-                    in: deptsToRemove
-                },
-                companyDept: {
-                    companyId: companyId
-                }
-            }
-        });
+    //     // remove depts
+    //     await prisma.companyDeptForm.deleteMany({
+    //         where: {
+    //             adminDeptFieldId: {
+    //                 in: deptsToRemove
+    //             },
+    //             companyDept: {
+    //                 companyId: companyId
+    //             }
+    //         }
+    //     });
 
-        // update company subscription
-        const updatedCompany = await prisma.company.update({
-            where: {
-                id: companyId,
-            },
-            data: {
-                Subscriptions: {
-                    create: {
-                        allowedDeptsIds,
-                        planId: planId,
-                        startDate,
-                        endDate
-                    }
-                }
-            },
-        });
+    //     // update company subscription
+    //     const updatedCompany = await prisma.company.update({
+    //         where: {
+    //             id: companyId,
+    //         },
+    //         data: {
+    //             Subscriptions: {
+    //                 create: {
+    //                     allowedDeptsIds,
+    //                     planId: planId,
+    //                     startDate,
+    //                     endDate
+    //                 }
+    //             }
+    //         },
+    //     });
 
-        return updatedCompany;
-    } catch (error: any) {
-        throw new Error(`Error updating company subscription: ${error.message}`);
-    }
+    //     return updatedCompany;
+    // } catch (error: any) {
+    //     throw new Error(`Error updating company subscription: ${error.message}`);
+    // }
 }
 
 export const getCompanySubscription = async (companyId: string) => {

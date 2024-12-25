@@ -17,12 +17,14 @@ const getCompanyDeptFields = async (deptId: string, ctxUser: z.infer<typeof logg
                 }
             },
             include: {
-                subDeptFields: true
+                fields: true,
+                category: true
             },
             orderBy: {
                 order: 'desc',
             }
         });
+
         return deptFieldsRoot;
         // }
 
@@ -47,42 +49,35 @@ const getCompanyDeptFields = async (deptId: string, ctxUser: z.infer<typeof logg
 }
 
 const getCompanyDeptOptFields = async (companyId: string) => {
-    try {
-        const deptFields = await prisma.companyDeptOptForm.findMany({
-            where: {
-                companyId: companyId
-            },
-            include: {
-                subDeptFields: true
-            },
-            orderBy: {
-                order: 'desc',
-            }
-        });
-        return deptFields;
-    } catch (error: any) {
-        logger.log(error.message, 'error')
-        throw new Error('Error fetching departments');
-    }
+    // try {
+    //     const deptFields = await prisma.companyDeptOptForm.findMany({
+    //         where: {
+    //             companyId: companyId
+    //         },
+    //         include: {
+    //             subDeptFields: true
+    //         },
+    //         orderBy: {
+    //             order: 'desc',
+    //         }
+    //     });
+    //     return deptFields;
+    // } catch (error: any) {
+    //     logger.log(error.message, 'error')
+    //     throw new Error('Error fetching departments');
+    // }
 }
 
 const getFollowUps = async (companyId: string) => {
     try {
-        // const followUps = await prisma.followUp.findMany({
-        //     where: {
-        //         lead: {
-        //             companyId
-        //         }
-        //     },
-        //     include: {
-        //         followUpBy: {
-        //             include: {
-        //                 role: true
-        //             }
-        //         },
-        //     }
-        // });
-        // return followUps;
+        const followUps = await prisma.leadFollowUp.findMany({
+            where: {
+                lead: {
+                    companyId
+                }
+            },
+        });
+        return followUps;
     } catch (error: any) {
         logger.log(error.message, 'error')
         throw new Error('Error fetching departments');
@@ -98,7 +93,7 @@ const getCompanyXchangerBids = async (companyId: string) => {
                 }
             },
             include: {
-                Member: true,
+                member: true,
                 lead: true
             }
         });
@@ -117,9 +112,15 @@ const getDepts = async (companyId: string) => {
                 companyId
             },
             include: {
-                companyDeptForms: true
+                companyForms: {
+                    include: {
+                        fields: true,
+                        category: true
+                    }
+                }
             }
         });
+
         return depts;
     } catch (error: any) {
         logger.log(error.message, 'error')
@@ -155,37 +156,54 @@ const createRole = async (role: z.infer<typeof createRoleSchema>) => {
 const createNUpdateCompanyDeptForm = async (deptForm: any, ctxUser: z.infer<typeof loggedUserSchema>) => {
     try {
 
-        const upsertDept = await prisma.companyDept.upsert({
+        const formCategory = await prisma.companyDeptFormCategory.upsert({
             where: {
-              companyId: ctxUser.companyId,
+                companyId_name: {
+                    companyId: ctxUser.companyId,
+                    name: deptForm.categoryName
+                }
             },
             create: {
-              name: deptForm.deptName,
-              deptManagerId: ctxUser.id,
-              companyId: ctxUser.companyId,
-              companyDeptForms: {
-                connectOrCreate: {
-                  where: {
-                    companyDeptId_name: {
-                      companyDeptId: deptForm.companyDeptId,
-                      name: deptForm.name,
+                name: deptForm.categoryName,
+                companyId: ctxUser.companyId
+            },
+            update: {}
+        });
+
+        if (!formCategory) {
+            throw new Error('Form category not found');
+        }
+
+        const upsertDept = await prisma.companyDept.upsert({
+            where: {
+                companyId: ctxUser.companyId,
+            },
+            create: {
+                name: deptForm.deptName,
+                deptManagerId: ctxUser.id,
+                companyId: ctxUser.companyId,
+                companyForms: {
+                    connectOrCreate: {
+                        where: {
+                            companyDeptId_name: {
+                                companyDeptId: deptForm.companyDeptId,
+                                name: deptForm.name,
+                            },
+                        },
+                        create: {
+                            name: deptForm.name,
+                            order: deptForm.order,
+                            categoryId: formCategory?.id,
+                            fields: {
+                                create: []
+                            },
+                        },
                     },
-                  },
-                  create: {
-                    name: deptForm.name,
-                    order: deptForm.order,
-                    subDeptFields: {
-                      create: []
-                    },
-                  },
                 },
-              },
             },
             update: {},
-          });
-          
+        });
 
-        console.log(upsertDept, 'upsertDept')
 
         const newDept = await prisma.companyDeptForm.upsert({
             where: {
@@ -197,7 +215,8 @@ const createNUpdateCompanyDeptForm = async (deptForm: any, ctxUser: z.infer<type
             update: {
                 name: deptForm.name,
                 order: deptForm.order,
-                subDeptFields: {
+                // dependentOnIds: deptForm.dependentOnId,
+                fields: {
                     deleteMany: {},
                     create: deptForm.subDeptFields.map((field: any) => ({
                         name: field.name,
@@ -205,7 +224,7 @@ const createNUpdateCompanyDeptForm = async (deptForm: any, ctxUser: z.infer<type
                         value: field.value,
                         imgLimit: field.imgLimit,
                         ddOptionId: field.ddOptionId,
-                        options: field.options,
+                        options: field?.options?.length > 0 ? field.options : null,
                         order: field.order,
                         isDisabled: field.isDisabled,
                         isRequired: field.isRequired
@@ -215,15 +234,17 @@ const createNUpdateCompanyDeptForm = async (deptForm: any, ctxUser: z.infer<type
             create: {
                 name: deptForm.name,
                 order: deptForm.order,
+                dependentOnId: deptForm.dependentOnId,
+                categoryId: formCategory?.id,
                 companyDeptId: deptForm.companyDeptId,
-                subDeptFields: {
+                fields: {
                     create: deptForm.subDeptFields.map((field: any) => ({
                         name: field.name,
                         fieldType: field.fieldType,
                         value: field.value,
                         imgLimit: field.imgLimit,
                         ddOptionId: field.ddOptionId,
-                        options: field.options,
+                        options: field?.options?.length > 0 ? field.options : null,
                         order: field.order,
                         isDisabled: field.isDisabled,
                         isRequired: field.isRequired
@@ -231,7 +252,17 @@ const createNUpdateCompanyDeptForm = async (deptForm: any, ctxUser: z.infer<type
                 }
             },
             include: {
-                subDeptFields: true
+                fields: true
+            }
+        });
+
+        await prisma.log.create({
+            data: {
+                logType: 'create',
+                logData: JSON.stringify(newDept),
+                description: `Created department form ${deptForm.name}`,
+                userId: ctxUser.id,
+                comapnyId: ctxUser.companyId || ""
             }
         });
 
@@ -243,119 +274,123 @@ const createNUpdateCompanyDeptForm = async (deptForm: any, ctxUser: z.infer<type
 };
 
 const createNUpdateCompanyDeptOptForm = async (deptForm: any, ctxUser: z.infer<typeof loggedUserSchema>) => {
-    try {
-        const newDept = await prisma.companyDeptOptForm.upsert({
-            where: {
-                companyId_name: {
-                    companyId: ctxUser.companyId,
-                    name: deptForm.name
-                }
-            },
-            update: {
-                name: deptForm.name,
-                order: deptForm.order,
-                companyId: ctxUser.companyId,
-                subDeptFields: {
-                    deleteMany: {},
-                    create: deptForm.subDeptFields.map((field: any) => ({
-                        name: field.name,
-                        fieldType: field.fieldType,
-                        value: field.value,
-                        imgLimit: field.imgLimit,
-                        ddOptionId: field.ddOptionId,
-                        options: field.options,
-                        order: field.order,
-                        isDisabled: field.isDisabled,
-                        isRequired: field.isRequired
-                    }))
-                }
-            },
-            create: {
-                name: deptForm.name,
-                order: deptForm.order,
-                companyId: ctxUser.companyId,
-                subDeptFields: {
-                    create: deptForm.subDeptFields.map((field: any) => ({
-                        name: field.name,
-                        fieldType: field.fieldType,
-                        value: field.value,
-                        imgLimit: field.imgLimit,
-                        ddOptionId: field.ddOptionId,
-                        options: field.options,
-                        order: field.order,
-                        isDisabled: field.isDisabled,
-                        isRequired: field.isRequired
-                    }))
-                }
-            },
-            include: {
-                subDeptFields: true
-            }
-        });
-        return newDept;
-    } catch (error: any) {
-        logger.error('Error creating department:', error);
-        throw new Error(`Error creating department: ${error.message}`);
-    }
+    // try {
+    //     const newDept = await prisma.companyDeptOptForm.upsert({
+    //         where: {
+    //             companyId_name: {
+    //                 companyId: ctxUser.companyId,
+    //                 name: deptForm.name
+    //             }
+    //         },
+    //         update: {
+    //             name: deptForm.name,
+    //             order: deptForm.order,
+    //             companyId: ctxUser.companyId,
+    //             subDeptFields: {
+    //                 deleteMany: {},
+    //                 create: deptForm.subDeptFields.map((field: any) => ({
+    //                     name: field.name,
+    //                     fieldType: field.fieldType,
+    //                     value: field.value,
+    //                     imgLimit: field.imgLimit,
+    //                     ddOptionId: field.ddOptionId,
+    //                     options: field.options,
+    //                     order: field.order,
+    //                     isDisabled: field.isDisabled,
+    //                     isRequired: field.isRequired
+    //                 }))
+    //             }
+    //         },
+    //         create: {
+    //             name: deptForm.name,
+    //             order: deptForm.order,
+    //             companyId: ctxUser.companyId,
+    //             subDeptFields: {
+    //                 create: deptForm.subDeptFields.map((field: any) => ({
+    //                     name: field.name,
+    //                     fieldType: field.fieldType,
+    //                     value: field.value,
+    //                     imgLimit: field.imgLimit,
+    //                     ddOptionId: field.ddOptionId,
+    //                     options: field.options,
+    //                     order: field.order,
+    //                     isDisabled: field.isDisabled,
+    //                     isRequired: field.isRequired
+    //                 }))
+    //             }
+    //         },
+    //         include: {
+    //             subDeptFields: true
+    //         }
+    //     });
+    //     return newDept;
+    // } catch (error: any) {
+    //     logger.error('Error creating department:', error);
+    //     throw new Error(`Error creating department: ${error.message}`);
+    // }
 };
 
+
+//@aloksharma10 Is this still in use?
 const createnUpdateCompanyDept = async (companyId: string, dept: z.infer<typeof createAdminDeptSchema>) => {
-    try {
-        const fieldsToCreate = dept.deptFields.map(field => ({
-            name: field.name,
-            fieldType: field.fieldType,
-            value: field.value,
-            imgLimit: field.imgLimit,
-            options: field.options,
-            order: field.order,
-            isDisabled: field.isDisabled,
-            isRequired: field.isRequired
-        }));
+    // try {
+    //     const fieldsToCreate = dept.deptFields.map(field => ({
+    //         name: field.name,
+    //         fieldType: field.fieldType,
+    //         value: field.value,
+    //         imgLimit: field.imgLimit,
+    //         options: {
+    //             create: field.options
+    //         },
+    //         order: field.order,
+    //         isDisabled: field.isDisabled,
+    //         isRequired: field.isRequired
+    //     }));
 
-        const company = await prisma.company.findFirst({
-            where: { id: companyId },
-        });
+    //     const company = await prisma.company.findFirst({
+    //         where: { id: companyId },
+    //     });
 
-        if (!company) {
-            throw new Error('Company not found.');
-        }
+    //     if (!company) {
+    //         throw new Error('Company not found.');
+    //     }
 
-        const newDept = await prisma.companyDept.upsert({
-            where: {
-                id: dept.id,
-            },
-            update: {
-                companyDeptForms: {
-                    create: {
-                        name: dept.subDeptName,
-                        order: dept.order,
-                        subDeptFields: {
-                            create: fieldsToCreate
-                        }
-                    }
-                }
-            },
-            create: {
-                name: dept.name,
-                deptManagerId: company?.companyManagerId,
-                companyId,
-                companyDeptForms: {
-                    create: {
-                        name: dept.subDeptName,
-                        order: dept.order,
-                        subDeptFields: {
-                            create: fieldsToCreate
-                        }
-                    }
-                }
-            },
-        });
+    //     const newDept = await prisma.companyDept.upsert({
+    //         where: {
+    //             id: dept.id,
+    //         },
+    //         update: {
+    //             companyForms: {
+    //                 create: {
+    //                     name: dept.subDeptName,
+    //                     order: dept.order,
+    //                     fields: {
+    //                         create: fieldsToCreate
+    //                     }
+    //                 }
+    //             }
+    //         },
+    //         create: {
+    //             name: dept.name,
+    //             deptManagerId: company?.companyManagerId,
+    //             companyId,
+    //             companyForms: {
+    //                 create: {
+    //                     name: dept.subDeptName,
+    //                     order: dept.order,
+    //                     fields: {
+    //                         create: fieldsToCreate
+    //                     }
+    //                 }
+    //             }
+    //         },
+    //     });
 
-        return { dept: newDept, errors: [] };
-    } catch (error: any) {
-        logger.error('Error creating department:', error);
-        throw new Error(`Error creating department: ${error.message}`);
-    }
+    //     return { dept: newDept, errors: [] };
+    // } catch (error: any) {
+    //     logger.error('Error creating department:', error);
+    //     throw new Error(`Error creating department: ${error.message}`);
+    // }
 };
 
 

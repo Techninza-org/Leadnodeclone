@@ -7,142 +7,26 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Prospect {
-  id String @id @default(auto()) @map("_id") @db.ObjectId
-
-  name           String
-  email          String
-  phone          String
-  alternatePhone String?
-  rating         Int?
-  remark         String
-
-  via String
-
-  isLeadConverted Boolean @default(false)
-
-  callStatus    CallStatus    @default(PENDING)
-  paymentStatus PaymentStatus @default(PENDING)
-
-  LeadMember LeadMember[]
-
-  nextFollowUpDate   String?
-  followUps          ProspectFollowUp[]
-  dynamicFieldValues Json?
-
-  companyId String?  @db.ObjectId
-  Company   Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([email, phone])
-  @@index([companyId])
-}
-
-model ProspectFollowUp {
-  id                 String  @id @default(auto()) @map("_id") @db.ObjectId
-  followUpBy         String
-  nextFollowUpDate   String
-  remark             String
-  customerResponse   String?
-  rating             String?
-  dynamicFieldValues Json?
-
-  Prospect   Prospect? @relation(fields: [prospectId], references: [id])
-  prospectId String?   @db.ObjectId
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+enum FieldType {
+  INPUT
+  PHONE
+  TAG
+  CURRENCY
+  IMAGE
+  DATE
+  DATETIME
+  TEXTAREA
+  RADIO
+  CHECKBOX
+  SELECT
+  DD
+  DD_IMG
 }
 
 enum Status {
+  NEW
   OPEN
   CLOSED
-}
-
-model Lead {
-  id String @id @default(auto()) @map("_id") @db.ObjectId
-
-  name           String
-  email          String
-  phone          String
-  alternatePhone String?
-  rating         Int?
-  remark         String
-
-  vehicleDate  DateTime?
-  vehicleName  String?
-  vehicleModel String?
-
-  via String
-
-  isLeadApproved Boolean @default(false)
-  status         Status  @default(OPEN)
-
-  callStatus    CallStatus    @default(PENDING)
-  paymentStatus PaymentStatus @default(PENDING)
-
-  LeadFeedback   LeadFeedback[]
-  LeadMember     LeadMember[]
-  Feedbacks      Feedbacks[]
-  bids           Bid[]
-  LeadTransferTo LeadTransferTo[]
-
-  isFinancedApproved Boolean @default(false)
-
-  nextFollowUpDate   String?
-  followUps          LeadFollowUp[]
-  dynamicFieldValues Json?
-
-  companyId  String?  @db.ObjectId
-  Company    Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  department String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([email, phone])
-  @@index([companyId])
-}
-
-model LeadFollowUp {
-  id               String  @id @default(auto()) @map("_id") @db.ObjectId
-  leadId           String  @db.ObjectId
-  lead             Lead    @relation(fields: [leadId], references: [id])
-  followUpBy       String
-  nextFollowUpDate String
-  remark           String
-  customerResponse String?
-  rating           String?
-
-  dynamicFieldValues Json?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Bid {
-  id String @id @default(auto()) @map("_id") @db.ObjectId
-
-  leadId String @db.ObjectId
-  lead   Lead   @relation(fields: [leadId], references: [id])
-
-  bidAmount Float
-  bidStatus BidStatus @default(PENDING)
-
-  deptId String?      @db.ObjectId
-  Dept   CompanyDept? @relation(fields: [deptId], references: [id])
-
-  memberId String @db.ObjectId
-  Member   Member @relation(fields: [memberId], references: [id])
-
-  description String?
-
-  isApproved Boolean @default(false)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 }
 
 enum BidStatus {
@@ -162,18 +46,150 @@ enum PaymentStatus {
   FAILED
 }
 
+model Prospect {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  name           String
+  email          String
+  phone          String
+  alternatePhone String?
+  rating         Int?
+  remark         String
+
+  via String
+
+  isLeadConverted Boolean @default(false)
+
+  callStatus    CallStatus    @default(PENDING)
+  paymentStatus PaymentStatus @default(PENDING)
+
+  LeadMember LeadMember[]
+
+  nextFollowUpDate String?
+  followUps        ProspectFollowUp[]
+
+  companyId String  @db.ObjectId
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([email, phone])
+  @@index([companyId])
+}
+
+model ProspectFollowUp {
+  id               String  @id @default(auto()) @map("_id") @db.ObjectId
+  followUpBy       String
+  nextFollowUpDate String?
+  remark           String
+  customerResponse String?
+  rating           String?
+  // dynamicFieldValues Json?
+
+  prospect   Prospect? @relation(fields: [prospectId], references: [id])
+  prospectId String?   @db.ObjectId
+
+  Lead      Lead?    @relation(fields: [leadId], references: [id])
+  leadId    String?  @db.ObjectId
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Lead {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  name           String
+  email          String
+  phone          String
+  alternatePhone String?
+  rating         Int?
+  remark         String
+
+  via String // The way through which the lead is tranfer : API or CSV or etc
+
+  status Status @default(OPEN)
+
+  callStatus    CallStatus    @default(PENDING)
+  paymentStatus PaymentStatus @default(PENDING)
+
+  submittedForm  SubmittedForm[]
+  leadMember     LeadMember[]
+  bids           Bid[]
+  leadTransferTo LeadTransferTo[]
+
+  followUps        LeadFollowUp[]
+  prospectFollowUp ProspectFollowUp[]
+  // dynamicFieldValues Json?
+
+  companyId String  @db.ObjectId
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  department String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([email, phone])
+  @@index([companyId])
+}
+
+model LeadFollowUp {
+  id               String  @id @default(auto()) @map("_id") @db.ObjectId
+  leadId           String  @db.ObjectId
+  lead             Lead    @relation(fields: [leadId], references: [id])
+  followUpBy       String
+  nextFollowUpDate String?
+  remark           String
+  customerResponse String?
+  rating           String?
+
+  // dynamicFieldValues Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Bid {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  leadId String @db.ObjectId
+  lead   Lead   @relation(fields: [leadId], references: [id])
+
+  bidAmount Float
+  bidStatus BidStatus @default(PENDING)
+
+  deptId String?      @db.ObjectId
+  Dept   CompanyDept? @relation(fields: [deptId], references: [id])
+
+  memberId String @db.ObjectId
+  member   Member @relation(fields: [memberId], references: [id])
+
+  description String?
+
+  isApproved Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model LeadMember {
   id String @id @default(auto()) @map("_id") @db.ObjectId
 
   leadId String @db.ObjectId
-  Lead   Lead   @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  lead   Lead   @relation(fields: [leadId], references: [id], onDelete: Cascade)
 
-  Location Location[]
-
-  memberId   String    @db.ObjectId
-  Member     Member    @relation(fields: [memberId], references: [id], onDelete: Cascade)
-  Prospect   Prospect? @relation(fields: [prospectId], references: [id])
+  prospect   Prospect? @relation(fields: [prospectId], references: [id])
   prospectId String?   @db.ObjectId
+
+  memberId String @db.ObjectId
+  member   Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  location Location[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([leadId, memberId])
 }
@@ -196,6 +212,161 @@ model LeadTransferTo {
   updatedAt DateTime @updatedAt
 }
 
+model SubmittedForm {
+  id       String @id @default(auto()) @map("_id") @db.ObjectId
+  formName String
+
+  leadId String @db.ObjectId
+  lead   Lead   @relation(fields: [leadId], references: [id])
+
+  memberId String @db.ObjectId
+  member   Member @relation(fields: [memberId], references: [id])
+
+  formValue FormValue[] @relation("FormValueRelation")
+
+  dependentOnFormName String?
+  dependentOnValue    FormValue[] @relation("DependentOnValueRelation")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([formName, leadId, memberId])
+}
+
+model FormValue {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  formValueId   String?        @db.ObjectId
+  submittedForm SubmittedForm? @relation("FormValueRelation", fields: [formValueId], references: [id])
+
+  dependentFormValueId String?        @db.ObjectId
+  dependentFormValue   SubmittedForm? @relation("DependentOnValueRelation", fields: [dependentFormValueId], references: [id])
+
+  name      String
+  value     Json?
+  fieldType FieldType
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model CompanyDept {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  name          String
+  deptManagerId String
+
+  companyId String  @db.ObjectId
+  Company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  companyForms CompanyDeptForm[]
+  members      Member[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  Bid       Bid[]
+
+  @@unique([companyId])
+  @@index([companyId, name])
+}
+
+model CompanyDeptFormCategory {
+  id   String @id @default(auto()) @map("_id") @db.ObjectId
+  name String
+
+  companyDeptForm CompanyDeptForm[]
+  companyId       String            @db.ObjectId
+  company         Company           @relation(fields: [companyId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([companyId, name])
+}
+
+model CompanyDeptForm {
+  id    String @id @default(auto()) @map("_id") @db.ObjectId
+  name  String
+  order Int
+
+  companyDeptId String      @db.ObjectId
+  companyDept   CompanyDept @relation(fields: [companyDeptId], references: [id])
+
+  dependentOnId String?
+
+  categoryId String                  @db.ObjectId
+  category   CompanyDeptFormCategory @relation(fields: [categoryId], references: [id])
+
+  fields CompanyFormField[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([companyDeptId, name])
+}
+
+// model CompanyFormFieldOptions {
+//   id String @id @default(auto()) @map("_id") @db.ObjectId
+
+//   label              String
+//   value              Json?
+//   colorCode          String?
+//   CompanyFormField   CompanyFormField? @relation(fields: [companyFormFieldId], references: [id])
+//   companyFormFieldId String?           @db.ObjectId
+// }
+
+model CompanyFormField {
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  name      String    @unique
+  fieldType FieldType
+  order     Int
+  value     Json?
+
+  ddOptionId String?
+  imgLimit   Int?
+
+  options Json?
+
+  deptFieldId String          @db.ObjectId
+  deptField   CompanyDeptForm @relation(fields: [deptFieldId], references: [id])
+
+  isDisabled Boolean @default(false)
+  isRequired Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([deptFieldId])
+}
+
+model Company {
+  id     String @id @default(auto()) @map("_id") @db.ObjectId
+  rootId String
+
+  companyManagerId String
+  name             String
+  imgURL           String?
+  email            String
+  phone            String
+
+  isSubscribed Boolean @default(false)
+
+  Log                     Log[]
+  Subscriptions           Subscriptions[]
+  Depts                   CompanyDept[]
+  Leads                   Lead[]
+  Prospect                Prospect[]
+  CompanyDeptFormCategory CompanyDeptFormCategory[]
+  members                 Member[]                  @relation("CompanyMembers")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([rootId])
+  @@index([companyManagerId])
+  @@index([email])
+}
+
 model Location {
   id                String  @id @default(auto()) @map("_id") @db.ObjectId
   locations         Json[]
@@ -214,102 +385,72 @@ model Location {
   @@unique([leadAssingeeMemberId, day])
 }
 
-model LeadFeedback {
-  id       String @id @default(auto()) @map("_id") @db.ObjectId
-  formName String
+model Role {
+  id      String   @id @default(auto()) @map("_id") @db.ObjectId
+  name    String
+  members Member[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Member {
+  id       String  @id @default(auto()) @map("_id") @db.ObjectId
+  email    String
+  password String
+  name     String
+  imgURL   String?
+  phone    String
+
+  otp       String?
+  otpExpiry DateTime?
+  platform  String?
 
   deptId String?      @db.ObjectId
-  dept   CompanyDept? @relation(fields: [deptId], references: [id])
+  Dept   CompanyDept? @relation(fields: [deptId], references: [id], onDelete: Cascade)
 
-  leadId String? @db.ObjectId
-  lead   Lead?   @relation(fields: [leadId], references: [id])
+  roleId String @db.ObjectId
+  role   Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
-  memberId String? @db.ObjectId
-  member   Member? @relation(fields: [memberId], references: [id])
+  companyId String?  @db.ObjectId
+  Company   Company? @relation(fields: [companyId], references: [id], name: "CompanyMembers", onDelete: Cascade)
 
-  feedback  Feedbacks[]
-  imageUrls String[]
+  submittedForm SubmittedForm[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  Log            Log[]
+  Bid            Bid[]
+  LeadMember     LeadMember[]
+  LeadTransferTo LeadTransferTo[] @relation("TransferTo")
+  LeadTransferBy LeadTransferTo[] @relation("TransferBy")
 
-  @@unique([formName, leadId, memberId])
-}
-
-model BroadcastForm {
-  id            String        @id @default(auto()) @map("_id") @db.ObjectId
-  name          String        @unique
-  order         Int
-  subCategories SubCategory[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model SubCategory {
-  id              String        @id @default(auto()) @map("_id") @db.ObjectId
-  name            String        @unique
-  order           Int
-  broadcastFormId String        @db.ObjectId
-  broadcastForm   BroadcastForm @relation(fields: [broadcastFormId], references: [id])
-
-  options Option[]
+  sessionToken String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([name, broadcastFormId])
+  @@index([deptId])
+  @@index([roleId])
+  @@index([companyId])
 }
 
-model Option {
-  id            String      @id @default(auto()) @map("_id") @db.ObjectId
-  name          String      @unique
-  type          FieldType
-  order         Int
-  subCategoryId String      @db.ObjectId
-  subCategory   SubCategory @relation(fields: [subCategoryId], references: [id])
+// /********ADMIN's MODEL********/
 
-  values OptionValue[]
+// model Admin {
+//   id       String  @id @default(auto()) @map("_id") @db.ObjectId
+//   name     String
+//   email    String  @unique
+//   password String
+//   imgURL   String?
+//   phone    String  @unique
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
+//   otp       String?
+//   otpExpiry DateTime?
+//   platform  String?
+//   createdAt DateTime  @default(now())
+//   updatedAt DateTime  @updatedAt
 
-model OptionValue {
-  id   String @id @default(auto()) @map("_id") @db.ObjectId
-  name String @unique
-
-  optionId String? @db.ObjectId
-  option   Option? @relation(fields: [optionId], references: [id])
-
-  values           OptionValue[]      @relation("OptionToOptionValues")
-  BroadcastMessage BroadcastMessage[]
-
-  parentValue   OptionValue? @relation("OptionToOptionValues", fields: [parentValueId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  parentValueId String?      @db.ObjectId
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([name, optionId])
-}
-
-model Feedbacks {
-  id String @id @default(auto()) @map("_id") @db.ObjectId
-
-  leadFeedbackId String?       @db.ObjectId
-  LeadFeedback   LeadFeedback? @relation(fields: [leadFeedbackId], references: [id])
-
-  leadId String? @db.ObjectId
-  lead   Lead?   @relation(fields: [leadId], references: [id])
-
-  name      String
-  value     Json?
-  fieldType String
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
+//   @@unique([email, phone])
+// }
 
 model AdminDept {
   id String @id @default(auto()) @map("_id") @db.ObjectId
@@ -317,45 +458,21 @@ model AdminDept {
   name   String  @unique
   imgURL String?
 
-  deptFields DeptField[]
+  adminDeptForm AdminDeptForm[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
-model CompanyDept {
-  id String @id @default(auto()) @map("_id") @db.ObjectId
-
-  name          String
-  deptManagerId String
-
-  companyId String  @db.ObjectId
-  Company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-
-  companyDeptForms CompanyDeptForm[]
-  members          Member[]
-  Bid              Bid[]
-
-  LeadFeedback       LeadFeedback[]
-  CompanyDeptOptForm CompanyDeptOptForm[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([companyId])
-  @@index([companyId, name])
-}
-
-model DeptField {
-  id    String @id @default(auto()) @map("_id") @db.ObjectId
-  name  String
-  order Int
+model AdminDeptForm {
+  id        String @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  deptOrder Int
 
   adminDeptId String?    @db.ObjectId
   AdminDept   AdminDept? @relation(fields: [adminDeptId], references: [id])
 
-  subDeptFields   SubDeptField[]
-  CompanyDeptForm CompanyDeptForm[]
+  formFields AdminFormField[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -363,29 +480,33 @@ model DeptField {
   @@index([adminDeptId])
 }
 
-model SubDeptField {
+model AdminFormFieldptions {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  label            String
+  value            Json?
+  colorCode        String?
+  AdminFormField   AdminFormField? @relation(fields: [adminFormFieldId], references: [id])
+  adminFormFieldId String?         @db.ObjectId
+}
+
+model AdminFormField {
   id        String    @id @default(auto()) @map("_id") @db.ObjectId
   name      String
   fieldType FieldType
+  order     Int
   value     Json?
-  options   Json?
-
-  imgLimit Int?
-
-  order      Int
-  isDisabled Boolean @default(false)
-  isRequired Boolean @default(false)
 
   ddOptionId String?
+  imgLimit   Int?
 
-  deptFieldId String?    @db.ObjectId
-  DeptField   DeptField? @relation(fields: [deptFieldId], references: [id])
+  options AdminFormFieldptions[]
 
-  CompanyDeptForm   CompanyDeptForm? @relation(fields: [companyDeptFormId], references: [id])
-  companyDeptFormId String?          @db.ObjectId
+  deptFieldId String        @db.ObjectId
+  DeptField   AdminDeptForm @relation(fields: [deptFieldId], references: [id])
 
-  CompanyDeptOptForm   CompanyDeptOptForm? @relation(fields: [companyDeptOptFormId], references: [id])
-  companyDeptOptFormId String?             @db.ObjectId
+  isDisabled Boolean @default(false)
+  isRequired Boolean @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -393,59 +514,7 @@ model SubDeptField {
   @@index([deptFieldId])
 }
 
-enum FieldType {
-  INPUT
-  PHONE
-  TAG
-  CURRENCY
-  IMAGE
-  DATE
-  DATETIME
-  TEXTAREA
-  RADIO
-  CHECKBOX
-  SELECT
-  DD
-  DD_IMG
-}
-
-model CompanyDeptForm {
-  id    String @id @default(auto()) @map("_id") @db.ObjectId
-  name  String
-  order Int
-
-  companyDeptId String      @db.ObjectId
-  companyDept   CompanyDept @relation(fields: [companyDeptId], references: [id])
-
-  adminDeptFieldId String?    @db.ObjectId
-  adminDeptField   DeptField? @relation(fields: [adminDeptFieldId], references: [id])
-
-  subDeptFields SubDeptField[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([companyDeptId, name])
-}
-
-model CompanyDeptOptForm {
-  id    String @id @default(auto()) @map("_id") @db.ObjectId
-  name  String
-  order Int
-
-  companyDeptId String?      @db.ObjectId
-  companyDept   CompanyDept? @relation(fields: [companyDeptId], references: [id])
-
-  companyId String  @db.ObjectId
-  company   Company @relation(fields: [companyId], references: [id])
-
-  subDeptFields SubDeptField[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([companyId, name])
-}
+// /********PLAN's MODEL********/
 
 model Plan {
   id String @id @default(auto()) @map("_id") @db.ObjectId
@@ -487,94 +556,21 @@ model Subscriptions {
   @@index([companyId])
 }
 
-model BroadcastMessage {
+// /***********Utils (Log maintain)**********/
+
+model Log {
   id String @id @default(auto()) @map("_id") @db.ObjectId
 
-  subCategory String
-  option      String
-  desc        String?
-  valueId     String?      @db.ObjectId
-  value       OptionValue? @relation(fields: [valueId], references: [id])
+  logType     String
+  logData     Json
+  description String
 
-  imgURL Json?
+  userId String @db.ObjectId
+  user   Member @relation(fields: [userId], references: [id])
 
-  companyId String  @db.ObjectId
-  Company   Company @relation(fields: [companyId], references: [id])
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Company {
-  id               String  @id @default(auto()) @map("_id") @db.ObjectId
-  rootId           String
-  companyManagerId String
-  name             String
-  imgURL           String?
-  email            String
-  phone            String
-
-  isSubscribed Boolean @default(false)
-
-  members       Member[]        @relation("CompanyMembers")
-  Depts         CompanyDept[]
-  Subscriptions Subscriptions[]
-  Leads         Lead[]
-
-  createdAt          DateTime             @default(now())
-  updatedAt          DateTime             @updatedAt
-  BroadcastMessage   BroadcastMessage[]
-  Prospect           Prospect[]
-  CompanyDeptOptForm CompanyDeptOptForm[]
-
-  @@index([rootId])
-  @@index([companyManagerId])
-  @@index([email])
-}
-
-model Role {
-  id   String @id @default(auto()) @map("_id") @db.ObjectId
-  name String
-
-  Members Member[]
+  comapnyId String  @db.ObjectId
+  company   Company @relation(fields: [comapnyId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-}
-
-model Member {
-  id       String  @id @default(auto()) @map("_id") @db.ObjectId
-  email    String
-  password String
-  name     String
-  imgURL   String?
-  phone    String
-
-  otp       String?
-  otpExpiry DateTime?
-  platform  String?
-
-  deptId String?      @db.ObjectId
-  Dept   CompanyDept? @relation(fields: [deptId], references: [id], onDelete: Cascade)
-
-  roleId String @db.ObjectId
-  role   Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
-
-  companyId String?  @db.ObjectId
-  Company   Company? @relation(fields: [companyId], references: [id], name: "CompanyMembers", onDelete: Cascade)
-
-  Bid            Bid[]
-  LeadMember     LeadMember[]
-  LeadFeedback   LeadFeedback[]
-  LeadTransferTo LeadTransferTo[] @relation("TransferTo")
-  LeadTransferBy LeadTransferTo[] @relation("TransferBy")
-
-  sessionToken String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([deptId])
-  @@index([roleId])
-  @@index([companyId])
 }

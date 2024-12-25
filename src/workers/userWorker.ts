@@ -89,7 +89,7 @@ const createUser = async (user: z.infer<typeof signupSchema>) => {
                 });
                 const existingDepts = await prisma.adminDept.findMany({
                     where: {
-                        deptFields: {
+                        adminDeptForm: {
                             some: {
                                 id: {
                                     in: freePlan?.defaultAllowedDeptsIds || [],
@@ -98,14 +98,18 @@ const createUser = async (user: z.infer<typeof signupSchema>) => {
                         },
                     },
                     include: {
-                        deptFields: {
+                        adminDeptForm: {
                             where: {
                                 id: {
                                     in: freePlan?.defaultAllowedDeptsIds || [],
                                 }
                             },
                             include: {
-                                subDeptFields: true,
+                                formFields: {
+                                    include: { 
+                                        options: true
+                                    }
+                                },
                             },
                         },
                     },
@@ -116,12 +120,12 @@ const createUser = async (user: z.infer<typeof signupSchema>) => {
                     name: dept.name,
                     deptManagerId: newUser.id,
                     companyDeptForms: {
-                        create: dept.deptFields.map(field => ({
+                        create: dept.adminDeptForm.map(field => ({
                             name: field.name,
-                            order: field.order,
+                            order: field.deptOrder,
                             adminDeptFieldId: field.id,
                             subDeptFields: {
-                                create: field.subDeptFields.map(subField => ({
+                                create: field.formFields.map(subField => ({
                                     name: subField.name,
                                     order: subField.order,
                                     fieldType: subField.fieldType,
@@ -491,6 +495,9 @@ const getCompanyDeptMembers = async (companyId: string, deptId: string) => {
             members = await prisma.member.findMany({
                 where: {
                     companyId: companyId,
+                    role: { 
+                        name: { notIn: ['Root', 'Manager', "Admin"] }
+                    }
                 },
                 include: {
                     role: true,
@@ -577,83 +584,83 @@ const getDriverLocationHistory = async (memberId: string, date: string) => {
 
 const createNUpdateBroadcast = async (broadcast: any) => {
 
-    try {
-        let existingBroadcast: null | any = null
-        if (broadcast.id) {
-            existingBroadcast = await prisma.broadcastMessage.findFirst({
-                where: {
-                    id: broadcast.id,
-                },
-            });
+    // try {
+    //     let existingBroadcast: null | any = null
+    //     if (broadcast.id) {
+    //         existingBroadcast = await prisma.broadcastMessage.findFirst({
+    //             where: {
+    //                 id: broadcast.id,
+    //             },
+    //         });
 
-        }
-        delete broadcast.id;
-        if (existingBroadcast) {
-            return await prisma.broadcastMessage.update({
-                where: {
-                    id: (existingBroadcast).id,
-                },
-                data: {
-                    ...broadcast,
-                    updatedAt: new Date(),
-                },
-            });
-        } else {
-            return await prisma.broadcastMessage.create({
-                data: {
-                    ...broadcast,
-                },
-            });
-        }
-    } catch (error: any) {
-        logger.error('Error creating or updating broadcast:', error);
-        throw new Error(error?.message);
-    }
+    //     }
+    //     delete broadcast.id;
+    //     if (existingBroadcast) {
+    //         return await prisma.broadcastMessage.update({
+    //             where: {
+    //                 id: (existingBroadcast).id,
+    //             },
+    //             data: {
+    //                 ...broadcast,
+    //                 updatedAt: new Date(),
+    //             },
+    //         });
+    //     } else {
+    //         return await prisma.broadcastMessage.create({
+    //             data: {
+    //                 ...broadcast,
+    //             },
+    //         });
+    //     }
+    // } catch (error: any) {
+    //     logger.error('Error creating or updating broadcast:', error);
+    //     throw new Error(error?.message);
+    // }
 }
 
 const getBroadcasts = async (companyId: string) => {
-    try {
-        const broadcasts = await prisma.broadcastMessage.findMany({
-            where: {
-                companyId,
-            },
-            orderBy: {
-                createdAt: 'desc',
-            },
-        });
-        return broadcasts;
-    } catch (error: any) {
-        logger.error('Error fetching broadcasts:', error);
-        throw new Error(error?.message);
-    }
+    // try {
+    //     const broadcasts = await prisma.broadcastMessage.findMany({
+    //         where: {
+    //             companyId,
+    //         },
+    //         orderBy: {
+    //             createdAt: 'desc',
+    //         },
+    //     });
+    //     return broadcasts;
+    // } catch (error: any) {
+    //     logger.error('Error fetching broadcasts:', error);
+    //     throw new Error(error?.message);
+    // }
 }
 
 const getBroadcastById = async (broadcastId: string) => {
-    try {
-        const broadcast = await prisma.broadcastMessage.findFirst({
-            where: {
-                id: broadcastId,
-            },
-        });
-        return broadcast;
-    } catch (error: any) {
-        logger.error('Error fetching broadcast:', error);
-        throw new Error(error?.message);
-    }
+    // try {
+    //     const broadcast = await prisma.broadcastMessage.findFirst({
+    //         where: {
+    //             id: broadcastId,
+    //         },
+    //     });
+    //     return broadcast;
+    // } catch (error: any) {
+    //     logger.error('Error fetching broadcast:', error);
+    //     throw new Error(error?.message);
+    // }
 }
 
 const deleteBroadcast = async (broadcastId: string) => {
-    try {
-        const b = await prisma.broadcastMessage.delete({
-            where: {
-                id: broadcastId,
-            },
-        });
-        return b;
-    } catch (error: any) {
-        logger.error('Error deleting broadcast:', error);
-        throw new Error(error?.message);
-    }
+    // try {
+    //     const b = await prisma.broadcastMessage.delete({
+    //         where: {
+    //             id: broadcastId,
+    //         },
+    //     });
+    //     return b;
+    // } catch (error: any) {
+    //     logger.error('Error deleting broadcast:', error);
+    //     throw new Error(error?.message);
+    // }
 }
 
 export default {

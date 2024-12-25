@@ -3,16 +3,16 @@ import { formatISO, parse } from "date-fns";
 import prisma from "../config/database";
 import logger from "../utils/logger";
 import { leadUtils } from "../utils";
-import { CallStatus, Feedbacks, FieldType, PaymentStatus, Status } from "@prisma/client";
+import { CallStatus, FieldType, FormValue, PaymentStatus, Status } from "@prisma/client";
 import { createLeadSchema, leadAssignToSchema, leadBidSchema, submitFeedbackSchema } from "../types/lead";
 import { loggedUserSchema } from "../types/user";
-import { formatReturnOfDB } from "../utils/lead-worker-utils";
+import { followUpUpdater, formatReturnOfDB } from "../utils/lead-worker-utils";
 
 const getAllLeads = async () => {
     try {
         const leads = await prisma.lead.findMany({
             include: {
-                Company: true,
+                company: true,
                 bids: true,
             },
         });
@@ -28,7 +28,8 @@ const getAllProspects = async () => {
     try {
         const prospects = await prisma.prospect.findMany({
             include: {
-                Company: true,
+                company: true,
+                followUps: true
             },
         });
 
@@ -64,9 +65,9 @@ const getLeadsByDateRange = async (companyId: string, fromDateStr: string, toDat
                 }
             },
             include: {
-                LeadFeedback: {
+                submittedForm: {
                     include: {
-                        feedback: true,
+                        formValue: true,
                         member: {
                             include: {
                                 role: true
@@ -76,7 +77,7 @@ const getLeadsByDateRange = async (companyId: string, fromDateStr: string, toDat
                 },
                 bids: {
                     include: {
-                        Member: true
+                        member: true
                     }
                 }
             }
@@ -86,7 +87,7 @@ const getLeadsByDateRange = async (companyId: string, fromDateStr: string, toDat
 
         // TODO: Calc totalLeads in which any member has given feedback based on member role
         const leadsWithFeedbackByRole = leads.reduce((acc: { [roleName: string]: number }, lead) => {
-            lead.LeadFeedback.forEach((feedback: any) => {
+            lead.submittedForm.forEach((feedback: any) => {
                 if (feedback.member && feedback.member.role && feedback.feedback.length > 0) {
                     const roleName = feedback.member.role.name;
                     // Exclude roles 'manager' and 'root'
@@ -105,9 +106,9 @@ const getLeadsByDateRange = async (companyId: string, fromDateStr: string, toDat
 
         // totalPayCollectedCount
         const totalAmtCollected = leads.reduce((totalAmt: number, lead) => {
-            lead.LeadFeedback.forEach((feedback: any) => {
+            lead.submittedForm.forEach((feedback: any) => {
                 if (feedback?.formName?.includes('Payment')) {
-                    feedback?.feedback?.forEach((item: Feedbacks) => {
+                    feedback?.feedback?.forEach((item: FormValue) => {
                         if (item.name === 'amount') {
                             totalAmt += parseFloat(String(item?.value ?? '0'));
                         }
@@ -147,12 +148,12 @@ const getAssignedLeads = async (userId: string, companyId?: string) => {
         const whereClause = companyId
             ? {
                 companyId,
-                LeadMember: {
+                leadMember: {
                     some: { memberId: userId }
                 }
             }
             : {
-                LeadMember: {
+                leadMember: {
                     some: { memberId: userId }
                 }
             };
@@ -161,15 +162,15 @@ const getAssignedLeads = async (userId: string, companyId?: string) => {
         const leads = await prisma.lead.findMany({
             where: whereClause,
             include: {
-                Company: true,
-                LeadMember: {
+                company: true,
+                leadMember: {
                     include: {
-                        Member: true,
+                        member: true,
                     },
                 },
-                LeadFeedback: {
+                submittedForm: {
                     include: {
-                        feedback: true,
+                        formValue: true,
                         member: {
                             include: {
                                 role: true
@@ -177,10 +178,10 @@ const getAssignedLeads = async (userId: string, companyId?: string) => {
                         }
                     }
                 },
-                Feedbacks: true,
+                // Feedbacks: true,
                 bids: {
                     include: {
-                        Member: true
+                        member: true
                     }
                 },
             },
@@ -199,66 +200,55 @@ const getCompanyLeads = async (companyId: string) => {
                 companyId,
             },
             include: {
-                LeadMember: {
+                leadMember: {
                     include: {
-                        Member: true
-                    }
+                        member: true,
+                    },
                 },
-                LeadFeedback: {
+                submittedForm: {
                     include: {
-                        feedback: true,
+                        formValue: true,
+                        dependentOnValue: true,
                         member: {
                             include: {
-                                role: true
-                            }
-                        }
-                    }
+                                role: true,
+                            },
+                        },
+                    },
                 },
                 bids: {
                     include: {
-                        Member: true
-                    }
+                        member: true,
+                    },
                 },
+                followUps: true
             },
             orderBy: {
-                createdAt: 'desc',
-            }
+                createdAt: 'desc', // Sorting by non-nullable createdAt field
+            },
         });
 
-        const leadsWithUniqueFeedback = leads.map(lead => {
-            lead.LeadFeedback.forEach(feedbackEntry => {
-                const feedbackMap = new Map<string, typeof feedbackEntry.feedback[0]>();
+        console.dir(leads, {depth: null})
 
-                feedbackEntry.feedback.forEach(item => {
-                    const key = `${item.name}-${item.fieldType}`;
-                    feedbackMap.set(key, item);  // Override if key already exists
-                });
+        // const leadsWithUniqueFeedback = leads.map(lead => {
+        //     lead.submittedForm.forEach(feedbackEntry => {
+        //         const feedbackMap = new Map<string, typeof feedbackEntry.formValue[0]>();
 
-                feedbackEntry.feedback = Array.from(feedbackMap.values());
-            });
+        //         feedbackEntry.formValue.forEach(item => {
+        //             const key = `${item.name}-${item.fieldType}`;
+        //             feedbackMap.set(key, item);  // Override if key already exists
+        //         });
 
-            return lead;
-        });
+        //         feedbackEntry.formValue = Array.from(feedbackMap.values());
+        //     });
+
+        //     return lead;
+        // });
 
 
-        const groupedLeads = leads.reduce((groups: any[], lead) => {
-            lead.LeadFeedback.forEach((feedback: any) => {
-                let group = groups.find(g => g.formName === feedback.formName);
-                if (!group) {
-                    group = {
-                        formName: feedback.formName,
-                        feedback: [],
-                    };
-                    groups.push(group);
-                }
-                group.feedback.push(...feedback.feedback);
-            });
-            return groups;
-        }, []);
 
         return {
-            lead: leadsWithUniqueFeedback,
-            groupedLeads,
+            lead: leads,
         };
 
     } catch (error: any) {
@@ -275,13 +265,13 @@ const getCompanyProspects = async (companyId: string) => {
             },
             include: {
                 followUps: true,
-                Company: {
+                company: {
                     include: {
                         Depts: {
                             include: {
-                                companyDeptForms: {
+                                companyForms: {
                                     include: {
-                                        subDeptFields: true
+                                        fields: true
                                     }
                                 }
                             }
@@ -305,15 +295,15 @@ const getCompanyLeadById = async (companyId: string, leadId: string) => {
                 id: leadId,
             },
             include: {
-                Company: true,
-                LeadMember: {
+                company: true,
+                leadMember: {
                     include: {
-                        Member: true
+                        member: true
                     }
                 },
-                LeadFeedback: {
+                submittedForm: {
                     include: {
-                        feedback: true,
+                        formValue: true,
                         member: {
                             include: {
                                 role: true
@@ -323,7 +313,7 @@ const getCompanyLeadById = async (companyId: string, leadId: string) => {
                 },
                 bids: {
                     include: {
-                        Member: true
+                        member: true
                     }
                 },
             },
@@ -340,14 +330,14 @@ const getTransferedLeads = async (userId: string) => {
     try {
         const leads = await prisma.lead.findMany({
             where: {
-                LeadTransferTo: {
+                leadTransferTo: {
                     some: {
                         transferById: userId,
                     },
                 },
             },
             include: {
-                LeadTransferTo: {
+                leadTransferTo: {
                     include: {
                         transferTo: {
                             include: {
@@ -411,9 +401,7 @@ const createProspect = async (prspct: z.infer<typeof createLeadSchema>, userName
 
         const newLead = await prisma.prospect.create({
             data: {
-                Company: {
-                    connect: { id: prspct.companyId },
-                },
+                companyId: prspct.companyId,
                 name: prspct.name,
                 email: prspct.email,
                 phone: prspct.phone,
@@ -422,7 +410,7 @@ const createProspect = async (prspct: z.infer<typeof createLeadSchema>, userName
                 callStatus: CallStatus.PENDING, // or PENDING
                 paymentStatus: PaymentStatus.PENDING, // or PENDING
                 remark: prspct.remark,
-                dynamicFieldValues: prspct.dynamicFieldValues,
+                // dynamicFieldValues: prspct.dynamicFieldValues,
                 via: `API: ${userName}`
             },
         });
@@ -434,7 +422,7 @@ const createProspect = async (prspct: z.infer<typeof createLeadSchema>, userName
     }
 };
 
-const createLead = async (lead: z.infer<typeof createLeadSchema>, userName: String) => {
+const createLead = async (lead: z.infer<typeof createLeadSchema>, user: z.infer<typeof loggedUserSchema>) => {
     try {
         const newLead = await prisma.lead.create({
             data: {
@@ -443,12 +431,9 @@ const createLead = async (lead: z.infer<typeof createLeadSchema>, userName: Stri
                 phone: lead.phone,
                 alternatePhone: lead.alternatePhone,
                 rating: lead.rating,
-                vehicleDate: formatISO(parse(lead.vehicleDate || "", 'dd/MM/yyyy', new Date())),
-                vehicleName: lead.vehicleName,
-                vehicleModel: lead.vehicleModel,
-                nextFollowUpDate: lead.nextFollowUpDate,
                 remark: lead.remark,
-                via: `API: ${userName}`
+                via: `Manually: ${user.name}`,
+                companyId: user.companyId,
             },
         });
 
@@ -458,6 +443,7 @@ const createLead = async (lead: z.infer<typeof createLeadSchema>, userName: Stri
         throw new Error(`Error updating Lead: ${error.message}`);
     }
 }
+
 const updateLead = async (lead: z.infer<typeof createLeadSchema>) => {
     try {
         const updatedLead = await prisma.lead.update({
@@ -470,10 +456,6 @@ const updateLead = async (lead: z.infer<typeof createLeadSchema>) => {
                 phone: lead.phone,
                 alternatePhone: lead.alternatePhone,
                 rating: lead.rating,
-                vehicleDate: formatISO(parse(lead.vehicleDate || "", 'dd/MM/yyyy', new Date())),
-                vehicleName: lead.vehicleName,
-                vehicleModel: lead.vehicleModel,
-                nextFollowUpDate: lead.nextFollowUpDate,
             },
         });
 
@@ -509,7 +491,7 @@ const approveLead = async (leadId: string, status: boolean) => {
 
     const prospectToLead = await prisma.lead.upsert({
         where: {
-            email_phone: { 
+            email_phone: {
                 email: prospect.email,
                 phone: prospect.phone
             }
@@ -521,21 +503,23 @@ const approveLead = async (leadId: string, status: boolean) => {
             alternatePhone: prospect.alternatePhone,
             rating: prospect.rating,
             companyId: prospect.companyId,
-            isLeadApproved: true,
             remark: prospect.remark,
-            via: `API`
+            via: `Manually: ${companyOwner.name}`,
         },
-        update : { 
+        update: {
             name: prospect.name,
             email: prospect.email,
             phone: prospect.phone,
             alternatePhone: prospect.alternatePhone,
             rating: prospect.rating,
             companyId: prospect.companyId,
-            isLeadApproved: true,
             // Follow up add krna baki h abhi !!!
         }
     })
+
+    const updateProspectFollow = await followUpUpdater(prospect.id, `Lead Converted from Prospect`, companyOwner.name);
+    const updateLeadProspectFollow = await followUpUpdater(prospectToLead.id, `Lead Converted from Prospect`, companyOwner.name);
+
 
     await prisma.leadMember.create({
         data: {
@@ -600,7 +584,7 @@ const leadAssignTo = async ({ companyId, leadIds, deptId, userIds, description }
             },
         });
 
-        // Upsert LeadMember entries
+        // Upsert leadMember entries
         for (const leadId of leadIds) {
             for (const userId of userIds) {
                 await prisma.leadMember.upsert({
@@ -619,7 +603,7 @@ const leadAssignTo = async ({ companyId, leadIds, deptId, userIds, description }
             }
         }
 
-        // Fetch updated leads with their LeadStatus and LeadMembers
+        // Fetch updated leads with their LeadStatus and leadMembers
         const updatedLeadsWithRelations = await prisma.lead.findMany({
             where: {
                 id: {
@@ -627,13 +611,14 @@ const leadAssignTo = async ({ companyId, leadIds, deptId, userIds, description }
                 },
             },
             include: {
-                LeadMember: {
+                leadMember: {
                     include: {
-                        Member: true,
+                        member: true,
                     },
                 },
             },
         });
+
 
         return updatedLeadsWithRelations;
     } catch (error: any) {
@@ -650,7 +635,7 @@ const leadTransferTo = async ({ leadId, transferToId }: { leadId: string, transf
                 companyId: user.companyId,
             },
             include: {
-                LeadFeedback: true
+                submittedForm: true
             }
         });
 
@@ -672,18 +657,21 @@ const leadTransferTo = async ({ leadId, transferToId }: { leadId: string, transf
         const leadTransfer = await prisma.leadTransferTo.create({
             data: {
                 leadId,
-                leadData: lead.LeadFeedback,
+                leadData: lead.submittedForm,
                 transferToId,
                 transferById: user.id,
             },
         });
+
+
+        const updateLeadProspectFollow = await followUpUpdater(leadId, `Lead Transfered to ${member.name}`, user.name);
 
         const updatedLead = await prisma.lead.update({
             where: {
                 id: leadId,
             },
             data: {
-                LeadMember: {
+                leadMember: {
                     deleteMany: {},
                     create: {
                         memberId: transferToId,
@@ -699,7 +687,7 @@ const leadTransferTo = async ({ leadId, transferToId }: { leadId: string, transf
     }
 }
 
-const submitFeedback = async ({ deptId, leadId, callStatus, paymentStatus, feedback, urls, submitType, formName, nextFollowUpDate }: z.infer<typeof submitFeedbackSchema>, userId: string) => {
+const submitFeedback = async ({ deptId, leadId, callStatus, paymentStatus, feedback, childFormValue, urls, submitType, formName, dependentOnFormName, nextFollowUpDate }: z.infer<typeof submitFeedbackSchema>, userId: string) => {
     try {
 
         const dept = await prisma.companyDept.findFirst({
@@ -729,7 +717,7 @@ const submitFeedback = async ({ deptId, leadId, callStatus, paymentStatus, feedb
             data: {
                 callStatus,
                 paymentStatus,
-                nextFollowUpDate
+                // nextFollowUpDate
             }
         });
 
@@ -737,16 +725,19 @@ const submitFeedback = async ({ deptId, leadId, callStatus, paymentStatus, feedb
             throw new Error("Lead not found")
         }
 
-        const feedbackData = feedback.map(fb => ({
+        const feedbackData = feedback.map((fb: any) => ({
             name: fb.name,
             value: fb.value,
-            fieldType: fb.fieldType,
-            leadId: leadId,
-
+            fieldType: (fb.fieldType as FieldType),
         }));
 
-        // Upsert lead feedback
-        const newFeedback = await prisma.leadFeedback.upsert({
+        const dependentOnValue = childFormValue.map((fb: any) => ({
+            name: fb.name,
+            value: fb.value,
+            fieldType: (fb.fieldType as FieldType),
+        }));
+
+        const newFeedback = await prisma.submittedForm.upsert({
             where: {
                 formName_leadId_memberId: {
                     formName,
@@ -755,29 +746,41 @@ const submitFeedback = async ({ deptId, leadId, callStatus, paymentStatus, feedb
                 },
             },
             update: {
-                feedback: {
+                dependentOnFormName,
+                formValue: {
                     deleteMany: {
-                        AND: feedbackData.map((fb) => ({
-                            name: fb.name,
-                        })),
+                        name: {
+                            in: feedbackData.map(fb => fb.name),
+                        }
                     },
                     createMany: {
                         data: feedbackData,
                     },
                 },
+                dependentOnValue: {
+                    deleteMany: {
+                        name: {
+                            in: dependentOnValue.map((fb: any) => fb.name),
+                        }
+                    },
+                    createMany: {
+                        data: dependentOnValue,
+                    },
+                },
                 formName: formName,
-                imageUrls: urls
             },
             create: {
                 formName: formName,
-                feedback: {
+                dependentOnFormName,
+                formValue: {
                     createMany: {
                         data: feedbackData,
                     },
                 },
-                imageUrls: urls,
-                dept: {
-                    connect: { id: dept.id },
+                dependentOnValue: {
+                    createMany: {
+                        data: dependentOnValue,
+                    },
                 },
                 lead: {
                     connect: { id: leadId },
@@ -787,7 +790,8 @@ const submitFeedback = async ({ deptId, leadId, callStatus, paymentStatus, feedb
                 },
             },
             include: {
-                feedback: true,
+                formValue: true,
+                dependentOnValue: true,
             },
         });
 
@@ -797,7 +801,7 @@ const submitFeedback = async ({ deptId, leadId, callStatus, paymentStatus, feedb
                     id: leadId,
                 },
                 data: {
-                    LeadMember: {
+                    leadMember: {
                         deleteMany: {},
                         create: {
                             memberId: company.companyManagerId,
@@ -866,7 +870,7 @@ const submitBid = async ({ deptId, leadId, companyId, bidAmount, description }: 
                 bidAmount: parseFloat(bidAmount),
                 description,
                 lead: { connect: { id: leadId } },
-                Member: { connect: { id: userId } },
+                member: { connect: { id: userId } },
             },
         });
 
@@ -893,7 +897,7 @@ const getLeadBids = async (leadId: string) => {
             leadId,
         },
         include: {
-            Member: true,
+            member: true,
         },
     });
 
@@ -917,7 +921,7 @@ const updateLeadFinanceStatus = async (leadId: string, financeStatus: boolean, u
                 id: leadId,
             },
             data: {
-                isFinancedApproved: financeStatus,
+                // isFinancedApproved: financeStatus,
             },
         });
 
@@ -930,7 +934,7 @@ const updateLeadFinanceStatus = async (leadId: string, financeStatus: boolean, u
             }
         });
 
-        const updatedLeadMember = await prisma.leadMember.create({
+        const updatedleadMember = await prisma.leadMember.create({
             data: {
                 leadId,
                 memberId: company.companyManagerId,
@@ -944,22 +948,18 @@ const updateLeadFinanceStatus = async (leadId: string, financeStatus: boolean, u
     }
 }
 
-const updateLeadFollowUpDate = async (leadId: string, nextFollowUpDate: string, remark: string, customerResponse: string, rating: string, memberId: string) => {
+const updateLeadFollowUpDate = async (leadId: string, nextFollowUpDate: string, remark: string, customerResponse: string, rating: string, memberName: string) => {
     try {
         const updatedLead = await prisma.lead.update({
             where: {
                 id: leadId,
             },
             data: {
-                nextFollowUpDate: nextFollowUpDate,
+
                 followUps: {
                     create: {
                         nextFollowUpDate: nextFollowUpDate,
-                        followUpBy: {
-                            connect: {
-                                id: memberId,
-                            },
-                        },
+                        followUpBy: memberName,
                         remark,
                         customerResponse,
                         rating,
@@ -1019,18 +1019,18 @@ const xChangerCustomerList = async (companyId: string) => {
                     { companyId },
                     // { status: Status.OPEN },
                     {
-                        LeadFeedback: {
+                        submittedForm: {
                             some: { formName: "Exchange" }
                         }
                     }
                 ]
             },
             include: {
-                LeadFeedback: {
+                submittedForm: {
                     where: { formName: "Exchange" },
                     include: {
                         member: true,
-                        feedback: true
+                        formValue: true
                     }
                 }
             }
@@ -1047,9 +1047,9 @@ const getLeadPhotos = async (companyId: string) => {
         const leads = await prisma.lead.findMany({
             where: {
                 companyId,
-                LeadFeedback: {
+                submittedForm: {
                     some: {
-                        feedback: {
+                        formValue: {
                             some: {
                                 fieldType: "DD_IMG"
                             }
@@ -1058,16 +1058,16 @@ const getLeadPhotos = async (companyId: string) => {
                 }
             },
             select: {
-                LeadFeedback: {
+                submittedForm: {
                     where: {
-                        feedback: {
+                        formValue: {
                             some: {
                                 fieldType: "DD_IMG"
                             }
                         }
                     },
                     include: {
-                        feedback: {
+                        formValue: {
                             where: {
                                 fieldType: "DD_IMG"
                             }
@@ -1076,7 +1076,6 @@ const getLeadPhotos = async (companyId: string) => {
                 }
             }
         });
-        console.log(JSON.stringify(leads, null, 2), "leads-----")
         return formatReturnOfDB(leads as any)
     } catch (error: any) {
         logger.error('Error getLeadPhotos:', error);
@@ -1089,10 +1088,10 @@ const getExchangeLeadImgs = async (companyId: string) => {
         const exchangeLeads = await prisma.lead.findMany({
             where: {
                 companyId,
-                LeadFeedback: {
+                submittedForm: {
                     some: {
                         formName: "Exchange",
-                        feedback: {
+                        formValue: {
                             some: {
                                 fieldType: "IMAGE"
                             }
@@ -1101,10 +1100,10 @@ const getExchangeLeadImgs = async (companyId: string) => {
                 }
             },
             select: {
-                LeadFeedback: {
+                submittedForm: {
                     where: {
                         formName: "Exchange",
-                        feedback: {
+                        formValue: {
                             some: {
                                 fieldType: "IMAGE"
                             }
@@ -1112,7 +1111,7 @@ const getExchangeLeadImgs = async (companyId: string) => {
                     },
                     include: {
                         member: true,
-                        feedback: {
+                        formValue: {
                             where: {
                                 fieldType: "IMAGE"
                             }
@@ -1134,16 +1133,16 @@ const paymentList = async (companyId: string) => {
         const leads = await prisma.lead.findMany({
             where: {
                 companyId,
-                LeadFeedback: {
-                    some: { formName: { in: ["Payments"] } }
+                submittedForm: {
+                    some: { formName: { in: ["Payments", "Payment"] } }
                 }
             },
             select: {
-                LeadFeedback: {
-                    where: { formName: { in: ["Payments"] } },
+                submittedForm: {
+                    where: { formName: { in: ["Payments", "Payment"] } },
                     include: {
                         member: true,
-                        feedback: true
+                        formValue: true
                     }
                 }
             }
@@ -1155,7 +1154,43 @@ const paymentList = async (companyId: string) => {
     }
 }
 
+const editLeadFormValue = async (submittedFormId: string, formValue: any) => {
+    try {
+        const submittedForm = await prisma.submittedForm.update({
+            where: {
+                id: submittedFormId
+            },
+            data: {
+                dependentOnValue: {
+                    deleteMany: {
+                        name: {
+                            in: formValue.map((item: any) => item.name)
+                        }
+                    },
+                    createMany: {
+                        data: formValue.map((item: any) => ({
+                            name: item.name,
+                            value: item.value,
+                            fieldType: item.fieldType
+                        }))
+                    }
+                }
+            },
+            include: {
+                dependentOnValue: true,
+                formValue: true
+            }
+        })
+
+        return submittedForm;
+    } catch (error) {
+        console.log('error', error);
+    }
+}
+
+
 export default {
+    editLeadFormValue,
     getAllLeads,
     getLeadBids,
     getCompanyLeads,

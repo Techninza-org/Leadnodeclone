@@ -33,6 +33,7 @@ export const leadAssignToSchema = z.object({
 export const submitFeedbackSchema = z.object({
     leadId: z.string().min(3, "Lead ID must be at least 3 characters long."),
     formName: z.string().min(3, "formName must be at least 3 characters long."),
+    dependentOnFormName: z.string().optional(),
     deptId: z.string().min(3, "Department ID must be at least 3 characters long."),
     callStatus: z.enum(['BUSY', 'PENDING', 'SUCCESS']),
     submitType: z.enum(['submitToManager', 'updateLead']),
@@ -42,6 +43,7 @@ export const submitFeedbackSchema = z.object({
         value: z.string().min(2, "Value must be at least 2 characters long."),
         fieldType: z.string().min(3, "Field type must be at least 3 characters long."),
     })),
+    childFormValue: z.any().optional(), // same schema as feedback
     urls: z.array(z.string()).optional(),
     nextFollowUpDate: z.string().optional(),
 });

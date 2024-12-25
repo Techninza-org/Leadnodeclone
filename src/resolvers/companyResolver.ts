@@ -31,8 +31,8 @@ export const companyResolvers = {
     //   throw new Error('Error fetching user roles');
     // }
   },
-  getCompanyDepts: async ({ companyId }: { companyId: string }) => {
-    return await companyWorker.getDepts(companyId);
+  getCompanyDepts: async ({ companyId }: { companyId: string },  { user }: { user: z.infer<typeof loggedUserSchema> }) => {
+    return await companyWorker.getDepts(user.companyId);
   },
   getCompanyDeptFields: async ({ deptId }: { deptId: string },  { user }: { user: z.infer<typeof loggedUserSchema> }) => {
     return await companyWorker.getCompanyDeptFields(deptId, user);

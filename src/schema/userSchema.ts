@@ -1,9 +1,10 @@
 export const userSchema = `
   input CreateDeptFormInput { 
     companyDeptId: ID
-    companyId: ID
+    categoryName: String!
     name: String!
     deptName: String
+    dependentOnId: String
     order: Int
     subDeptFields: [CreateDeptFieldInput!]!
   }
@@ -15,7 +16,7 @@ export const userSchema = `
     imgLimit: Int
     ddOptionId: String
     options: JSON
-    order: Int!
+    order: Int
     isDisabled: Boolean
     isRequired: Boolean
   }
@@ -72,7 +73,7 @@ export const userSchema = `
     role: Role!
     sessionToken: String
     token: String!
-    companyId: String!
+    companyId: String
   }
 
   type Member {

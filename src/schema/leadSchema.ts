@@ -20,7 +20,6 @@ export const leadSchema = `
 
   type LeadAndGroupedLeads { 
     lead: [Lead]
-    groupedLeads: [groupLeads]
   }
 
   enum CallStatus {
@@ -48,14 +47,15 @@ export const leadSchema = `
 
   type LeadMember {
     id: ID!
-    Lead: Lead!
-    Member: Member!
+    lead: Lead!
+    member: Member!
     createdAt: String!
     updatedAt: String!
   }
 
   type Feedback {
     id: ID!
+    formValueId: ID
     name: String!
     fieldType: FieldType!
     value: JSON!
@@ -66,13 +66,13 @@ export const leadSchema = `
 
   type LeadFeedback {
     id: ID!
+    formName: String!
     leadId: String!
     member: Member!
     memberId: String!
-    Lead: Lead!
-    imageUrls: [String]
-
-    feedback: [Feedback]!
+    dependentOnFormName: String
+    formValue: [Feedback]!
+    dependentOnValue: [Feedback]
     createdAt: String!
     updatedAt: String!
   }
@@ -84,23 +84,20 @@ export const leadSchema = `
     phone: String!
     alternatePhone: String
     rating: Int!
-    isLeadApproved: Boolean!
     isLeadConverted: Boolean!
     isFinancedApproved: Boolean!
-    vehicleDate: String
-    vehicleName: String
-    vehicleModel: String
     callStatus: String!
     paymentStatus: String!
-    LeadMember: [LeadMember]
-    LeadFeedback: [LeadFeedback]
-    Company: Company!
+    leadMember: [LeadMember]
+    submittedForm: [LeadFeedback]
+    company: Company!
     bids: [Bid]
     nextFollowUpDate: String
     department: String
     createdAt: String!
     updatedAt: String!
-    LeadTransferTo: [LeadTransferTo]
+    leadTransferTo: [LeadTransferTo]
+    followUps: [FollowUp]
   }
 
   type LeadTransferTo {
@@ -136,15 +133,14 @@ export const leadSchema = `
   
   type FollowUp { 
     id: ID!
-    nextFollowUpDate: String!
+    nextFollowUpDate: String
     remark: String!
-    customerResponse: String!
-    rating: String!
+    customerResponse: String
+    rating: String
     
-    leadId: String!
-    lead: Lead!
-    followUpById: String!
-    followUpBy: Member!
+    leadId: String
+    lead: Lead
+    followUpBy: String
 
     createdAt: String!
     updatedAt: String!
