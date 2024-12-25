@@ -83,8 +83,8 @@ export const userSchema = `
     phone: String!
     dept: Dept!
     role: Role
-    companyId: String!
-    Company: Company!
+    companyId: String
+    Company: Company
     createdAt: String!
     updatedAt: String!
   }

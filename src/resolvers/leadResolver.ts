@@ -176,7 +176,7 @@ export const leadResolvers = {
     },
     updateLeadFollowUpDate: async ({ leadId, nextFollowUpDate, remark, customerResponse, rating }: { leadId: string, nextFollowUpDate: string, remark: string, customerResponse: string, rating: string }, { user }: { user: z.infer<typeof loggedUserSchema> }) => {
         try {
-            return await leadWorker.updateLeadFollowUpDate(leadId, nextFollowUpDate, remark, customerResponse, rating, user.id);
+            return await leadWorker.updateLeadFollowUpDate(leadId, nextFollowUpDate, remark, customerResponse, rating, user.name);
         } catch (error) {
             logger.error('Error updating lead follow up date:', error);
             throw new Error(`Error updating lead follow up date: ${error}`);
