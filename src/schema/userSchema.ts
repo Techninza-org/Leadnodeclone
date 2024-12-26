@@ -1,5 +1,6 @@
 export const userSchema = `
   input CreateDeptFormInput { 
+    companyDeptFormId: String
     companyDeptId: ID
     categoryName: String!
     name: String!

@@ -183,20 +183,12 @@ const createNUpdateCompanyDeptForm = async (deptForm: any, ctxUser: z.infer<type
                 deptManagerId: ctxUser.id,
                 companyId: ctxUser.companyId,
                 companyForms: {
-                    connectOrCreate: {
-                        where: {
-                            companyDeptId_name: {
-                                companyDeptId: deptForm.companyDeptId,
-                                name: deptForm.name,
-                            },
-                        },
-                        create: {
-                            name: deptForm.name,
-                            order: deptForm.order,
-                            categoryId: formCategory?.id,
-                            fields: {
-                                create: []
-                            },
+                    create: {
+                        name: deptForm.name,
+                        order: deptForm.order,
+                        categoryId: formCategory?.id,
+                        fields: {
+                            create: []
                         },
                     },
                 },
@@ -205,56 +197,64 @@ const createNUpdateCompanyDeptForm = async (deptForm: any, ctxUser: z.infer<type
         });
 
 
-        const newDept = await prisma.companyDeptForm.upsert({
-            where: {
-                companyDeptId_name: {
+        let newDept = null;
+        if (!deptForm.companyDeptFormId) {
+            newDept = await prisma.companyDeptForm.create({
+                data: {
+                    name: deptForm.name,
+                    order: deptForm.order,
+                    dependentOnId: deptForm.dependentOnId,
+                    categoryId: formCategory?.id,
                     companyDeptId: deptForm.companyDeptId,
-                    name: deptForm.name
+                    fields: {
+                        create: deptForm.subDeptFields.map((field: any) => ({
+                            name: field.name,
+                            fieldType: field.fieldType,
+                            value: field.value,
+                            imgLimit: field.imgLimit,
+                            ddOptionId: field.ddOptionId,
+                            options: field?.options?.length > 0 ? field.options : null,
+                            order: field.order,
+                            isDisabled: field.isDisabled,
+                            isRequired: field.isRequired
+                        }))
+                    }
+                },
+                include: {
+                    fields: true
                 }
-            },
-            update: {
-                name: deptForm.name,
-                order: deptForm.order,
-                // dependentOnIds: deptForm.dependentOnId,
-                fields: {
-                    deleteMany: {},
-                    create: deptForm.subDeptFields.map((field: any) => ({
-                        name: field.name,
-                        fieldType: field.fieldType,
-                        value: field.value,
-                        imgLimit: field.imgLimit,
-                        ddOptionId: field.ddOptionId,
-                        options: field?.options?.length > 0 ? field.options : null,
-                        order: field.order,
-                        isDisabled: field.isDisabled,
-                        isRequired: field.isRequired
-                    }))
+            });
+        }
+
+        if (deptForm.companyDeptFormId) {
+            newDept = await prisma.companyDeptForm.update({
+                where: {
+                    id: deptForm.companyDeptFormId || '',
+                },
+                data: {
+                    name: deptForm.name,
+                    order: deptForm.order,
+                    // dependentOnIds: deptForm.dependentOnId,
+                    fields: {
+                        deleteMany: {},
+                        create: deptForm.subDeptFields.map((field: any) => ({
+                            name: field.name,
+                            fieldType: field.fieldType,
+                            value: field.value,
+                            imgLimit: field.imgLimit,
+                            ddOptionId: field.ddOptionId,
+                            options: field?.options?.length > 0 ? field.options : null,
+                            order: field.order,
+                            isDisabled: field.isDisabled,
+                            isRequired: field.isRequired
+                        }))
+                    }
+                },
+                include: {
+                    fields: true
                 }
-            },
-            create: {
-                name: deptForm.name,
-                order: deptForm.order,
-                dependentOnId: deptForm.dependentOnId,
-                categoryId: formCategory?.id,
-                companyDeptId: deptForm.companyDeptId,
-                fields: {
-                    create: deptForm.subDeptFields.map((field: any) => ({
-                        name: field.name,
-                        fieldType: field.fieldType,
-                        value: field.value,
-                        imgLimit: field.imgLimit,
-                        ddOptionId: field.ddOptionId,
-                        options: field?.options?.length > 0 ? field.options : null,
-                        order: field.order,
-                        isDisabled: field.isDisabled,
-                        isRequired: field.isRequired
-                    }))
-                }
-            },
-            include: {
-                fields: true
-            }
-        });
+            });
+        }
 
         await prisma.log.create({
             data: {

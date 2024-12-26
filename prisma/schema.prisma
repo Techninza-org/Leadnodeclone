@@ -302,7 +302,6 @@ model CompanyDeptForm {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([companyDeptId, name])
 }
 
 // model CompanyFormFieldOptions {
@@ -317,7 +316,7 @@ model CompanyDeptForm {
 
 model CompanyFormField {
   id        String    @id @default(auto()) @map("_id") @db.ObjectId
-  name      String    @unique
+  name      String    
   fieldType FieldType
   order     Int
   value     Json?

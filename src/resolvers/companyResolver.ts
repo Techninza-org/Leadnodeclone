@@ -62,7 +62,6 @@ export const companyResolvers = {
     //   }));
     //   return { user: null, errors };
     // }
-
     return await companyWorker.createNUpdateCompanyDeptForm(input, user);
   },
   createNUpdateCompanyDeptOptForm: async ({ input }: { input: any }, { user }: { user: z.infer<typeof loggedUserSchema> }) => {
