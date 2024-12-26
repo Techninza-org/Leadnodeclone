@@ -228,7 +228,7 @@ const getCompanyLeads = async (companyId: string) => {
             },
         });
 
-        console.dir(leads, {depth: null})
+        console.dir(leads, { depth: null })
 
         // const leadsWithUniqueFeedback = leads.map(lead => {
         //     lead.submittedForm.forEach(feedbackEntry => {
@@ -731,11 +731,12 @@ const submitFeedback = async ({ deptId, leadId, callStatus, paymentStatus, feedb
             fieldType: (fb.fieldType as FieldType),
         }));
 
-        const dependentOnValue = childFormValue.map((fb: any) => ({
-            name: fb.name,
-            value: fb.value,
-            fieldType: (fb.fieldType as FieldType),
-        }));
+        const dependentOnValue = childFormValue?.length > 0
+            ? childFormValue.map((fb: any) => ({
+                name: fb.name,
+                value: fb.value,
+                fieldType: fb.fieldType as FieldType,
+            })) : [];
 
         const newFeedback = await prisma.submittedForm.upsert({
             where: {
@@ -751,37 +752,45 @@ const submitFeedback = async ({ deptId, leadId, callStatus, paymentStatus, feedb
                     deleteMany: {
                         name: {
                             in: feedbackData.map(fb => fb.name),
-                        }
+                        },
                     },
-                    createMany: {
-                        data: feedbackData,
-                    },
+                    ...(feedbackData.length > 0 && {
+                        createMany: {
+                            data: feedbackData,
+                        },
+                    }),
                 },
                 dependentOnValue: {
                     deleteMany: {
                         name: {
                             in: dependentOnValue.map((fb: any) => fb.name),
-                        }
+                        },
                     },
-                    createMany: {
-                        data: dependentOnValue,
-                    },
+                    ...(dependentOnValue.length > 0 && {
+                        createMany: {
+                            data: dependentOnValue,
+                        },
+                    }),
                 },
-                formName: formName,
+                formName,
             },
             create: {
-                formName: formName,
+                formName,
                 dependentOnFormName,
-                formValue: {
-                    createMany: {
-                        data: feedbackData,
+                ...(feedbackData.length > 0 && {
+                    formValue: {
+                        createMany: {
+                            data: feedbackData,
+                        },
                     },
-                },
-                dependentOnValue: {
-                    createMany: {
-                        data: dependentOnValue,
+                }),
+                ...(dependentOnValue.length > 0 && {
+                    dependentOnValue: {
+                        createMany: {
+                            data: dependentOnValue,
+                        },
                     },
-                },
+                }),
                 lead: {
                     connect: { id: leadId },
                 },
@@ -794,7 +803,7 @@ const submitFeedback = async ({ deptId, leadId, callStatus, paymentStatus, feedb
                 dependentOnValue: true,
             },
         });
-
+        
         if (submitType === leadUtils.SUBMIT_TO_MANAGER) {
             const updatedLead = await prisma.lead.update({
                 where: {
