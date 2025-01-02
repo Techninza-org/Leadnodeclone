@@ -1122,7 +1122,7 @@ const updateLeadFollowUpDate = async (feedback: any, leadId: string, nextFollowU
 
 const updateProspectFollowUpDate = async (feedback: any, leadId: string, nextFollowUpDate: string, remark: string, customerResponse: string, rating: string, memberName: string) => {
     try {
-        const feedbackData = feedback.map((fb: any) => ({
+        const feedbackData = feedback.length > 0 && feedback?.map((fb: any) => ({
             name: fb.name,
             value: fb.value,
             fieldType: (fb.fieldType as FieldType),
