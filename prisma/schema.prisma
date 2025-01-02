@@ -56,7 +56,7 @@ model Prospect {
   rating         Int?
   remark         String
 
-  via String
+  via                String
   dynamicFieldValues Json?
 
   isLeadConverted Boolean @default(false)
@@ -64,9 +64,9 @@ model Prospect {
   callStatus    CallStatus    @default(PENDING)
   paymentStatus PaymentStatus @default(PENDING)
 
-  LeadMember LeadMember[]
-
+  // leadTransferTo LeadTransferTo[] // May be in future
   nextFollowUpDate String?
+  leadMember       ProspectMember[]
   followUps        ProspectFollowUp[]
 
   companyId String  @db.ObjectId
@@ -83,22 +83,34 @@ model Prospect {
 }
 
 model ProspectFollowUp {
-  id               String  @id @default(auto()) @map("_id") @db.ObjectId
-  followUpBy       String
-  nextFollowUpDate String?
-  remark           String
-  customerResponse String?
-  rating           String?
+  id                 String  @id @default(auto()) @map("_id") @db.ObjectId
+  followUpBy         String
+  nextFollowUpDate   String?
+  remark             String
+  customerResponse   String?
+  rating             String?
   dynamicFieldValues Json?
 
-  prospect   Prospect? @relation(fields: [prospectId], references: [id])
-  prospectId String?   @db.ObjectId
-
-  Lead   Lead?   @relation(fields: [leadId], references: [id])
-  leadId String? @db.ObjectId
+  prospect   Prospect @relation(fields: [prospectId], references: [id])
+  prospectId String   @db.ObjectId
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model ProspectMember {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  prospect   Prospect @relation(fields: [prospectId], references: [id])
+  prospectId String   @db.ObjectId
+
+  memberId String @db.ObjectId
+  member   Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([prospectId, memberId])
 }
 
 model Lead {
@@ -123,8 +135,7 @@ model Lead {
   bids           Bid[]
   leadTransferTo LeadTransferTo[]
 
-  followUps        LeadFollowUp[]
-  prospectFollowUp ProspectFollowUp[]
+  followUps          LeadFollowUp[]
   dynamicFieldValues Json?
 
   companyId String  @db.ObjectId
@@ -185,13 +196,8 @@ model LeadMember {
   leadId String @db.ObjectId
   lead   Lead   @relation(fields: [leadId], references: [id], onDelete: Cascade)
 
-  prospect   Prospect? @relation(fields: [prospectId], references: [id])
-  prospectId String?   @db.ObjectId
-
   memberId String @db.ObjectId
   member   Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
-
-  location Location[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -381,13 +387,13 @@ model Location {
   networkStrength   String?
   isLocationOff     Boolean @default(true)
 
-  leadAssingeeMemberId String     @db.ObjectId
-  leadAssingeeMember   LeadMember @relation(fields: [leadAssingeeMemberId], references: [id])
+  memberId String @db.ObjectId
+  member   Member @relation(fields: [memberId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([leadAssingeeMemberId, day])
+  @@unique([memberId, day])
 }
 
 model Role {
@@ -425,6 +431,8 @@ model Member {
   Log            Log[]
   Bid            Bid[]
   LeadMember     LeadMember[]
+  Location       Location[]
+  ProspectMember ProspectMember[]
   LeadTransferTo LeadTransferTo[] @relation("TransferTo")
   LeadTransferBy LeadTransferTo[] @relation("TransferBy")
 

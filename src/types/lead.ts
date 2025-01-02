@@ -29,7 +29,14 @@ export const leadAssignToSchema = z.object({
     // assignedOn: z.date().default(() => new Date()),
 });
 
-
+export const prospectAssignToSchema = z.object({
+    companyId: z.string().min(3, "Company ID must be at least 3 characters long."),
+    prospectIds: z.array(z.string().min(3, "Lead ID must be at least 3 characters long.")),
+    userIds: z.array(z.string().min(3, "User ID must be at least 3 characters long.")),
+    deptId: z.string().min(3, "Department ID must be at least 3 characters long."),
+    description: z.string().optional(),
+    // assignedOn: z.date().default(() => new Date()),
+});
 
 export const submitFeedbackSchema = z.object({
     leadId: z.string().min(3, "Lead ID must be at least 3 characters long."),

@@ -100,6 +100,7 @@ type Query {
     createProspect(input: LeadInput!): LeadResponse
     
     leadAssignTo(companyId: String!, leadIds: [String!]!, deptId: String, userIds: [String!]!, description: String): [Lead]
+    prospectAssignTo(companyId: String!, leadIds: [String!]!, deptId: String, userIds: [String!]!, description: String): [Lead]
 
     submitFeedback(nextFollowUpDate: String, deptId: String!, leadId: String!, callStatus: String!, paymentStatus: String!, feedback: [FeedbackInput], childFormValue: [FeedbackInput] urls: [String], submitType: String, formName: String, dependentOnFormName: String): LeadResponse
 
@@ -107,7 +108,8 @@ type Query {
 
     updateLeadFinanceStatus(leadId: String!, financeStatus: Boolean!): Lead
 
-    updateLeadFollowUpDate(leadId: String!, nextFollowUpDate: String!, remark: String!, customerResponse: String!, rating: String!): Lead
+    updateLeadFollowUpDate(leadId: String!, nextFollowUpDate: String!, remark: String!, customerResponse: String!, rating: String, feedback: [FeedbackInput]): Lead
+    updateProspectFollowUpDate(leadId: String!, nextFollowUpDate: String!, remark: String!, customerResponse: String!, rating: String, feedback: [FeedbackInput]): Lead
 
     updateLeadPaymentStatus(leadId: String!, paymentStatus: String!): Lead
 

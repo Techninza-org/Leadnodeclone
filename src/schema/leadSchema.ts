@@ -138,6 +138,7 @@ export const leadSchema = `
     customerResponse: String
     rating: String
     
+    dynamicFieldValues : JSON
     leadId: String
     lead: Lead
     followUpBy: String

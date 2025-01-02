@@ -532,8 +532,8 @@ const savedMemberLocation = async (memberId: string, locations: Array<{ apiHitTi
 
         const existingDocument = await prisma.location.findUnique({
             where: {
-                leadAssingeeMemberId_day: {
-                    leadAssingeeMemberId: memberId,
+                memberId_day: {
+                    memberId,
                     day: today,
                 },
             },
@@ -554,7 +554,7 @@ const savedMemberLocation = async (memberId: string, locations: Array<{ apiHitTi
         } else {
             return await prisma.location.create({
                 data: {
-                    leadAssingeeMemberId: memberId,
+                    memberId,
                     day: today,
                     locations: locationData,
                 },
@@ -571,7 +571,7 @@ const getDriverLocationHistory = async (memberId: string, date: string) => {
     try {
         const locations = await prisma.location.findFirst({
             where: {
-                leadAssingeeMemberId: memberId,
+                memberId,
                 day: date,
             },
         });

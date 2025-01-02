@@ -4,7 +4,7 @@ import prisma from "../config/database";
 import logger from "../utils/logger";
 import { leadUtils } from "../utils";
 import { CallStatus, FieldType, FormValue, PaymentStatus, Status } from "@prisma/client";
-import { createLeadSchema, leadAssignToSchema, leadBidSchema, submitFeedbackSchema } from "../types/lead";
+import { createLeadSchema, leadAssignToSchema, leadBidSchema, prospectAssignToSchema, submitFeedbackSchema } from "../types/lead";
 import { loggedUserSchema } from "../types/user";
 import { followUpUpdater, formatReturnOfDB, getColumnNames } from "../utils/lead-worker-utils";
 
@@ -649,6 +649,95 @@ const leadAssignTo = async ({ companyId, leadIds, deptId, userIds, description }
     }
 }
 
+const prospectAssignTo = async ({ companyId, prospectIds, deptId, userIds, description }: z.infer<typeof prospectAssignToSchema>) => {
+    try {
+        if (!Array.isArray(prospectIds)) {
+            throw new Error("prospectIds must be an array of lead IDs");
+        }
+
+        if (!Array.isArray(userIds)) {
+            throw new Error("userIds must be an array of user IDs");
+        }
+
+        // Fetch leads to ensure they exist and belong to the company
+        const leads = await prisma.prospect.findMany({
+            where: {
+                companyId,
+                id: {
+                    in: prospectIds,
+                },
+            },
+        });
+
+        if (leads.length !== prospectIds.length) {
+            throw new Error("Some leads not found or not part of the company");
+        }
+
+        // Fetch members to ensure they exist and belong to the company and department
+        const members = await prisma.member.findMany({
+            where: {
+                companyId,
+                id: {
+                    in: userIds,
+                },
+            },
+        });
+
+        if (members.length !== userIds.length) {
+            throw new Error("Some members not found or not part of the company or department");
+        }
+
+        await prisma.prospectMember.deleteMany({
+            where: {
+                prospectId: {
+                    in: prospectIds,
+                },
+            },
+        });
+
+        // Upsert leadMember entries
+        for (const prospectId of prospectIds) {
+            for (const userId of userIds) {
+                await prisma.prospectMember.upsert({
+                    where: {
+                        prospectId_memberId: {
+                            prospectId,
+                            memberId: userId,
+                        },
+                    },
+                    update: {},
+                    create: {
+                        prospectId,
+                        memberId: userId,
+                    },
+                });
+            }
+        }
+
+        // Fetch updated leads with their LeadStatus and leadMembers
+        const updatedLeadsWithRelations = await prisma.prospect.findMany({
+            where: {
+                id: {
+                    in: prospectIds,
+                },
+            },
+            include: {
+                leadMember: {
+                    include: {
+                        member: true,
+                    },
+                },
+            },
+        });
+
+
+        return updatedLeadsWithRelations;
+    } catch (error: any) {
+        logger.error('Error assigning Leads:', error);
+        throw new Error(`Error Assigning Leads: ${error.message}`);
+    }
+}
+
 const leadTransferTo = async ({ leadId, transferToId }: { leadId: string, transferToId: string }, { user }: { user: z.infer<typeof loggedUserSchema> }) => {
     try {
         const lead = await prisma.lead.findFirst({
@@ -709,7 +798,7 @@ const leadTransferTo = async ({ leadId, transferToId }: { leadId: string, transf
     }
 }
 
-const submitFeedback = async ({ deptId, leadId, callStatus, paymentStatus, feedback, childFormValue, urls, submitType, formName, dependentOnFormName, nextFollowUpDate }: z.infer<typeof submitFeedbackSchema>, userId: string) => {
+const submitFeedback = async ({ deptId, leadId, callStatus, paymentStatus, feedback, childFormValue, urls, submitType, formName, dependentOnFormName, nextFollowUpDate }: z.infer<typeof submitFeedbackSchema>, user: any) => {
     try {
 
         const dept = await prisma.companyDept.findFirst({
@@ -739,7 +828,6 @@ const submitFeedback = async ({ deptId, leadId, callStatus, paymentStatus, feedb
             data: {
                 callStatus,
                 paymentStatus,
-                // nextFollowUpDate
             }
         });
 
@@ -760,71 +848,91 @@ const submitFeedback = async ({ deptId, leadId, callStatus, paymentStatus, feedb
                 fieldType: fb.fieldType as FieldType,
             })) : [];
 
-        const newFeedback = await prisma.submittedForm.upsert({
-            where: {
-                formName_leadId_memberId: {
-                    formName,
-                    leadId: leadId,
-                    memberId: userId,
-                },
-            },
-            update: {
-                dependentOnFormName,
-                formValue: {
-                    deleteMany: {
-                        name: {
-                            in: feedbackData.map(fb => fb.name),
-                        },
+
+        if (formName.toUpperCase() === "LEAD FOLLOW UP" || (dependentOnFormName && dependentOnFormName.toUpperCase() === "LEAD FOLLOW UP")) {
+            const customerResponse = feedback.find((fb: any) => fb.name === "customerResponse")?.value;
+            const remark = feedback.find((fb: any) => fb.name === "remark")?.value;
+
+            const followUp = await prisma.leadFollowUp.create({
+                data: {
+                    leadId,
+                    nextFollowUpDate,
+                    followUpBy: user.name,
+                    customerResponse: customerResponse,
+                    remark: remark || "",
+                    dynamicFieldValues: dependentOnFormName ? dependentOnValue : feedback,
+                }
+            })
+        } else {
+
+            const newFeedback = await prisma.submittedForm.upsert({
+                where: {
+                    formName_leadId_memberId: {
+                        formName,
+                        leadId: leadId,
+                        memberId: user.id,
                     },
-                    ...(feedbackData.length > 0 && {
-                        createMany: {
-                            data: feedbackData,
-                        },
-                    }),
                 },
-                dependentOnValue: {
-                    deleteMany: {
-                        name: {
-                            in: dependentOnValue.map((fb: any) => fb.name),
-                        },
-                    },
-                    ...(dependentOnValue.length > 0 && {
-                        createMany: {
-                            data: dependentOnValue,
-                        },
-                    }),
-                },
-                formName,
-            },
-            create: {
-                formName,
-                dependentOnFormName,
-                ...(feedbackData.length > 0 && {
+                update: {
+                    dependentOnFormName,
                     formValue: {
-                        createMany: {
-                            data: feedbackData,
+                        deleteMany: {
+                            name: {
+                                in: feedbackData.map(fb => fb.name),
+                            },
                         },
+                        ...(feedbackData.length > 0 && {
+                            createMany: {
+                                data: feedbackData,
+                            },
+                        }),
                     },
-                }),
-                ...(dependentOnValue.length > 0 && {
                     dependentOnValue: {
-                        createMany: {
-                            data: dependentOnValue,
+                        deleteMany: {
+                            name: {
+                                in: dependentOnValue.map((fb: any) => fb.name),
+                            },
                         },
+                        ...(dependentOnValue.length > 0 && {
+                            createMany: {
+                                data: dependentOnValue,
+                            },
+                        }),
                     },
-                }),
-                lead: {
-                    connect: { id: leadId },
+                    formName,
                 },
-                member: {
-                    connect: { id: userId },
+                create: {
+                    formName,
+                    dependentOnFormName,
+                    ...(feedbackData.length > 0 && {
+                        formValue: {
+                            createMany: {
+                                data: feedbackData,
+                            },
+                        },
+                    }),
+                    ...(dependentOnValue.length > 0 && {
+                        dependentOnValue: {
+                            createMany: {
+                                data: dependentOnValue,
+                            },
+                        },
+                    }),
+                    lead: {
+                        connect: { id: leadId },
+                    },
+                    member: {
+                        connect: { id: user.id },
+                    },
                 },
-            },
-            include: {
-                formValue: true,
-                dependentOnValue: true,
-            },
-        });
+                include: {
+                    formValue: true,
+                    dependentOnValue: true,
+                },
+            });
+
+        }
+
 
         if (submitType === leadUtils.SUBMIT_TO_MANAGER) {
             const updatedLead = await prisma.lead.update({
@@ -979,14 +1087,19 @@ const updateLeadFinanceStatus = async (leadId: string, financeStatus: boolean, u
     }
 }
 
-const updateLeadFollowUpDate = async (leadId: string, nextFollowUpDate: string, remark: string, customerResponse: string, rating: string, memberName: string) => {
+const updateLeadFollowUpDate = async (feedback: any, leadId: string, nextFollowUpDate: string, remark: string, customerResponse: string, rating: string, memberName: string) => {
     try {
+        const feedbackData = feedback.map((fb: any) => ({
+            name: fb.name,
+            value: fb.value,
+            fieldType: (fb.fieldType as FieldType),
+        }));
+
         const updatedLead = await prisma.lead.update({
             where: {
                 id: leadId,
             },
             data: {
-
                 followUps: {
                     create: {
                         nextFollowUpDate: nextFollowUpDate,
@@ -994,6 +1107,40 @@ const updateLeadFollowUpDate = async (leadId: string, nextFollowUpDate: string, 
                         remark,
                         customerResponse,
                         rating,
+                        dynamicFieldValues: feedbackData
+                    },
+                },
+            },
+        });
+
+        return updatedLead;
+    } catch (error: any) {
+        logger.error('Error updating Lead:', error);
+        throw new Error(`Error updating Lead: ${error.message}`);
+    }
+}
+
+const updateProspectFollowUpDate = async (feedback: any, leadId: string, nextFollowUpDate: string, remark: string, customerResponse: string, rating: string, memberName: string) => {
+    try {
+        const feedbackData = feedback.map((fb: any) => ({
+            name: fb.name,
+            value: fb.value,
+            fieldType: (fb.fieldType as FieldType),
+        }));
+
+        const updatedLead = await prisma.prospect.update({
+            where: {
+                id: leadId,
+            },
+            data: {
+                followUps: {
+                    create: {
+                        nextFollowUpDate: nextFollowUpDate,
+                        followUpBy: memberName,
+                        remark,
+                        customerResponse,
+                        rating,
+                        dynamicFieldValues: feedbackData
                     },
                 },
             },
@@ -1247,11 +1394,13 @@ export default {
     updateLead,
     approveLead,
     leadAssignTo,
+    prospectAssignTo,
     submitFeedback,
     submitBid,
     updateLeadFinanceStatus,
     getLeadsByDateRange,
     updateLeadFollowUpDate,
+    updateProspectFollowUpDate,
     leadTransferTo,
     getTransferedLeads,
     updateLeadPaymentStatus,

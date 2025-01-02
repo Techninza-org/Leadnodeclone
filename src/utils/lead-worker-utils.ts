@@ -96,7 +96,6 @@ export const followUpUpdater = async (leadId: string, desc: string, userName: st
                     create: {
                         followUpBy: userName,
                         remark: desc,
-                        leadId: lead && lead.id,
                     }
                 },
             },

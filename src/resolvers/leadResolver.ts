@@ -117,7 +117,22 @@ export const leadResolvers = {
             throw new Error(`${error}`);
         }
     },
-
+    prospectAssignTo: async ({ companyId, leadIds, deptId, userIds, description }: z.infer<typeof leadAssignToSchema>) => {
+        try {
+            // const parsedData = leadAssignToSchema.safeParse({ companyId, leadIds, deptId, userIds, description });
+            // if (!parsedData.success) {
+            //     const errors = parsedData.error.errors.map((err: ZodIssue) => ({
+            //         message: err.message,
+            //         path: err.path,
+            //     }));
+            //     return { user: null, errors };
+            // }
+            return await leadWorker.prospectAssignTo({ companyId, prospectIds: leadIds, deptId, userIds, description });
+        } catch (error) {
+            logger.error('Error Assigning lead [leadAssignTo]:', error);
+            throw new Error(`${error}`);
+        }
+    },
     leadTransferTo: async ({ leadId, transferToId }: { leadId: string, transferToId: string }, { user }: { user: z.infer<typeof loggedUserSchema> }) => {
         try {
             return await leadWorker.leadTransferTo({ leadId, transferToId }, { user });
@@ -134,7 +149,7 @@ export const leadResolvers = {
             //     const errors = parsedData.error.errors.map((err: ZodIssue) => ([err.message, err.path]));
             //     throw new Error(errors.join(', '));
             // }
-            return await leadWorker.submitFeedback({ nextFollowUpDate, deptId, leadId, callStatus, paymentStatus, feedback, dependentOnFormName, childFormValue, urls, submitType, formName }, user.id);
+            return await leadWorker.submitFeedback({ nextFollowUpDate, deptId, leadId, callStatus, paymentStatus, feedback, dependentOnFormName, childFormValue, urls, submitType, formName }, user);
         } catch (error) {
             logger.error('Error Submitting Feedback:', error);
             throw new Error('Error Submitting Feedback');
@@ -164,9 +179,17 @@ export const leadResolvers = {
             throw new Error(`Error updating lead finance status: ${error}`);
         }
     },
-    updateLeadFollowUpDate: async ({ leadId, nextFollowUpDate, remark, customerResponse, rating }: { leadId: string, nextFollowUpDate: string, remark: string, customerResponse: string, rating: string }, { user }: { user: z.infer<typeof loggedUserSchema> }) => {
+    updateLeadFollowUpDate: async ({ leadId, nextFollowUpDate, remark, feedback, customerResponse, rating }: {feedback: any, leadId: string, nextFollowUpDate: string, remark: string, customerResponse: string, rating: string }, { user }: { user: z.infer<typeof loggedUserSchema> }) => {
         try {
-            return await leadWorker.updateLeadFollowUpDate(leadId, nextFollowUpDate, remark, customerResponse, rating, user.name);
+            return await leadWorker.updateLeadFollowUpDate(feedback, leadId, nextFollowUpDate, remark, customerResponse, rating, user.name);
+        } catch (error) {
+            logger.error('Error updating lead follow up date:', error);
+            throw new Error(`Error updating lead follow up date: ${error}`);
+        }
+    },
+    updateProspectFollowUpDate: async ({ leadId, nextFollowUpDate, remark, feedback, customerResponse, rating }: {feedback: any, leadId: string, nextFollowUpDate: string, remark: string, customerResponse: string, rating: string }, { user }: { user: z.infer<typeof loggedUserSchema> }) => {
+        try {
+            return await leadWorker.updateProspectFollowUpDate(feedback, leadId, nextFollowUpDate, remark, customerResponse, rating, user.name);
         } catch (error) {
             logger.error('Error updating lead follow up date:', error);
             throw new Error(`Error updating lead follow up date: ${error}`);
