@@ -6,7 +6,7 @@ import { leadUtils } from "../utils";
 import { CallStatus, FieldType, FormValue, PaymentStatus, Status } from "@prisma/client";
 import { createLeadSchema, leadAssignToSchema, leadBidSchema, submitFeedbackSchema } from "../types/lead";
 import { loggedUserSchema } from "../types/user";
-import { followUpUpdater, formatReturnOfDB } from "../utils/lead-worker-utils";
+import { followUpUpdater, formatReturnOfDB, getColumnNames } from "../utils/lead-worker-utils";
 
 const getAllLeads = async () => {
     try {
@@ -228,8 +228,6 @@ const getCompanyLeads = async (companyId: string) => {
             },
         });
 
-        console.dir(leads, { depth: null })
-
         // const leadsWithUniqueFeedback = leads.map(lead => {
         //     lead.submittedForm.forEach(feedbackEntry => {
         //         const feedbackMap = new Map<string, typeof feedbackEntry.formValue[0]>();
@@ -410,8 +408,9 @@ const createProspect = async (prspct: z.infer<typeof createLeadSchema>, userName
                 callStatus: CallStatus.PENDING, // or PENDING
                 paymentStatus: PaymentStatus.PENDING, // or PENDING
                 remark: prspct.remark,
-                // dynamicFieldValues: prspct.dynamicFieldValues,
-                via: `API: ${userName}`
+                dynamicFieldValues: prspct.dynamicFieldValues,
+                companyDeptId: prspct.department,
+                via: `Manually: ${userName}`
             },
         });
 
@@ -434,6 +433,8 @@ const createLead = async (lead: z.infer<typeof createLeadSchema>, user: z.infer<
                 remark: lead.remark,
                 via: `Manually: ${user.name}`,
                 companyId: user.companyId,
+                companyDeptId: lead.department,
+                dynamicFieldValues: lead.dynamicFieldValues,
             },
         });
 
@@ -466,13 +467,19 @@ const updateLead = async (lead: z.infer<typeof createLeadSchema>) => {
     }
 }
 
-const approveLead = async (leadId: string, status: boolean) => {
+const approveLead = async (leadId: string, status: boolean, userName: string) => {
     const prospect = await prisma.prospect.update({
         where: {
             id: leadId
         },
         data: {
             isLeadConverted: true,
+        },
+        include: {
+            followUps: {
+                orderBy: { createdAt: 'desc' },
+                take: 1
+            }
         }
     })
 
@@ -505,6 +512,14 @@ const approveLead = async (leadId: string, status: boolean) => {
             companyId: prospect.companyId,
             remark: prospect.remark,
             via: `Manually: ${companyOwner.name}`,
+            companyDeptId: prospect.companyDeptId,
+            followUps: {
+                create: {
+                    nextFollowUpDate: prospect.followUps[0]?.nextFollowUpDate,
+                    followUpBy: userName,
+                    remark: "Lead Converted from Prospect",
+                }
+            }
         },
         update: {
             name: prospect.name,
@@ -513,19 +528,26 @@ const approveLead = async (leadId: string, status: boolean) => {
             alternatePhone: prospect.alternatePhone,
             rating: prospect.rating,
             companyId: prospect.companyId,
-            // Follow up add krna baki h abhi !!!
         }
     })
 
-    const updateProspectFollow = await followUpUpdater(prospect.id, `Lead Converted from Prospect`, companyOwner.name);
-    const updateLeadProspectFollow = await followUpUpdater(prospectToLead.id, `Lead Converted from Prospect`, companyOwner.name);
-
-
-    await prisma.leadMember.create({
-        data: {
-            leadId: prospectToLead.id,
-            memberId: companyOwner.id,
+    await prisma.leadMember.upsert({
+        where: {
+            leadId_memberId: {
+                leadId: prospectToLead.id,
+                memberId: companyOwner.id
+            }
         },
+        update: {},
+        create: {
+            leadId: prospectToLead.id,
+            memberId: companyOwner.id
+        }
+    }).catch(err => {
+        if (err.code === 'P2002') {
+            throw new Error("Error assigning lead to company owner")
+        }
+        logger.error('Error assigning lead to company owner:', err);
     });
 
 
@@ -803,7 +825,7 @@ const submitFeedback = async ({ deptId, leadId, callStatus, paymentStatus, feedb
                 dependentOnValue: true,
             },
         });
-        
+
         if (submitType === leadUtils.SUBMIT_TO_MANAGER) {
             const updatedLead = await prisma.lead.update({
                 where: {
@@ -1137,18 +1159,18 @@ const getExchangeLeadImgs = async (companyId: string) => {
     }
 }
 
-const paymentList = async (companyId: string) => {
+const getFormValuesByFormName = async (companyId: string, formName: string) => {
     try {
         const leads = await prisma.lead.findMany({
             where: {
                 companyId,
                 submittedForm: {
-                    some: { formName: { in: ["Payments", "Payment"] } }
+                    some: { formName: { in: [formName] } }
                 }
             },
             select: {
                 submittedForm: {
-                    where: { formName: { in: ["Payments", "Payment"] } },
+                    where: { formName: { in: [formName] } },
                     include: {
                         member: true,
                         formValue: true
@@ -1156,10 +1178,24 @@ const paymentList = async (companyId: string) => {
                 }
             }
         })
-        return formatReturnOfDB(leads as any)
+
+        const forms = await prisma.submittedForm.findMany({
+            where: {
+                lead: {
+                    companyId,
+                },
+                formName
+            },
+            include: {
+                dependentOnValue: true,
+                formValue: true,
+            }
+        })
+
+        return formatReturnOfDB(forms)
     } catch (error: any) {
-        logger.error('Error paymentList:', error);
-        throw new Error(`Error paymentList: ${error.message}`);
+        logger.error('Error getFormValuesByFormName:', error);
+        throw new Error(`Error getFormValuesByFormName: ${error.message}`);
     }
 }
 
@@ -1223,6 +1259,6 @@ export default {
     getAllProspects,
     xChangerCustomerList,
     getLeadPhotos,
-    paymentList,
+    getFormValuesByFormName,
     getExchangeLeadImgs
 }

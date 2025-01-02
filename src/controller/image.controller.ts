@@ -187,7 +187,6 @@ const createBulkProspect = async (leads: z.infer<typeof createLeadSchema>[], com
             if (errors.length > 0) {
                 errorRows.push({ email: lead.email, errors: errors.join(', ') });
             } else {
-                console.log("aarha h kya yaha pr +=======")
                 if (lead.name.length > 3) {
                     validLeads.push({
                         companyId,

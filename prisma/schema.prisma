@@ -57,6 +57,7 @@ model Prospect {
   remark         String
 
   via String
+  dynamicFieldValues Json?
 
   isLeadConverted Boolean @default(false)
 
@@ -70,6 +71,9 @@ model Prospect {
 
   companyId String  @db.ObjectId
   company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  companyDeptId String      @db.ObjectId
+  companyDept   CompanyDept @relation(fields: [companyDeptId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -85,13 +89,13 @@ model ProspectFollowUp {
   remark           String
   customerResponse String?
   rating           String?
-  // dynamicFieldValues Json?
+  dynamicFieldValues Json?
 
   prospect   Prospect? @relation(fields: [prospectId], references: [id])
   prospectId String?   @db.ObjectId
 
-  Lead      Lead?    @relation(fields: [leadId], references: [id])
-  leadId    String?  @db.ObjectId
+  Lead   Lead?   @relation(fields: [leadId], references: [id])
+  leadId String? @db.ObjectId
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -121,12 +125,13 @@ model Lead {
 
   followUps        LeadFollowUp[]
   prospectFollowUp ProspectFollowUp[]
-  // dynamicFieldValues Json?
+  dynamicFieldValues Json?
 
   companyId String  @db.ObjectId
   company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
-  department String?
+  companyDeptId String      @db.ObjectId
+  companyDept   CompanyDept @relation(fields: [companyDeptId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -145,7 +150,7 @@ model LeadFollowUp {
   customerResponse String?
   rating           String?
 
-  // dynamicFieldValues Json?
+  dynamicFieldValues Json?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -261,10 +266,12 @@ model CompanyDept {
 
   companyForms CompanyDeptForm[]
   members      Member[]
+  Lead         Lead[]
+  Bid          Bid[]
+  Prospect     Prospect[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  Bid       Bid[]
 
   @@unique([companyId])
   @@index([companyId, name])
@@ -301,7 +308,6 @@ model CompanyDeptForm {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
 }
 
 // model CompanyFormFieldOptions {
@@ -316,7 +322,7 @@ model CompanyDeptForm {
 
 model CompanyFormField {
   id        String    @id @default(auto()) @map("_id") @db.ObjectId
-  name      String    
+  name      String
   fieldType FieldType
   order     Int
   value     Json?

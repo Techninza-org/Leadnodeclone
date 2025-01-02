@@ -44,7 +44,7 @@ type Query {
     xChangerCustomerList: jsonType
     getLeadPhotos: jsonType
     getExchangeLeadImgs: jsonType
-    paymentList: jsonType    
+    getFormValuesByFormName(formName: String!): JSON    
     getCompanyProspects: [Lead]
   }
 
