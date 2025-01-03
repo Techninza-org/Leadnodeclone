@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { formatISO, parse } from "date-fns";
+import { format, formatISO, parse } from "date-fns";
 import prisma from "../config/database";
 import logger from "../utils/logger";
 import { leadUtils } from "../utils";
@@ -231,7 +231,8 @@ const getAssignedProspect = async (userId: string, companyId?: string) => {
 
 const getCompanyLeads = async (companyId: string) => {
     try {
-        const leads = await prisma.lead.findMany({
+
+        const leadsRaw = await prisma.lead.findMany({
             where: {
                 companyId,
             },
@@ -257,12 +258,18 @@ const getCompanyLeads = async (companyId: string) => {
                         member: true,
                     },
                 },
-                followUps: true
+                followUps: true,
             },
             orderBy: {
-                createdAt: 'desc', // Sorting by non-nullable createdAt field
+                createdAt: 'desc',
             },
         });
+
+        // Format the createdAt field
+        const leads = leadsRaw.map(lead => ({
+            ...lead,
+            createdAt: format(new Date(lead.createdAt), 'dd/MM/yyyy'), // Formatting to MM DD YYYY
+        }));
 
         // const leadsWithUniqueFeedback = leads.map(lead => {
         //     lead.submittedForm.forEach(feedbackEntry => {
@@ -293,9 +300,9 @@ const getCompanyLeads = async (companyId: string) => {
 
 const getCompanyProspects = async (companyId: string) => {
     try {
-        const prospects = await prisma.prospect.findMany({
+        const prospectsRaw = await prisma.prospect.findMany({
             where: {
-                companyId
+                companyId,
             },
             include: {
                 followUps: true,
@@ -305,15 +312,21 @@ const getCompanyProspects = async (companyId: string) => {
                             include: {
                                 companyForms: {
                                     include: {
-                                        fields: true
-                                    }
-                                }
-                            }
+                                        fields: true,
+                                    },
+                                },
+                            },
                         },
-                    }
-                }
-            }
-        })
+                    },
+                },
+            },
+        });
+
+        const prospects = prospectsRaw.map(prospect => ({
+            ...prospect,
+            createdAt: prospect.createdAt ? format(new Date(prospect.createdAt), 'dd/MM/yyyy') : null,
+        }));
+
         return prospects;
     } catch (error: any) {
         throw new Error(`Error getCompanyProspects leads: ${error.message}`);

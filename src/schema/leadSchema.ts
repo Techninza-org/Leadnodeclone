@@ -83,6 +83,7 @@ export const leadSchema = `
     email: String!
     phone: String!
     alternatePhone: String
+    via: String
     rating: Int!
     isLeadConverted: Boolean!
     isFinancedApproved: Boolean!
