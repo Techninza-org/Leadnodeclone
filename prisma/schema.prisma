@@ -408,7 +408,7 @@ model Role {
 model Member {
   id       String  @id @default(auto()) @map("_id") @db.ObjectId
   email    String
-  password String
+  password String  @unique
   name     String
   imgURL   String?
   phone    String
@@ -444,6 +444,7 @@ model Member {
   @@index([deptId])
   @@index([roleId])
   @@index([companyId])
+  @@unique([phone])
 }
 
 // /********ADMIN's MODEL********/

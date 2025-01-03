@@ -193,6 +193,42 @@ const getAssignedLeads = async (userId: string, companyId?: string) => {
     }
 };
 
+const getAssignedProspect = async (userId: string, companyId?: string) => {
+    try {
+        // Construct the where clause based on whether companyId is provided
+        const whereClause = companyId
+            ? {
+                companyId,
+                leadMember: {
+                    some: { memberId: userId }
+                }
+            }
+            : {
+                leadMember: {
+                    some: { memberId: userId }
+                }
+            };
+
+        // Fetch the leads with the constructed where clause
+        const leads = await prisma.prospect.findMany({
+            where: whereClause,
+            include: {
+                company: true,
+                leadMember: {
+                    include: {
+                        member: true,
+                    },
+                },
+                followUps: true
+            },
+        });
+
+        return leads;
+    } catch (error: any) {
+        throw new Error(`Error fetching getAssignedProspect: ${error.message}`);
+    }
+};
+
 const getCompanyLeads = async (companyId: string) => {
     try {
         const leads = await prisma.lead.findMany({
@@ -1409,5 +1445,6 @@ export default {
     xChangerCustomerList,
     getLeadPhotos,
     getFormValuesByFormName,
+    getAssignedProspect,
     getExchangeLeadImgs
 }

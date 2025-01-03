@@ -49,6 +49,14 @@ export const leadResolvers = {
             throw new Error('Error fetching lead');
         }
     },
+    getAssignedProspect: async ({ userId }: { userId: string }, { user }: { user: z.infer<typeof loggedUserSchema> }) => {
+        try {
+            return await leadWorker.getAssignedProspect(userId, user?.companyId);
+        } catch (error) {
+            logger.error('Error fetching lead [getAssignedProspect]:', error);
+            throw new Error('Error fetching lead');
+        }
+    },
     getCompanyLeadById: async ({ companyId, leadId }: { companyId: string, leadId: string }) => {
         try {
             return await leadWorker.getCompanyLeadById(companyId, leadId);
