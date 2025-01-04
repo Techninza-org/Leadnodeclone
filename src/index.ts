@@ -9,6 +9,7 @@ import { createHandler } from 'graphql-http/lib/use/express';
 import { schema } from './schema';
 import { resolvers } from './resolvers';
 import { broadcastMessage, handleCreateBulkLead, handleCreateBulkProspect, uploadImage } from './controller/image.controller';
+import prisma from './config/database';
 
 const app = express();
 const PORT = config.envProvider.PORT;
@@ -33,3 +34,14 @@ app.use('/graphql', middleware.userAuthMiddleware, createHandler({
 app.listen(PORT, () => {
     logger.info(`Server is running on http://localhost:${PORT}`);
 });
+
+// prisma.role.create({
+//     data: {
+//         name: 'Telecaller',
+//         companyId: "67644a7abd3b295e0dbdb221"
+//     }
+// }).then(() => {
+//     logger.info('Admin role created');
+// }).catch((err) => {
+//     logger.error('Error creating admin role', err);
+// })

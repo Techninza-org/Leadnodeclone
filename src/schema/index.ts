@@ -76,6 +76,7 @@ type Query {
     
     loginUser(email: String, password: String, phone: String, otp: String, platform: String): LoginUserResponse
 
+    upsertCompanyDeptForm(formIds: [String]!, roleId: String): Role
     appvedLead(leadId: ID!, status: Boolean): Lead
 
     createOrUpdateManager(

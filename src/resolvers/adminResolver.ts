@@ -13,9 +13,9 @@ export const adminResolvers = {
     //   throw new Error('Error fetching users');
     // }
   },
-  getAllRoles: async () => {
+  getAllRoles: async (_: any, { user }: any) => {
     try {
-      return await adminWorker.getRoles();
+      return await adminWorker.getRoles(user.companyId);
     } catch (error) {
       throw new Error('Error fetching roles');
     }
@@ -26,8 +26,8 @@ export const adminResolvers = {
   getDeptsAdmin: async () => {
     return await adminWorker.getDeptsAdmin();
   },
-  getDeptWFields: async (_: any, {user}: any) => {
-    if(user.role.name !== "Admin") {
+  getDeptWFields: async (_: any, { user }: any) => {
+    if (user.role.name !== "Admin") {
       throw new Error("You are not authorized to perform this action");
     }
 
@@ -40,7 +40,8 @@ export const adminResolvers = {
       throw new Error('Error fetching root users');
     }
   },
-  createUserRole: async ({ name }: z.infer<typeof createRoleSchema>) => {
+  // For company root user
+  createUserRole: async ({ name }: z.infer<typeof createRoleSchema>, { user }: any) => {
     const parsedData = createRoleSchema.safeParse({ name });
 
     if (!parsedData.success) {
@@ -51,7 +52,7 @@ export const adminResolvers = {
       return { user: null, errors };
     }
 
-    return await adminWorker.createRole(parsedData.data);
+    return await adminWorker.createRole(parsedData.data, user.comapnyId);
   },
   createDept: async ({ input }: { input: z.infer<typeof createAdminDeptSchema> }) => {
     return await adminWorker.createDept(input);

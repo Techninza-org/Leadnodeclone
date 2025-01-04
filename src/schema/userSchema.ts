@@ -14,6 +14,7 @@ export const userSchema = `
     name: String!
     fieldType: String!
     value: String
+    isHardCoded: Boolean
     imgLimit: Int
     ddOptionId: String
     options: JSON
@@ -56,6 +57,7 @@ export const userSchema = `
     id: ID!
     name: String!
     members: [Member!]
+    companyDeptForm: [CompanyDeptForm!]
     createdAt: String!
     updatedAt: String!
   }

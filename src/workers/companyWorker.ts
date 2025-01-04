@@ -128,7 +128,7 @@ const getDepts = async (companyId: string) => {
     }
 }
 
-const createRole = async (role: z.infer<typeof createRoleSchema>) => {
+const createRole = async (role: z.infer<typeof createRoleSchema>, ctxUser: z.infer<typeof loggedUserSchema>) => {
     const existingRole = await prisma.role.findFirst({
         where: {
             name: role.name,
@@ -143,6 +143,7 @@ const createRole = async (role: z.infer<typeof createRoleSchema>) => {
         const newRole = await prisma.role.create({
             data: {
                 name: role.name,
+                companyId: ctxUser.companyId,
             },
         });
 
@@ -330,7 +331,6 @@ const createNUpdateCompanyDeptOptForm = async (deptForm: any, ctxUser: z.infer<t
     // }
 };
 
-
 //@aloksharma10 Is this still in use?
 const createnUpdateCompanyDept = async (companyId: string, dept: z.infer<typeof createAdminDeptSchema>) => {
     // try {
@@ -393,6 +393,38 @@ const createnUpdateCompanyDept = async (companyId: string, dept: z.infer<typeof 
     // }
 };
 
+const upsertCompanyDeptForm = async (formIds: string[], roleId: string, ctxUser: z.infer<typeof loggedUserSchema>) => {
+    try{
+
+        const role = await prisma.role.findFirst({
+            where: {
+                id: roleId
+            }
+        });
+
+        if(!role){
+            throw new Error('Role not found');
+        }
+
+        const upsertedForm = await prisma.role.update({
+            where: {
+                id: roleId,
+                companyId: ctxUser.companyId
+            },
+            data: {
+                companyDeptForm: {
+                    connect: formIds.map(id => ({ id })) || [] 
+                }
+            }
+        });
+
+        return upsertedForm;
+    } catch (error: any) {
+        logger.error('Error creating department:', error);
+        throw new Error(`Error creating department: ${error.message}`);
+    }
+}
+
 
 export default {
     getFollowUps,
@@ -403,5 +435,6 @@ export default {
     createRole,
     createNUpdateCompanyDeptForm,
     createNUpdateCompanyDeptOptForm,
-    getCompanyDeptOptFields
+    getCompanyDeptOptFields,
+    upsertCompanyDeptForm
 }

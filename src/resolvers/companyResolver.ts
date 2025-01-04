@@ -40,7 +40,7 @@ export const companyResolvers = {
   getCompanyDeptOptFields: async (_: any, { user }: { user: z.infer<typeof loggedUserSchema> }) => {
     return await companyWorker.getCompanyDeptOptFields(user.companyId);
   },
-  createUserRole: async ({ name }: z.infer<typeof createRoleSchema>) => {
+  createUserRole: async ({ name }: z.infer<typeof createRoleSchema>, { user }: { user: z.infer<typeof loggedUserSchema> }) => {
     const parsedData = createRoleSchema.safeParse({ name });
 
     if (!parsedData.success) {
@@ -51,7 +51,7 @@ export const companyResolvers = {
       return { user: null, errors };
     }
 
-    return await companyWorker.createRole(parsedData.data);
+    return await companyWorker.createRole(parsedData.data,  user);
   },
   createNUpdateCompanyDeptForm: async ({ input }: { input: any }, { user }: { user: z.infer<typeof loggedUserSchema> }) => {
     // const parsedData = createAdminDeptSchema.safeParse(input);
@@ -66,5 +66,9 @@ export const companyResolvers = {
   },
   createNUpdateCompanyDeptOptForm: async ({ input }: { input: any }, { user }: { user: z.infer<typeof loggedUserSchema> }) => {
     return await companyWorker.createNUpdateCompanyDeptOptForm(input, user);
+  },
+  upsertCompanyDeptForm: async ({ formIds, roleId }: { formIds : string[], roleId : string }, { user }: { user: z.infer<typeof loggedUserSchema> }) => {
+    // console.log(formIds, roleId, "input")
+    return await companyWorker.upsertCompanyDeptForm(formIds, roleId, user);
   },
 }

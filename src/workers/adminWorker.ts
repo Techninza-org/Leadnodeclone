@@ -62,15 +62,23 @@ export const getRootUsers = async () => {
     }
 }
 
-export const getRoles = async () => {
+export const getRoles = async (companyId: string) => {
     try {
+        if (!companyId) {
+            throw new Error('Company ID is required to fetch roles');
+        }
         const roles = await prisma.role.findMany({
             where: { 
-                name: { 
-                    notIn: ['Root', 'Admin'] 
-                }
+                AND: [
+                    { companyId: companyId },
+                    { name: { notIn: ['Root', 'Admin'] } }
+                ],
+            },
+            include: { 
+                companyDeptForm: true
             }
         });
+
         return roles;
     } catch (error: any) {
         throw new Error('Error fetching roles');
@@ -94,7 +102,7 @@ export const getDeptsAdmin = async () => {
     }
 }
 
-export const createRole = async (role: z.infer<typeof createRoleSchema>) => {
+export const createRole = async (role: z.infer<typeof createRoleSchema>, companyId: string) => {
     const existingRole = await prisma.role.findFirst({
         where: {
             name: role.name,
@@ -109,6 +117,7 @@ export const createRole = async (role: z.infer<typeof createRoleSchema>) => {
         const newRole = await prisma.role.create({
             data: {
                 name: role.name,
+                companyId,
             },
         });
 

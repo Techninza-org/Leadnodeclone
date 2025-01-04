@@ -312,6 +312,9 @@ model CompanyDeptForm {
 
   fields CompanyFormField[]
 
+  roleId String? @db.ObjectId
+  Role   Role?   @relation(fields: [roleId], references: [id])
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -369,6 +372,7 @@ model Company {
   Prospect                Prospect[]
   CompanyDeptFormCategory CompanyDeptFormCategory[]
   members                 Member[]                  @relation("CompanyMembers")
+  Role                    Role[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -400,6 +404,11 @@ model Role {
   id      String   @id @default(auto()) @map("_id") @db.ObjectId
   name    String
   members Member[]
+
+  companyDeptForm CompanyDeptForm[]
+
+  companyId       String?            @db.ObjectId
+  company         Company?           @relation(fields: [companyId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -441,10 +450,10 @@ model Member {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@unique([phone])
   @@index([deptId])
   @@index([roleId])
   @@index([companyId])
-  @@unique([phone])
 }
 
 // /********ADMIN's MODEL********/
