@@ -84,7 +84,8 @@ export const leadSchema = `
     phone: String!
     alternatePhone: String
     via: String
-    rating: Int!
+    remark: String
+    rating: Int
     isLeadConverted: Boolean!
     isFinancedApproved: Boolean!
     callStatus: String!

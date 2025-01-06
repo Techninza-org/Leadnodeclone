@@ -184,6 +184,7 @@ const getAssignedLeads = async (userId: string, companyId?: string) => {
                         member: true
                     }
                 },
+                followUps: true,
             },
         });
 

@@ -379,7 +379,6 @@ const loginUser = async (loginInfo: z.infer<typeof loginSchema>) => {
         });
 
         const token = await generateToken({ id: user.id, sessionToken });
-
         return { user: { ...user, sessionToken, token }, errors: [] };
     } catch (error: any) {
         logger.error('Error logging in user:', error);

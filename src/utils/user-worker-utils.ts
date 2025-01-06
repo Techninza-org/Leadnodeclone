@@ -72,18 +72,16 @@ export const verifyOtp = async (phone: string, otp: string): Promise<boolean> =>
 export const generateHash = async (password: string): Promise<string> => {
     return await argon2.hash(password, {
         hashLength: 20,
-        memoryCost: 2 ** 18,
-        timeCost: 4,
+        memoryCost: 16,
         parallelism: 1,
-        raw: false,
-        secret: Buffer.from(process.env.PASSWORD_SECRET!),
+        secret: process.env.PASSWORD_SECRET!,
         type: argon2.argon2id,
     });
 }
 
 export const verifyHash = async (hash: string, password: string): Promise<boolean> => {
     return await argon2.verify(hash, password, {
-        secret: Buffer.from(process.env.PASSWORD_SECRET!),
+        secret: Buffer.from(process.env.PASSWORD_SECRET!)
     });
 }
 

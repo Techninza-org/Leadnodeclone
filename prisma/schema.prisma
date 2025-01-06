@@ -407,8 +407,8 @@ model Role {
 
   companyDeptForm CompanyDeptForm[]
 
-  companyId       String?            @db.ObjectId
-  company         Company?           @relation(fields: [companyId], references: [id])
+  companyId String?  @db.ObjectId
+  company   Company? @relation(fields: [companyId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -421,8 +421,8 @@ model Member {
   name     String
   imgURL   String?
   phone    String
-
   otp       String?
+  
   otpExpiry DateTime?
   platform  String?
 
