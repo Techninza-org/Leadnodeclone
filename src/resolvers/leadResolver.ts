@@ -93,9 +93,9 @@ export const leadResolvers = {
     createProspect: async ({ input }: { input: z.infer<typeof createLeadSchema> }, { user }: { user: z.infer<typeof loggedUserSchema> }) => {
         try {
             return await leadWorker.createProspect(input, user);
-        } catch (error) {
+        } catch (error: any) {
             logger.error('Error Creating lead:', error);
-            throw new Error('Error Creating lead');
+            throw new Error(error);
         }
     },
 
