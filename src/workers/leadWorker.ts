@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { tuple, z } from "zod";
 import { format, formatISO, parse } from "date-fns";
 import prisma from "../config/database";
 import logger from "../utils/logger";
@@ -307,6 +307,11 @@ const getCompanyProspects = async (companyId: string) => {
             },
             include: {
                 followUps: true,
+                leadMember: {
+                    include: {
+                        member: true
+                    }
+                },
                 company: {
                     include: {
                         Depts: {
@@ -409,7 +414,7 @@ const getTransferedLeads = async (userId: string) => {
     }
 }
 
-const createProspect = async (prspct: z.infer<typeof createLeadSchema>, userName: string) => {
+const createProspect = async (prspct: z.infer<typeof createLeadSchema>, user: z.infer<typeof loggedUserSchema>) => {
     try {
         const company = await prisma.company.findFirst({
             where: { id: prspct.companyId },
@@ -443,9 +448,7 @@ const createProspect = async (prspct: z.infer<typeof createLeadSchema>, userName
             throw new Error("Company manager not found");
         }
 
-        const formattedVehicleDate = prspct.vehicleDate
-            ? formatISO(parse(prspct.vehicleDate, 'dd-MM-yyyy', new Date()))
-            : null;
+        const isEmployee = user?.role?.name !== "Manager"
 
         const newLead = await prisma.prospect.create({
             data: {
@@ -453,14 +456,21 @@ const createProspect = async (prspct: z.infer<typeof createLeadSchema>, userName
                 name: prspct.name,
                 email: prspct.email,
                 phone: prspct.phone,
-                alternatePhone: prspct.alternatePhone,
+                alternatePhone: prspct.alternatePhone || "",
                 rating: prspct.rating,
                 callStatus: CallStatus.PENDING, // or PENDING
                 paymentStatus: PaymentStatus.PENDING, // or PENDING
                 remark: prspct.remark,
                 dynamicFieldValues: prspct.dynamicFieldValues,
                 companyDeptId: prspct.department,
-                via: `Manually: ${userName}`
+                via: `Manually: ${user.name}`,
+                ...(isEmployee && {
+                    leadMember: {
+                        create: {
+                            memberId: user.id
+                        }
+                    }
+                })
             },
         });
 
@@ -473,18 +483,27 @@ const createProspect = async (prspct: z.infer<typeof createLeadSchema>, userName
 
 const createLead = async (lead: z.infer<typeof createLeadSchema>, user: z.infer<typeof loggedUserSchema>) => {
     try {
+        const isEmployee = user?.role?.name !== "Manager"
+
         const newLead = await prisma.lead.create({
             data: {
                 name: lead.name,
                 email: lead.email,
                 phone: lead.phone,
-                alternatePhone: lead.alternatePhone,
+                alternatePhone: lead.alternatePhone || "",
                 rating: lead.rating,
                 remark: lead.remark,
                 via: `Manually: ${user.name}`,
                 companyId: user.companyId,
                 companyDeptId: lead.department,
                 dynamicFieldValues: lead.dynamicFieldValues,
+                ...(isEmployee && {
+                    leadMember: {
+                        create: {
+                            memberId: user.id
+                        }
+                    }
+                })
             },
         });
 
@@ -505,7 +524,7 @@ const updateLead = async (lead: z.infer<typeof createLeadSchema>) => {
                 name: lead.name,
                 email: lead.email,
                 phone: lead.phone,
-                alternatePhone: lead.alternatePhone,
+                alternatePhone: lead.alternatePhone || "",
                 rating: lead.rating,
             },
         });
@@ -557,7 +576,7 @@ const approveLead = async (leadId: string, status: boolean, userName: string) =>
             name: prospect.name,
             email: prospect.email,
             phone: prospect.phone,
-            alternatePhone: prospect.alternatePhone,
+            alternatePhone: prospect.alternatePhone || "",
             rating: prospect.rating,
             companyId: prospect.companyId,
             remark: prospect.remark,
@@ -575,7 +594,7 @@ const approveLead = async (leadId: string, status: boolean, userName: string) =>
             name: prospect.name,
             email: prospect.email,
             phone: prospect.phone,
-            alternatePhone: prospect.alternatePhone,
+            alternatePhone: prospect.alternatePhone || "",
             rating: prospect.rating,
             companyId: prospect.companyId,
         }
@@ -609,6 +628,109 @@ const approveLead = async (leadId: string, status: boolean, userName: string) =>
 
     return prospectToLead;
 }
+
+const leadToClient = async (leadId: string, status: boolean, userName: string) => {
+    const prospect = await prisma.lead.findFirst({
+        where: {
+            id: leadId
+        },
+        include: {
+            followUps: {
+                orderBy: { createdAt: 'desc' },
+                take: 1
+            }
+        }
+    })
+
+    if (!prospect) throw new Error("Prospect not found!");
+
+    const companyOwner = await prisma.member.findFirst({
+        where: {
+            companyId: prospect.companyId,
+            role: {
+                name: "Root"
+            }
+        }
+    })
+
+    if (!companyOwner) throw new Error("Company Not found!")
+
+    const LeadToClient = await prisma.client.upsert({
+        where: {
+            email_phone: {
+                email: prospect.email,
+                phone: prospect.phone
+            }
+        },
+        create: {
+            name: prospect.name,
+            email: prospect.email,
+            phone: prospect.phone,
+            alternatePhone: prospect.alternatePhone || "",
+            rating: prospect.rating,
+            companyId: prospect.companyId,
+            remark: prospect.remark,
+            via: `Manually: ${companyOwner.name}`,
+            companyDeptId: prospect.companyDeptId,
+            dynamicFieldValues: prospect.dynamicFieldValues,
+            followUps: {
+                create: prospect.followUps.map(followUp => ({
+                    nextFollowUpDate: followUp.nextFollowUpDate,
+                    followUpBy: followUp.followUpBy,
+                    remark: followUp.remark,
+                    customerResponse: followUp.customerResponse,
+                    dynamicFieldValues: followUp.dynamicFieldValues,
+                    lead: { connect: { id: leadId } }
+                }))
+            }
+        },
+        update: {
+            name: prospect.name,
+            email: prospect.email,
+            phone: prospect.phone,
+            alternatePhone: prospect.alternatePhone || "",
+            rating: prospect.rating,
+            companyId: prospect.companyId,
+        }
+    })
+
+    // await prisma.prospect.delete({
+    //     where: {
+    //         id: prospect.id
+    //     }
+    // })
+
+    return LeadToClient;
+}
+
+
+const getClients = async (companyId: string) => {
+    try {
+
+        const leadsRaw = await prisma.client.findMany({
+            where: {
+                companyId,
+            },
+            include: {
+                followUps: true,
+            },
+            orderBy: {
+                createdAt: 'desc',
+            },
+        });
+
+        const leads = leadsRaw.map(lead => ({
+            ...lead,
+            createdAt: format(new Date(lead.createdAt), 'dd/MM/yyyy')
+        }));
+
+        return leads
+
+    } catch (error: any) {
+        logger.error('Error fetching Leads:', error);
+        throw new Error(`Error fetching leads: ${error.message}`);
+    }
+};
 
 const leadAssignTo = async ({ companyId, leadIds, deptId, userIds, description }: z.infer<typeof leadAssignToSchema>) => {
     try {
@@ -1443,6 +1565,7 @@ export default {
     createLead,
     updateLead,
     approveLead,
+    getClients,
     leadAssignTo,
     prospectAssignTo,
     submitFeedback,
@@ -1456,6 +1579,7 @@ export default {
     updateLeadPaymentStatus,
     getFollowUpByLeadId,
     getAllProspects,
+    leadToClient,
     xChangerCustomerList,
     getLeadPhotos,
     getFormValuesByFormName,

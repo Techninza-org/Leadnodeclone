@@ -175,6 +175,8 @@ const createBulkProspect = async (leads: z.infer<typeof createLeadSchema>[], com
         const errorRows: any[] = [];
         const validLeads: any[] = [];
 
+        const companyDept = await prisma.companyDept.findFirst({ where: { companyId } })
+
         for (const lead of leads) {
             const errors: string[] = [];
 
@@ -193,13 +195,15 @@ const createBulkProspect = async (leads: z.infer<typeof createLeadSchema>[], com
                         name: lead.name,
                         email: lead.email,
                         phone: String(lead.phone),
-                        alternatePhone: String(lead.alternatePhone),
+                        alternatePhone: String(lead.alternatePhone || ""),
                         rating: lead.rating,
                         callStatus: 'PENDING',
                         paymentStatus: 'PENDING',
                         dynamicFieldValues: lead.dynamicFieldValues,
                         remark: lead.remark,
                         via: `CSV: ${user.name}`,
+                        // @ts-ignore
+                        companyDeptId: companyDept?.id
                     });
                 }
 
@@ -226,6 +230,7 @@ const createBulkProspect = async (leads: z.infer<typeof createLeadSchema>[], com
 };
 
 const createBulkLead = async (leads: z.infer<typeof createLeadSchema>[], companyId: string, user: any) => {
+    console.log(leads, "leadsleads")
     try {
         const errorWorkbook = new exceljs.Workbook();
         const errorWorksheet = errorWorkbook.addWorksheet('Error Sheet');
@@ -238,7 +243,11 @@ const createBulkLead = async (leads: z.infer<typeof createLeadSchema>[], company
         const errorRows: any[] = [];
         const validLeads: any[] = [];
 
-        for (const lead of leads) {
+        const companyDept = await prisma.companyDept.findFirst({ where: { companyId } })
+
+        const filterLeads = leads.filter(x => !!x.name)
+
+        for (const lead of filterLeads) {
             const errors: string[] = [];
 
             if (!lead.name) errors.push('Name is required');
@@ -256,13 +265,15 @@ const createBulkLead = async (leads: z.infer<typeof createLeadSchema>[], company
                         name: lead.name,
                         email: lead.email,
                         phone: String(lead.phone),
-                        alternatePhone: String(lead.alternatePhone),
+                        alternatePhone: String(lead.alternatePhone || ""),
                         rating: lead.rating,
                         callStatus: 'PENDING',
                         paymentStatus: 'PENDING',
                         dynamicFieldValues: lead.dynamicFieldValues,
                         remark: lead.remark,
                         via: `CSV: ${user.name}`,
+                        // @ts-ignore
+                        companyDeptId: companyDept?.id
                     });
                 }
             }

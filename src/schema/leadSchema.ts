@@ -87,6 +87,7 @@ export const leadSchema = `
     remark: String
     rating: Int
     isLeadConverted: Boolean!
+    dynamicFieldValues: JSON
     isFinancedApproved: Boolean!
     callStatus: String!
     paymentStatus: String!

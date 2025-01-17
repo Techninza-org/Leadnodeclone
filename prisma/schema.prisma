@@ -151,6 +151,39 @@ model Lead {
   @@index([companyId])
 }
 
+model Client {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  name           String
+  email          String
+  phone          String
+  alternatePhone String?
+  rating         Int?
+  remark         String
+
+  via String // The way through which the lead is tranfer : API or CSV or etc
+
+  status Status @default(OPEN)
+
+  callStatus    CallStatus    @default(PENDING)
+  paymentStatus PaymentStatus @default(PENDING)
+
+  followUps          LeadFollowUp[]
+  dynamicFieldValues Json?
+
+  companyId String  @db.ObjectId
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  companyDeptId String      @db.ObjectId
+  companyDept   CompanyDept @relation(fields: [companyDeptId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([email, phone])
+  @@index([companyId])
+}
+
 model LeadFollowUp {
   id               String  @id @default(auto()) @map("_id") @db.ObjectId
   leadId           String  @db.ObjectId
@@ -165,6 +198,8 @@ model LeadFollowUp {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  Client    Client?  @relation(fields: [clientId], references: [id])
+  clientId  String?  @db.ObjectId
 }
 
 model Bid {
@@ -278,6 +313,7 @@ model CompanyDept {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  Client    Client[]
 
   @@unique([companyId])
   @@index([companyId, name])
@@ -376,6 +412,7 @@ model Company {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  Client    Client[]
 
   @@index([rootId])
   @@index([companyManagerId])
@@ -421,8 +458,8 @@ model Member {
   name     String
   imgURL   String?
   phone    String
-  otp       String?
-  
+  otp      String?
+
   otpExpiry DateTime?
   platform  String?
 

@@ -84,7 +84,6 @@ export const leadResolvers = {
             //     }));
             //     return { user: null, errors };
             // }
-
             return await leadWorker.createLead(input, user);
         } catch (error) {
             logger.error('Error Creating lead:', error);
@@ -93,7 +92,7 @@ export const leadResolvers = {
     },
     createProspect: async ({ input }: { input: z.infer<typeof createLeadSchema> }, { user }: { user: z.infer<typeof loggedUserSchema> }) => {
         try {
-            return await leadWorker.createProspect(input, user.name);
+            return await leadWorker.createProspect(input, user);
         } catch (error) {
             logger.error('Error Creating lead:', error);
             throw new Error('Error Creating lead');
@@ -106,6 +105,22 @@ export const leadResolvers = {
         } catch (error) {
             logger.error('Error Approving lead:', error);
             throw new Error('Error Approving lead');
+        }
+    },
+    leadToClient: async ({ leadId, status }: { leadId: string, status: boolean }, { user }: { user: any }) => {
+        try {
+            return await leadWorker.leadToClient(leadId, status, user.name);
+        } catch (error) {
+            logger.error('Error Approving lead:', error);
+            throw new Error('Error Approving lead');
+        }
+    },
+    getClients: async (_: any, { user }: { user: z.infer<typeof loggedUserSchema> }) => {
+        try {
+            return await leadWorker.getClients(user.companyId);
+        } catch (error) {
+            logger.error('Error fetching lead bids:', error);
+            throw new Error('Error fetching lead bids');
         }
     },
 
@@ -187,7 +202,7 @@ export const leadResolvers = {
             throw new Error(`Error updating lead finance status: ${error}`);
         }
     },
-    updateLeadFollowUpDate: async ({ leadId, nextFollowUpDate, remark, feedback, customerResponse, rating }: {feedback: any, leadId: string, nextFollowUpDate: string, remark: string, customerResponse: string, rating: string }, { user }: { user: z.infer<typeof loggedUserSchema> }) => {
+    updateLeadFollowUpDate: async ({ leadId, nextFollowUpDate, remark, feedback, customerResponse, rating }: { feedback: any, leadId: string, nextFollowUpDate: string, remark: string, customerResponse: string, rating: string }, { user }: { user: z.infer<typeof loggedUserSchema> }) => {
         try {
             return await leadWorker.updateLeadFollowUpDate(feedback, leadId, nextFollowUpDate, remark, customerResponse, rating, user.name);
         } catch (error) {
@@ -195,7 +210,7 @@ export const leadResolvers = {
             throw new Error(`Error updating lead follow up date: ${error}`);
         }
     },
-    updateProspectFollowUpDate: async ({ leadId, nextFollowUpDate, remark, feedback, customerResponse, rating }: {feedback: any, leadId: string, nextFollowUpDate: string, remark: string, customerResponse: string, rating: string }, { user }: { user: z.infer<typeof loggedUserSchema> }) => {
+    updateProspectFollowUpDate: async ({ leadId, nextFollowUpDate, remark, feedback, customerResponse, rating }: { feedback: any, leadId: string, nextFollowUpDate: string, remark: string, customerResponse: string, rating: string }, { user }: { user: z.infer<typeof loggedUserSchema> }) => {
         try {
             return await leadWorker.updateProspectFollowUpDate(feedback, leadId, nextFollowUpDate, remark, customerResponse, rating, user.name);
         } catch (error) {

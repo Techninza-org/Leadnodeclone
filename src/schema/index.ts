@@ -30,6 +30,7 @@ type Query {
     getCompanyDeptFields(deptId: String): [CompanyDeptForm]
     getCompanyDeptOptFields: [CompanyDeptForm]
     getLeadBids(leadId: String!): [Bid]
+    getClients: [Lead]
     getMemberLocation(memberId: String!, date: String!): MemberLocation
     getTransferedLeads(userId: String!): [Lead]
     getMembersByRole(role: String!): [Member]
@@ -78,6 +79,7 @@ type Query {
 
     upsertCompanyDeptForm(formIds: [String]!, roleId: String): Role
     appvedLead(leadId: ID!, status: Boolean): Lead
+    leadToClient(leadId: ID!, status: Boolean): Lead
 
     createOrUpdateManager(
       memberId: ID,
