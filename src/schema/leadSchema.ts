@@ -120,7 +120,7 @@ export const leadSchema = `
   input LeadInput {
     companyId: String!
     name: String!
-    email: String!
+    email: String
     phone: String!
     alternatePhone: String
     remark: String!

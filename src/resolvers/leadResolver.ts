@@ -24,9 +24,9 @@ export const leadResolvers = {
         }
     },
 
-    getCompanyLeads: async ({ companyId }: { companyId: string }, ctx: any) => {
+    getCompanyLeads: async ({ companyId }: { companyId: string }) => {
         try {
-            return await leadWorker.getCompanyLeads(ctx.companyId);
+            return await leadWorker.getCompanyLeads(companyId);
         } catch (error) {
             logger.error('Error fetching lead [getCompanyLeads]:', error);
             throw new Error('Error fetching lead');

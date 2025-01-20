@@ -15,6 +15,9 @@ const getAllLeads = async () => {
                 company: true,
                 bids: true,
             },
+            orderBy: {
+                createdAt: 'desc',
+            },
         });
 
         return leads;
@@ -30,6 +33,9 @@ const getAllProspects = async () => {
             include: {
                 company: true,
                 followUps: true
+            },
+            orderBy: {
+                createdAt: 'desc',
             },
         });
 
@@ -80,7 +86,10 @@ const getLeadsByDateRange = async (companyId: string, fromDateStr: string, toDat
                         member: true
                     }
                 }
-            }
+            },
+            orderBy: {
+                createdAt: 'desc',
+            },
         });
 
         const number = leads.length
@@ -186,6 +195,9 @@ const getAssignedLeads = async (userId: string, companyId?: string) => {
                 },
                 followUps: true,
             },
+            orderBy: {
+                createdAt: 'desc',
+            },
         });
 
         return leads;
@@ -222,6 +234,9 @@ const getAssignedProspect = async (userId: string, companyId?: string) => {
                 },
                 followUps: true
             },
+            orderBy: {
+                createdAt: 'desc',
+            },
         });
 
         return leads;
@@ -238,11 +253,11 @@ const getCompanyLeads = async (companyId: string) => {
                 companyId,
             },
             include: {
-                leadMember: {
-                    include: {
-                        member: true,
-                    },
-                },
+                // leadMember: {
+                //     include: {
+                //         member: true,
+                //     },
+                // },
                 submittedForm: {
                     include: {
                         formValue: true,
@@ -271,6 +286,8 @@ const getCompanyLeads = async (companyId: string) => {
             ...lead,
             createdAt: format(new Date(lead.createdAt), 'dd/MM/yyyy'), // Formatting to MM DD YYYY
         }));
+        console.log(leads, 'dynamic fields');
+        
 
         // const leadsWithUniqueFeedback = leads.map(lead => {
         //     lead.submittedForm.forEach(feedbackEntry => {
@@ -307,11 +324,11 @@ const getCompanyProspects = async (companyId: string) => {
             },
             include: {
                 followUps: true,
-                leadMember: {
-                    include: {
-                        member: true
-                    }
-                },
+                // leadMember: {
+                //     include: {
+                //         member: true
+                //     }
+                // },
                 company: {
                     include: {
                         Depts: {
@@ -325,6 +342,9 @@ const getCompanyProspects = async (companyId: string) => {
                         },
                     },
                 },
+            },
+            orderBy: {
+                createdAt: 'desc',
             },
         });
 
@@ -370,6 +390,9 @@ const getCompanyLeadById = async (companyId: string, leadId: string) => {
                     }
                 },
             },
+            orderBy: {
+                createdAt: 'desc',
+            },
         });
 
         return lead;
@@ -404,6 +427,9 @@ const getTransferedLeads = async (userId: string) => {
                         },
                     }
                 },
+            },
+            orderBy: {
+                createdAt: 'desc',
             },
         });
 
@@ -454,7 +480,7 @@ const createProspect = async (prspct: z.infer<typeof createLeadSchema>, user: z.
             data: {
                 companyId: prspct.companyId,
                 name: prspct.name,
-                email: prspct.email,
+                email: prspct.email || "",
                 phone: prspct.phone,
                 alternatePhone: prspct.alternatePhone || "",
                 rating: prspct.rating,
@@ -488,7 +514,7 @@ const createLead = async (lead: z.infer<typeof createLeadSchema>, user: z.infer<
         const newLead = await prisma.lead.create({
             data: {
                 name: lead.name,
-                email: lead.email,
+                email: lead.email || "",
                 phone: lead.phone,
                 alternatePhone: lead.alternatePhone || "",
                 rating: lead.rating,
@@ -522,7 +548,7 @@ const updateLead = async (lead: z.infer<typeof createLeadSchema>) => {
             },
             data: {
                 name: lead.name,
-                email: lead.email,
+                email: lead.email || "",
                 phone: lead.phone,
                 alternatePhone: lead.alternatePhone || "",
                 rating: lead.rating,
@@ -658,13 +684,13 @@ const leadToClient = async (leadId: string, status: boolean, userName: string) =
     const LeadToClient = await prisma.client.upsert({
         where: {
             email_phone: {
-                email: prospect.email,
+                email: prospect.email || "",
                 phone: prospect.phone
             }
         },
         create: {
             name: prospect.name,
-            email: prospect.email,
+            email: prospect.email || "", 
             phone: prospect.phone,
             alternatePhone: prospect.alternatePhone || "",
             rating: prospect.rating,
@@ -686,7 +712,7 @@ const leadToClient = async (leadId: string, status: boolean, userName: string) =
         },
         update: {
             name: prospect.name,
-            email: prospect.email,
+            email: prospect.email || "",
             phone: prospect.phone,
             alternatePhone: prospect.alternatePhone || "",
             rating: prospect.rating,

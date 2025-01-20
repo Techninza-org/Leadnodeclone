@@ -6,7 +6,7 @@ export const createLeadSchema = z.object({
 
     companyDeptId: z.string().min(3, "Company Dept Id must be valid ObjectId."),
     name: z.string().min(3, "Name must be at least 3 characters long."),
-    email: z.string().email("Invalid email address."),
+    email: z.string().email("Invalid email address.").optional(),
     phone: z.string().min(10, "Phone number must be at least 10 characters long."),
     alternatePhone: z.string().optional(),
     remark: z.string().min(3, "Remark must be at least 3 characters long."),
