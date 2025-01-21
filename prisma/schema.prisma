@@ -78,7 +78,7 @@ model Prospect {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([email, phone])
+  @@unique([phone])
   @@index([companyId])
 }
 
@@ -148,7 +148,7 @@ model Lead {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([email, phone])
+  @@unique([phone])
   @@index([companyId])
 }
 
