@@ -592,14 +592,11 @@ const approveLead = async (leadId: string, status: boolean, userName: string) =>
 
     const prospectToLead = await prisma.lead.upsert({
         where: {
-            email_phone: {
-                email: prospect.email,
-                phone: prospect.phone
-            }
+            phone: prospect.phone
         },
         create: {
             name: prospect.name,
-            email: prospect.email,
+            email: prospect.email || "",
             phone: prospect.phone,
             alternatePhone: prospect.alternatePhone || "",
             rating: prospect.rating,
@@ -617,7 +614,7 @@ const approveLead = async (leadId: string, status: boolean, userName: string) =>
         },
         update: {
             name: prospect.name,
-            email: prospect.email,
+            email: prospect.email || "",
             phone: prospect.phone,
             alternatePhone: prospect.alternatePhone || "",
             rating: prospect.rating,
