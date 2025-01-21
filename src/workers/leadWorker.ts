@@ -286,7 +286,6 @@ const getCompanyLeads = async (companyId: string) => {
             ...lead,
             createdAt: format(new Date(lead.createdAt), 'dd/MM/yyyy'), // Formatting to MM DD YYYY
         }));
-        console.log(leads, 'dynamic fields');
         
 
         // const leadsWithUniqueFeedback = leads.map(lead => {
@@ -453,14 +452,14 @@ const createProspect = async (prspct: z.infer<typeof createLeadSchema>, user: z.
         const isProspectExists = await prisma.prospect.findFirst({
             where: {
                 OR: [
-                    { email: prspct.email },
+                    // { email: prspct.email },
                     { phone: prspct.phone },
                 ]
             },
         });
 
         if (isProspectExists) {
-            throw new Error("Prospect already exists with the same email or phone number");
+            throw new Error("Prospect already exists with the same phone number");
         }
 
         const companyManager = await prisma.member.findFirst({
@@ -725,6 +724,15 @@ const leadToClient = async (leadId: string, status: boolean, userName: string) =
     //         id: prospect.id
     //     }
     // })
+
+    await prisma.lead.update({
+        where: {
+            id: leadId
+        },
+        data: {
+            approvedToClient: true
+        }
+    })
 
     return LeadToClient;
 }
