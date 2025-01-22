@@ -60,6 +60,7 @@ model Prospect {
   dynamicFieldValues Json?
 
   isLeadConverted Boolean @default(false)
+  approvedToClient Boolean @default(false)
 
   callStatus    CallStatus    @default(PENDING)
   paymentStatus PaymentStatus @default(PENDING)
@@ -134,6 +135,7 @@ model Lead {
   leadMember     LeadMember[]
   bids           Bid[]
   leadTransferTo LeadTransferTo[]
+  isLeadConverted Boolean @default(false)
   approvedToClient Boolean @default(false)
 
   followUps          LeadFollowUp[]

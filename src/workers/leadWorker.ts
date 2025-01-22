@@ -153,6 +153,13 @@ const getLeadsByDateRange = async (companyId: string, fromDateStr: string, toDat
 
 const getAssignedLeads = async (userId: string, companyId?: string) => {
     try {
+        const myself = await prisma.member.findFirst({
+            where: {
+                id: userId
+            },
+        })
+        const username = myself?.name
+        
         // Construct the where clause based on whether companyId is provided
         const whereClause = companyId
             ? {
@@ -199,8 +206,54 @@ const getAssignedLeads = async (userId: string, companyId?: string) => {
                 createdAt: 'desc',
             },
         });
-
-        return leads;
+        
+        const transferedLeads = await prisma.lead.findMany({
+            where: {
+                followUps: {
+                    some: {
+                        remark: {
+                            equals: "Lead Converted from Prospect"
+                        },
+                        followUpBy: {
+                            equals: username
+                        }
+                    }
+                }
+            },
+            include: {
+                company: true,
+                leadMember: {
+                    include: {
+                        member: true,
+                    },
+                },
+                submittedForm: {
+                    include: {
+                        formValue: true,
+                        member: {
+                            include: {
+                                role: true
+                            }
+                        }
+                    }
+                },
+                // Feedbacks: true,
+                bids: {
+                    include: {
+                        member: true
+                    }
+                },
+                followUps: true,
+            },
+            orderBy: {
+                createdAt: 'desc',
+            },
+        })
+        
+        
+        const allLeads = [...leads, ...transferedLeads]
+        const sortedLeads = allLeads.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        return sortedLeads;
     } catch (error: any) {
         throw new Error(`Error fetching assigned leads: ${error.message}`);
     }
@@ -253,11 +306,11 @@ const getCompanyLeads = async (companyId: string) => {
                 companyId,
             },
             include: {
-                // leadMember: {
-                //     include: {
-                //         member: true,
-                //     },
-                // },
+                leadMember: {
+                    include: {
+                        member: true,
+                    },
+                },
                 submittedForm: {
                     include: {
                         formValue: true,
@@ -561,7 +614,7 @@ const updateLead = async (lead: z.infer<typeof createLeadSchema>) => {
     }
 }
 
-const approveLead = async (leadId: string, status: boolean, userName: string) => {
+const approveLead = async (leadId: string, status: boolean, userName: string) => {    
     const prospect = await prisma.prospect.update({
         where: {
             id: leadId
@@ -652,6 +705,7 @@ const approveLead = async (leadId: string, status: boolean, userName: string) =>
 }
 
 const leadToClient = async (leadId: string, status: boolean, userName: string) => {
+    
     const prospect = await prisma.lead.findFirst({
         where: {
             id: leadId
@@ -663,6 +717,7 @@ const leadToClient = async (leadId: string, status: boolean, userName: string) =
             }
         }
     })
+    
 
     if (!prospect) throw new Error("Prospect not found!");
 
