@@ -11,6 +11,7 @@ export const createLeadSchema = z.object({
     alternatePhone: z.string().optional(),
     remark: z.string().min(3, "Remark must be at least 3 characters long."),
     rating: z.number().int().optional(),
+    category: z.string().optional(),
 
     vehicleDate: z.string().optional(),
     vehicleName: z.string().optional(),

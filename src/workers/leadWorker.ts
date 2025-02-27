@@ -536,6 +536,7 @@ const createProspect = async (prspct: z.infer<typeof createLeadSchema>, user: z.
                 phone: prspct.phone,
                 alternatePhone: prspct.alternatePhone || "",
                 rating: prspct.rating,
+                category: prspct.category,
                 callStatus: CallStatus.PENDING, // or PENDING
                 paymentStatus: PaymentStatus.PENDING, // or PENDING
                 remark: prspct.remark,
@@ -571,6 +572,7 @@ const createLead = async (lead: z.infer<typeof createLeadSchema>, user: z.infer<
                 alternatePhone: lead.alternatePhone || "",
                 rating: lead.rating,
                 remark: lead.remark,
+                category: lead.category,
                 via: `Manually: ${user.name}`,
                 companyId: user.companyId,
                 companyDeptId: lead.department,

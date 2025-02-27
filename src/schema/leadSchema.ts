@@ -85,6 +85,7 @@ export const leadSchema = `
     alternatePhone: String
     via: String
     remark: String
+    category: String
     rating: Int
     isLeadConverted: Boolean!
     approvedToClient: Boolean
@@ -125,6 +126,7 @@ export const leadSchema = `
     phone: String!
     alternatePhone: String
     remark: String!
+    category: String
     department: String
     dynamicFieldValues: JSON
   }
