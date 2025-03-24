@@ -165,6 +165,7 @@ model Client {
   alternatePhone String?
   rating         Int?
   remark         String
+  category       String?
 
   via String // The way through which the lead is tranfer : API or CSV or etc
 

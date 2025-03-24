@@ -747,6 +747,7 @@ const leadToClient = async (leadId: string, status: boolean, userName: string) =
             phone: prospect.phone,
             alternatePhone: prospect.alternatePhone || "",
             rating: prospect.rating,
+            category: prospect.category,
             companyId: prospect.companyId,
             remark: prospect.remark,
             via: `Manually: ${companyOwner.name}`,
