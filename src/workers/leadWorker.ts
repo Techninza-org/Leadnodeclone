@@ -298,12 +298,14 @@ const getAssignedProspect = async (userId: string, companyId?: string) => {
     }
 };
 
-const getCompanyLeads = async (companyId: string) => {
+const getCompanyLeads = async (companyId: string, user: any) => {
     try {
 
+        console.log("companyId", companyId, user.deptId)
         const leadsRaw = await prisma.lead.findMany({
             where: {
                 companyId,
+                ...(user.deptId && {companyDeptId: user.deptId}),
             },
             include: {
                 leadMember: {
