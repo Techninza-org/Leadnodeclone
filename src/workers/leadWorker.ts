@@ -374,7 +374,7 @@ const getCompanyProspects = async (companyId: string, user: any) => {
     try {
         const prospectsRaw = await prisma.prospect.findMany({
             where: {
-                companyId,
+                companyId: user.companyId,
                 ...(user.deptId && { companyDeptId: user.deptId }),
             },
             include: {
