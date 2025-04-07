@@ -321,7 +321,6 @@ model CompanyDept {
   updatedAt DateTime @updatedAt
   Client    Client[]
 
-  @@unique([companyId])
   @@index([companyId, name])
 }
 
