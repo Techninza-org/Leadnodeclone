@@ -159,7 +159,7 @@ const getAssignedLeads = async (userId: string, companyId?: string) => {
             },
         })
         const username = myself?.name
-        
+
         // Construct the where clause based on whether companyId is provided
         const whereClause = companyId
             ? {
@@ -206,7 +206,7 @@ const getAssignedLeads = async (userId: string, companyId?: string) => {
                 createdAt: 'desc',
             },
         });
-        
+
         const transferedLeads = await prisma.lead.findMany({
             where: {
                 followUps: {
@@ -249,8 +249,8 @@ const getAssignedLeads = async (userId: string, companyId?: string) => {
                 createdAt: 'desc',
             },
         })
-        
-        
+
+
         const allLeads = [...leads, ...transferedLeads]
         const sortedLeads = allLeads.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
         return sortedLeads;
@@ -301,13 +301,13 @@ const getAssignedProspect = async (userId: string, companyId?: string) => {
 const getCompanyLeads = async (companyId: string, user: any) => {
     try {
 
-        console.log("companyId", companyId, user.deptId)
         const leadsRaw = await prisma.lead.findMany({
             where: {
                 companyId,
-                ...(user.deptId && {companyDeptId: user.deptId}),
+                ...(user.deptId && { companyDeptId: user.deptId }),
             },
             include: {
+                companyDept: true,
                 leadMember: {
                     include: {
                         member: true,
@@ -339,9 +339,9 @@ const getCompanyLeads = async (companyId: string, user: any) => {
         // Format the createdAt field
         const leads = leadsRaw.map(lead => ({
             ...lead,
+            department: lead.companyDept?.name,
             createdAt: format(new Date(lead.createdAt), 'dd/MM/yyyy'), // Formatting to MM DD YYYY
         }));
-        
 
         // const leadsWithUniqueFeedback = leads.map(lead => {
         //     lead.submittedForm.forEach(feedbackEntry => {
@@ -370,14 +370,16 @@ const getCompanyLeads = async (companyId: string, user: any) => {
     }
 };
 
-const getCompanyProspects = async (companyId: string) => {
+const getCompanyProspects = async (companyId: string, user: any) => {
     try {
         const prospectsRaw = await prisma.prospect.findMany({
             where: {
                 companyId,
+                ...(user.deptId && { companyDeptId: user.deptId }),
             },
             include: {
                 followUps: true,
+                companyDept: true,
                 // leadMember: {
                 //     include: {
                 //         member: true
@@ -404,6 +406,7 @@ const getCompanyProspects = async (companyId: string) => {
 
         const prospects = prospectsRaw.map(prospect => ({
             ...prospect,
+            department: prospect.companyDept?.name,
             createdAt: prospect.createdAt ? format(new Date(prospect.createdAt), 'dd/MM/yyyy') : null,
         }));
 
@@ -618,7 +621,7 @@ const updateLead = async (lead: z.infer<typeof createLeadSchema>) => {
     }
 }
 
-const approveLead = async (leadId: string, status: boolean, userName: string) => {    
+const approveLead = async (leadId: string, status: boolean, userName: string) => {
     const prospect = await prisma.prospect.update({
         where: {
             id: leadId
@@ -709,7 +712,7 @@ const approveLead = async (leadId: string, status: boolean, userName: string) =>
 }
 
 const leadToClient = async (leadId: string, status: boolean, userName: string) => {
-    
+
     const prospect = await prisma.lead.findFirst({
         where: {
             id: leadId
@@ -721,7 +724,7 @@ const leadToClient = async (leadId: string, status: boolean, userName: string) =
             }
         }
     })
-    
+
 
     if (!prospect) throw new Error("Prospect not found!");
 
@@ -745,7 +748,7 @@ const leadToClient = async (leadId: string, status: boolean, userName: string) =
         },
         create: {
             name: prospect.name,
-            email: prospect.email || "", 
+            email: prospect.email || "",
             phone: prospect.phone,
             alternatePhone: prospect.alternatePhone || "",
             rating: prospect.rating,
