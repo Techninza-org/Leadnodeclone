@@ -177,6 +177,7 @@ const createNUpdateCompanyDeptForm = async (deptForm: any, ctxUser: z.infer<type
 
         const upsertDept = await prisma.companyDept.upsert({
             where: {
+                id: deptForm.companyDeptId || '', 
                 companyId: ctxUser.companyId,
             },
             create: {
