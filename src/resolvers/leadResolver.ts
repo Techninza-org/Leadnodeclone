@@ -1,4 +1,3 @@
-
 import { z, ZodIssue } from 'zod';
 import leadWorker from '../workers/leadWorker';
 import { createLeadSchema, leadAssignToSchema, leadBidSchema, submitFeedbackSchema } from '../types/lead';
@@ -29,6 +28,36 @@ export const leadResolvers = {
             return await leadWorker.getCompanyLeads(companyId, user);
         } catch (error) {
             logger.error('Error fetching lead [getCompanyLeads]:', error);
+            throw new Error('Error fetching lead');
+        }
+    },
+    getLeadsByDeptId: async ({
+        deptId,
+        page,
+        limit,
+        fromDate,
+        toDate,
+        searchQuery
+    }: {
+        deptId: string,
+        page: number,
+        limit: number,
+        fromDate?: string,
+        toDate?: string,
+        searchQuery?: string
+    }, { user }: { user: z.infer<typeof loggedUserSchema> }) => {
+        try {
+            return await leadWorker.getLeadsByDeptId(
+                deptId,
+                page,
+                limit,
+                fromDate,
+                toDate,
+                searchQuery
+            );
+        } catch (error) {
+            console.log(error, "error")
+            logger.error('Error fetching lead [getLeadsByDeptId]:', error);
             throw new Error('Error fetching lead');
         }
     },
@@ -275,5 +304,13 @@ export const leadResolvers = {
 
         }
     },
+    deleteLead: async ({ leadId }: { leadId: string }) => {
+        try {
+            return await leadWorker.deleteLead(leadId);
+        } catch (error) {
+            logger.error('Error deleting lead:', error);
+            throw new Error(`Error deleting lead: ${error}`);
+        }
+    }
 
 };

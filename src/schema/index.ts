@@ -3,6 +3,7 @@ import { authSchema } from "./authSchema";
 import { adminSchema } from "./adminSchema";
 import { leadSchema } from "./leadSchema";
 import { userSchema } from "./userSchema";
+import { permissionSchema } from "./permission";
 
 const queries_mutation = `
 scalar JSON
@@ -48,9 +49,19 @@ type Query {
     getExchangeLeadImgs: jsonType
     getFormValuesByFormName(formName: String!): JSON    
     getCompanyProspects: [Lead]
+    getLeadsByDeptId(deptId: String, page: Int, limit: Int, fromDate: String, toDate: String, searchQuery: String): JSON
+    getAllPermissions: [Permission!]!
+    getPermissionsByRoleId: JSON
   }
 
   type Mutation {
+    assignPermissionToRole(roleId: String!, permissionId: String!): Boolean!
+    removePermissionFromRole(roleId: String!, permissionId: String!): Boolean!
+    createPermission(input: CreatePermissionInput!): Permission!
+    updatePermission(id: String!, input: UpdatePermissionInput!): Permission!
+    deletePermission(id: String!): Boolean!
+    updateRolePermissions(input: UpdateRolePermissionsInput!): Boolean!
+    deleteLead(leadId: String!): Lead
     editLeadFormValue(submittedFormId: String!, formValue: [CreateDeptFieldInput]): Dept
     
     createNUpdateCompanyDeptForm(input: CreateDeptFormInput!): Dept
@@ -97,6 +108,8 @@ type Query {
     createDept(input: CreateDeptInput!): CreateDeptResponse
 
     createNUpdateSubscriptionPlan(input: PlanInput!): Plan
+    createDeptCompany(deptName: String, deptManagerId: String):JSON
+    createCompanyRole(roleName: String):JSON
 
     updateCompanySubscription(companyId: String!, planId: String!, allowedDeptsIds: [String!], startDate: String!, endDate: String!): Company
 
@@ -125,7 +138,7 @@ type Query {
     updateBroadcastForm(input: [CreateBroadcastInput]!): [BroadcastForm]
   }
 `
-const allSchemas = [authSchema, adminSchema, leadSchema, userSchema, queries_mutation];
+const allSchemas = [authSchema, permissionSchema, adminSchema, leadSchema, userSchema, queries_mutation];
 
 export const schema = buildSchema(
   allSchemas.join("\n")

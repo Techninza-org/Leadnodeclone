@@ -128,10 +128,10 @@ const getDepts = async (companyId: string) => {
     }
 }
 
-const createRole = async (role: z.infer<typeof createRoleSchema>, ctxUser: z.infer<typeof loggedUserSchema>) => {
+const createRole = async (roleName: string, companyId: string) => {
     const existingRole = await prisma.role.findFirst({
         where: {
-            name: role.name,
+            name: roleName,
         },
     });
 
@@ -142,8 +142,8 @@ const createRole = async (role: z.infer<typeof createRoleSchema>, ctxUser: z.inf
     try {
         const newRole = await prisma.role.create({
             data: {
-                name: role.name,
-                companyId: ctxUser.companyId,
+                name: roleName,
+                companyId: companyId,
             },
         });
 
@@ -426,8 +426,27 @@ const upsertCompanyDeptForm = async (formIds: string[], roleId: string, ctxUser:
     }
 }
 
+// createDeptCompany: async ({ deptName, deptManagerId }: { deptName: string, deptManagerId: string }) => {
+//     return await companyWorker.createDeptCompany(deptName, deptManagerId);
+//   },
+//   createCompanyRole: async ({ roleName }: { roleName: string }, { user }: { user: z.infer<typeof loggedUserSchema> }) => {
+//     return await companyWorker.createCompanyRole(roleName, user.companyId);
+//   },
+
+const createDeptCompany = async (deptName: string, deptManagerId: string, companyId: string) =>{
+    const dept = await prisma.companyDept.create({
+        data: { 
+            name: deptName,
+            deptManagerId,
+            companyId: companyId
+        }
+    })
+
+    return dept;
+}
 
 export default {
+    createDeptCompany,
     getFollowUps,
     getCompanyXchangerBids,
     getDepts,

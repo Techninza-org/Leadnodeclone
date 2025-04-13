@@ -102,3 +102,34 @@ export const loggedUserSchema = z.object({
     deptId: z.string(),
     companyId: z.string(),
 })
+
+
+
+import {
+    type Role as PrismaRole,
+    type Permission as PrismaPermission,
+    type PermissionAction,
+} from "@prisma/client"
+
+export interface Role extends Omit<PrismaRole, "createdAt" | "updatedAt"> {
+    permissions: Permission[]
+}
+
+export interface Permission {
+    id: string
+    name: string
+    resource: string
+    actions: PermissionAction[]
+    createdAt: Date
+    permissions: Permission[]
+    roles: Role[]
+    updatedAt: Date
+}
+
+export interface UpdateRolePermissionsDto {
+    roleId: string
+    permissions: {
+        id: string
+        actions: PermissionAction[]
+    }[]
+}

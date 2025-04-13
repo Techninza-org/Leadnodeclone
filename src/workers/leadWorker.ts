@@ -1646,8 +1646,133 @@ const editLeadFormValue = async (submittedFormId: string, formValue: any) => {
     }
 }
 
+const getLeadsByDeptId = async (
+    deptId: string,
+    page: number = 1,
+    limit: number = 10,
+    fromDate?: string,
+    toDate?: string,
+    searchQuery?: string
+) => {
+    try {
+        const skip = (page - 1) * limit;
+
+        // Build the where clause for filtering
+        const where: any = {
+            companyDeptId: deptId, // Fixed: using companyDeptId instead of deptId
+        };
+
+        // Add date range filter if provided
+        if (fromDate && toDate) {
+            where.createdAt = {
+                gte: new Date(fromDate + 'T00:00:00.000Z'), // Include the start date
+                lt: new Date(toDate + 'T23:59:59.999Z'), // Exclude the end date + 1 second
+            };
+        }
+
+        // Add global search if query provided
+        if (searchQuery) {
+            where.OR = [
+                { name: { contains: searchQuery, mode: 'insensitive' } },
+                { email: { contains: searchQuery, mode: 'insensitive' } },
+                { phone: { contains: searchQuery, mode: 'insensitive' } },
+            ];
+        }
+
+        // Get total count for pagination
+        const totalCount = await prisma.lead.count({ where });
+
+        // Get leads with pagination
+        const leads = await prisma.lead.findMany({
+            where,
+            include: {
+                company: true,
+                bids: true,
+                followUps: true,
+                leadMember: {
+                    include: {
+                        member: true
+                    }
+                }
+            },
+            orderBy: {
+                createdAt: 'desc'
+            },
+            skip,
+            take: limit
+        });
+
+        const members = await prisma.member.count({
+            where: {
+                deptId
+            }
+        })
+
+        const newLeads = await prisma.lead.count({
+            where: {
+                companyDeptId: deptId,
+                status: Status.OPEN
+            }
+        })
+
+        const inProgress = await prisma.lead.count({
+            where: {
+                companyDeptId: deptId,
+                status: Status.IN_PROGRESS
+            }
+        })
+
+        const completed = await prisma.lead.count({
+            where: {
+                companyDeptId: deptId,
+                status: Status.CLOSED
+            }
+        })
+
+        return {
+            stats: {
+                members,
+                leads: totalCount,
+                newLeads,
+                inProgress,
+                completed
+            },
+            leads: leads,
+            pagination: {
+                total: totalCount,
+                page,
+                limit,
+                totalPages: Math.ceil(totalCount / limit)
+            }
+        };
+    } catch (error) {
+        logger.error('Error fetching leads by department:', error);
+        throw error;
+    }
+};
+
+const deleteLead = async (leadId: string) => {
+    try {
+        await prisma.leadFollowUp.deleteMany({
+            where: {
+                leadId,
+            },
+        });
+        const lead = await prisma.lead.delete({
+            where: { id: leadId }
+        });
+        return lead;
+    } catch (error: any) {
+        if (error.code === 'P2025') {
+            throw new Error('Cannot delete lead as it is associated with a follow-up');
+        }
+        logger.error('Error deleting lead:', error);
+        throw new Error(`Error deleting lead: ${error}`);
+    }
+};
 
 export default {
+    deleteLead,
     editLeadFormValue,
     getAllLeads,
     getLeadBids,
@@ -1676,7 +1801,8 @@ export default {
     leadToClient,
     xChangerCustomerList,
     getLeadPhotos,
+    getExchangeLeadImgs,
     getFormValuesByFormName,
     getAssignedProspect,
-    getExchangeLeadImgs
+    getLeadsByDeptId
 }

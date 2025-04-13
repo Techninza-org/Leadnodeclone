@@ -31,10 +31,10 @@ export const companyResolvers = {
     //   throw new Error('Error fetching user roles');
     // }
   },
-  getCompanyDepts: async ({ companyId }: { companyId: string },  { user }: { user: z.infer<typeof loggedUserSchema> }) => {
+  getCompanyDepts: async ({ companyId }: { companyId: string }, { user }: { user: z.infer<typeof loggedUserSchema> }) => {
     return await companyWorker.getDepts(user.companyId);
   },
-  getCompanyDeptFields: async ({ deptId }: { deptId: string },  { user }: { user: z.infer<typeof loggedUserSchema> }) => {
+  getCompanyDeptFields: async ({ deptId }: { deptId: string }, { user }: { user: z.infer<typeof loggedUserSchema> }) => {
     return await companyWorker.getCompanyDeptFields(deptId, user);
   },
   getCompanyDeptOptFields: async (_: any, { user }: { user: z.infer<typeof loggedUserSchema> }) => {
@@ -51,7 +51,7 @@ export const companyResolvers = {
       return { user: null, errors };
     }
 
-    return await companyWorker.createRole(parsedData.data,  user);
+    return await companyWorker.createRole(parsedData.data.name, user.companyId);
   },
   createNUpdateCompanyDeptForm: async ({ input }: { input: any }, { user }: { user: z.infer<typeof loggedUserSchema> }) => {
     // const parsedData = createAdminDeptSchema.safeParse(input);
@@ -67,8 +67,14 @@ export const companyResolvers = {
   createNUpdateCompanyDeptOptForm: async ({ input }: { input: any }, { user }: { user: z.infer<typeof loggedUserSchema> }) => {
     return await companyWorker.createNUpdateCompanyDeptOptForm(input, user);
   },
-  upsertCompanyDeptForm: async ({ formIds, roleId }: { formIds : string[], roleId : string }, { user }: { user: z.infer<typeof loggedUserSchema> }) => {
+  upsertCompanyDeptForm: async ({ formIds, roleId }: { formIds: string[], roleId: string }, { user }: { user: z.infer<typeof loggedUserSchema> }) => {
     // console.log(formIds, roleId, "input")
     return await companyWorker.upsertCompanyDeptForm(formIds, roleId, user);
+  },
+  createDeptCompany: async ({ deptName, deptManagerId }: { deptName: string, deptManagerId: string }, { user }: { user: z.infer<typeof loggedUserSchema> }) => {
+    return await companyWorker.createDeptCompany(deptName, deptManagerId, user.companyId);
+  },
+  createCompanyRole: async ({ roleName }: { roleName: string }, { user }: { user: z.infer<typeof loggedUserSchema> }) => {
+    return await companyWorker.createRole(roleName, user.companyId);
   },
 }
