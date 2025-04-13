@@ -18,7 +18,10 @@ app.use(cors({ origin: '*' }));
 app.use(express.json());
 app.use(middleware.loggerMiddleware);
 
+// Serve static files
+app.use('/api/quotations', express.static(path.join(__dirname, '../uploads/documents')));
 app.use('/graphql/images', express.static(path.join(__dirname, 'uploads')));
+app.use('/public', express.static(path.join(__dirname, 'public')));
 
 app.post('/graphql/upload', upload.any(), uploadImage);
 app.post('/graphql/broadcastMessage', middleware.userAuthMiddleware, upload.any(), broadcastMessage);

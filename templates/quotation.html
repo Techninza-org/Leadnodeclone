@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sooprs Mobile App Quotation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .page {
+            width: 794px;
+            /* A4 width at 96 DPI */
+            height: 1123px;
+            /* A4 height at 96 DPI */
+            margin: 20px auto;
+            position: relative;
+            page-break-after: always;
+            box-sizing: border-box;
+        }
+
+        .page:last-child {
+            page-break-after: auto;
+        }
+
+        .cover-page {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .cover-page img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            /* Ensures the image covers the entire area */
+        }
+
+        .content-page {
+            background: #fff;
+            padding: 40px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        .header img {
+            max-width: 120px;
+        }
+
+        .header h1 {
+            font-size: 20px;
+            color: #007bff;
+            margin: 5px 0;
+        }
+
+        .header p {
+            font-size: 12px;
+            color: #666;
+        }
+
+        h2 {
+            font-size: 18px;
+            color: #007bff;
+            margin: 20px 0 10px;
+            page-break-before: auto;
+            page-break-inside: avoid;
+        }
+
+        h3 {
+            font-size: 14px;
+            color: #333;
+            margin-bottom: 8px;
+            page-break-inside: avoid;
+        }
+
+        h4 {
+            font-size: 13px;
+            color: #333;
+            margin-bottom: 6px;
+        }
+
+        p,
+        li {
+            font-size: 12px;
+            margin-bottom: 8px;
+            page-break-inside: avoid;
+        }
+
+        ul {
+            padding-left: 20px;
+            margin-bottom: 10px;
+            page-break-inside: avoid;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            page-break-inside: avoid;
+        }
+
+        table,
+        th,
+        td {
+            border: 1px solid #ddd;
+        }
+
+        th,
+        td {
+            padding: 8px;
+            text-align: left;
+            font-size: 12px;
+        }
+
+        th {
+            background-color: #007bff;
+            color: #fff;
+        }
+
+        .footer {
+            position: absolute;
+            bottom: 20px;
+            width: calc(100% - 80px);
+            text-align: center;
+            border-top: 2px solid #007bff;
+            padding-top: 10px;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .footer a {
+            color: #007bff;
+            text-decoration: none;
+        }
+
+        .content {
+            padding-bottom: 60px;
+            /* Space for footer */
+        }
+
+        .avoid-break {
+            page-break-inside: avoid;
+        }
+
+        @media screen {
+            .page {
+                margin: 20px auto;
+            }
+        }
+
+        @media print {
+            body {
+                background: none;
+            }
+
+            .page {
+                margin: 0;
+                box-shadow: none;
+                height: auto;
+                min-height: 842px;
+            }
+
+            .footer {
+                position: fixed;
+                bottom: 0;
+            }
+
+            .cover-page img {
+                height: 1123px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Page 1: Cover Page with Logo -->
+    <div class="page cover-page">
+        <img src="https://sooprs.com/images/sooprs_fp.png" alt="Sooprs Cover Page">
+    </div>
+
+    <!-- Page 2: Introduction and Services -->
+    <div class="page">
+        <div class="content-page">
+            <div class="header">
+                <img src="https://sooprs.com/images/sooprs_logo.png" alt="Sooprs Logo">
+                <h1>VGI Sooprs Technology Pvt Ltd</h1>
+                <p>www.sooprs.com | GST No: 06AAKCV5021D1ZM</p>
+            </div>
+            <div class="content">
+                <h2>INTRODUCTION</h2>
+                <div class="avoid-break">
+                    <h3>About Company</h3>
+                    <p><strong>Registered Entity:</strong> VGI Sooprs Technology Pvt Ltd</p>
+                    <p><strong>GST No:</strong> 06AAKCV5021D1ZM</p>
+                    <p><strong>Website:</strong> <a href="http://www.sooprs.com">www.sooprs.com</a></p>
+                    <p>Sooprs.com is an online freelance marketplace that connects clients with professionals across
+                        various fields, including programming, artificial intelligence, graphic design, digital
+                        marketing, and more. Clients can post projects, set budgets, and select freelancers to
+                        collaborate with, while freelancers can bid on projects that match their skills. The platform
+                        offers project management tools to facilitate seamless collaboration and payment processing. We
+                        also provide in-house development services.</p>
+                </div>
+                <h3>Our Services</h3>
+                <h4>DEVELOPMENT</h4>
+                <ul>
+                    <li>Website Design</li>
+                    <li>Android App Development</li>
+                    <li>Hybrid App Development</li>
+                    <li>Iphone App Development</li>
+                    <li>Internet of Things</li>
+                    <li>Artificial Intelligence</li>
+                    <li>Machine Learning</li>
+                    <li>Augmented Reality</li>
+                    <li>Virtual Reality</li>
+                </ul>
+                <h4>DIGITAL MARKETING</h4>
+                <ul>
+                    <li>SEO & SMO</li>
+                    <li>Content Writing</li>
+                </ul>
+                <h4>CLOUD SERVICES</h4>
+                <ul>
+                    <li>Hosting Services</li>
+                    <li>Cloud Security</li>
+                    <li>Platform Security</li>
+                </ul>
+            </div>
+            <div class="footer">
+                <p>VGI Sooprs Technology Pvt Ltd | <a href="http://www.sooprs.com">www.sooprs.com</a></p>
+                <p>Contact: 8178924823 | Email: <a href="mailto:contact@sooprs.com">contact@sooprs.com</a></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Page 3: Project Requirement (Technology and Features Part 1) -->
+    <div class="page">
+        <div class="content-page">
+            <div class="header">
+                <img src="https://sooprs.com/images/sooprs_logo.png" alt="Sooprs Logo">
+                <h1>VGI Sooprs Technology Pvt Ltd</h1>
+                <p>www.sooprs.com | GST No: 06AAKCV5021D1ZM</p>
+            </div>
+            <div class="content">
+                <h2>Project Requirement</h2>
+                <div class="avoid-break">
+                    <p><strong>Platform:</strong> <span id="platform-os">${data.platformOs}</span>, <span
+                            id="platform-admin">${data.platformAdmin}</span></p>
+                    <h3>Technology</h3>
+                    <ul>
+                        <li>Database: <span id="tech-database">${data.techDatabase}</span></li>
+                        <li>API Framework: <span id="tech-api">${data.techApi}</span></li>
+                        <li>Backend: <span id="tech-backend">${data.techBackend}</span></li>
+                        <li>App: <span id="tech-app">${data.techApp}</span></li>
+                    </ul>
+                </div>
+                <div class="avoid-break">
+                    <h3>Features</h3>
+                    <ul>
+                        <li><strong>Onboarding/Welcome Screens:</strong> Introduction to the app's purpose, features,
+                            and benefits. Key messages about quality, reliability, and ease of use.</li>
+                        <li><strong>Sign-Up/Login Page:</strong> User authentication with options for email, phone
+                            number, or social media.</li>
+                        <li><strong>Home Page/Dashboard:</strong> Featured products (fertilizers, supplements, etc.).
+                            Seasonal recommendations and trending items.</li>
+                        <li><strong>Product Catalog Page:</strong> Categories such as fertilizers, soil conditioners,
+                            organic supplements, and pest control. Filters for type, crop suitability, price, and brand.
+                        </li>
+                        <li><strong>Product Details Page:</strong> Comprehensive product information, including
+                            benefits, application instructions, and ingredients. Images, videos, and ratings/reviews.
+                        </li>
+                        <li><strong>Crop Recommendations Page:</strong> Interactive feature where users select their
+                            crop type and receive tailored product suggestions.</li>
+                        <li><strong>Subscription Management Page:</strong> Option to subscribe for regular deliveries
+                            (e.g., monthly fertilizer supplies).</li>
+                        <li><strong>Cart Page:</strong> Manage selected products, view estimated costs, and apply
+                            discounts.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer">
+                <p>VGI Sooprs Technology Pvt Ltd | <a href="http://www.sooprs.com">www.sooprs.com</a></p>
+                <p>Contact: 8178924823 | Email: <a href="mailto:contact@sooprs.com">contact@sooprs.com</a></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Page 4: Features (Mobile App Part 2 and Admin Panel) -->
+    <div class="page">
+        <div class="content-page">
+            <div class="header">
+                <img src="https://sooprs.com/images/sooprs_logo.png" alt="Sooprs Logo">
+                <h1>VGI Sooprs Technology Pvt Ltd</h1>
+                <p>www.sooprs.com | GST No: 06AAKCV5021D1ZM</p>
+            </div>
+            <div class="content">
+                <h2>Project Requirement (Continued)</h2>
+                <div class="avoid-break">
+                    <!-- <h4>Mobile App (Continued)</h4> -->
+                    <ul>
+                        <li><strong>Payment Page:</strong> Integration with multiple payment gateways (UPI, net banking,
+                            credit/debit card). Support for cash on delivery (COD).</li>
+                        <li><strong>Order Summary/Confirmation Page:</strong> Display order details with tracking link.
+                        </li>
+                        <li><strong>Order History Page:</strong> Users can view past orders, reorder items, and track
+                            current orders.</li>
+                        <li><strong>Delivery Tracking Page:</strong> Real-time tracking of delivery status.</li>
+                        <li><strong>Educational Resources Page:</strong> Articles, videos, and guides on proper
+                            fertilizer use, crop health, and sustainable farming practices.</li>
+                        <li><strong>Customer Support/Help Page:</strong> FAQs, live chat, or chatbot for quick
+                            assistance. Option to raise complaints or track issue resolutions.</li>
+                        <li><strong>Profile Page:</strong> User details, saved delivery addresses, and payment methods.
+                        </li>
+                        <li><strong>Notifications Page:</strong> Alerts about offers, delivery updates, and reminders
+                            for seasonal products.</li>
+                        <li><strong>Loyalty Rewards Page (Optional):</strong> Display points earned for purchases and
+                            redeemable rewards.</li>
+                    </ul>
+                </div>
+                <div class="avoid-break">
+                    <h4>Admin Panel Pages</h4>
+                    <ul>
+                        <li><strong>Dashboard:</strong> Overview of sales, revenue, and order trends.</li>
+                        <li><strong>User Management:</strong> Manage customer profiles, orders, and complaints.</li>
+                        <li><strong>Product Management:</strong> Add, update, or remove products and categories. Stock
+                            management.</li>
+                        <li><strong>Order Management:</strong> View and manage customer orders (pending, shipped,
+                            delivered).</li>
+                        <li><strong>Delivery Management:</strong> Assign delivery agents and monitor delivery progress.
+                        </li>
+                        <li><strong>Payment Gateway Management:</strong> Monitor payment transactions and manage
+                            refunds.</li>
+                        <li><strong>Offers and Discounts Management:</strong> Create and manage promotional campaigns.
+                        </li>
+                        <li><strong>Reports and Analytics:</strong> Detailed insights into sales, customer behavior, and
+                            inventory performance.</li>
+                        <li><strong>Feedback Management:</strong> Monitor and act on customer feedback and ratings.</li>
+                        <li><strong>System Settings:</strong> Configure app settings, user roles, and permissions.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer">
+                <p>VGI Sooprs Technology Pvt Ltd | <a href="http://www.sooprs.com">www.sooprs.com</a></p>
+                <p>Contact: 8178924823 | Email: <a href="mailto:contact@sooprs.com">contact@sooprs.com</a></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Page 5: Budget, Terms, Why Choose Sooprs, Contact -->
+    <div class="page">
+        <div class="content-page">
+            <div class="header">
+                <img src="https://sooprs.com/images/sooprs_logo.png" alt="Sooprs Logo">
+                <h1>VGI Sooprs Technology Pvt Ltd</h1>
+                <p>www.sooprs.com | GST No: 06AAKCV5021D1ZM</p>
+            </div>
+            <div class="content">
+                <div class="avoid-break">
+                    <h2>Budget & Timeline</h2>
+                    <table>
+                        <tr>
+                            <th>Item</th>
+                            <th>Details</th>
+                        </tr>
+                        <tr>
+                            <td>Budget</td>
+                            <td><span id="budget-amount">${data.budgetAmount}</span></td>
+                        </tr>
+                        <tr>
+                            <td>Timeline</td>
+                            <td><span id="timeline-days">${data.timelineDays}</span></td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="avoid-break">
+                    <h2>Terms & Conditions</h2>
+                    <ul>
+                        <li>Third-party services like SMS, Email, Hosting will be purchased by the client if needed.
+                        </li>
+                        <li>GST applicable 18% excluding charges.</li>
+                        <li>Payment terms as per personal discussion will be final.</li>
+                        <li>In the above price, mobile app and admin will be delivered.</li>
+                    </ul>
+                </div>
+                <div class="avoid-break">
+                    <h2>Why Choose Sooprs?</h2>
+                    <ul>
+                        <li>Expertise in the latest technologies and trends.</li>
+                        <li>End-to-end software solutions tailored to client needs.</li>
+                        <li>Dedicated to delivering quality products and ensuring customer satisfaction.</li>
+                    </ul>
+                </div>
+                <div class="avoid-break">
+                    <h2>Contact</h2>
+                    <p>If you have any questions or need modifications to the quotation, feel free to reach out.</p>
+                    <p><strong>Contact:</strong> 8178924823</p>
+                    <p><strong>Email:</strong> <a href="mailto:contact@sooprs.com">contact@sooprs.com</a></p>
+                    <p>We look forward to working with you on this exciting project!</p>
+                </div>
+            </div>
+            <div class="footer">
+                <p>VGI Sooprs Technology Pvt Ltd | <a href="http://www.sooprs.com">www.sooprs.com</a></p>
+                <p>Contact: 8178924823 | Email: <a href="mailto:contact@sooprs.com">contact@sooprs.com</a></p>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

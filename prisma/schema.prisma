@@ -130,6 +130,7 @@ model Lead {
   via String // The way through which the lead is tranfer : API or CSV or etc
 
   status Status @default(OPEN)
+  quotationStatus Boolean @default(false)
 
   callStatus    CallStatus    @default(PENDING)
   paymentStatus PaymentStatus @default(PENDING)

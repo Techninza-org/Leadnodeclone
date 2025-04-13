@@ -3,6 +3,7 @@ import { authResolvers } from "./authResolver";
 import { companyResolvers } from "./companyResolver";
 import { leadResolvers } from "./leadResolver";
 import { permissionResolvers } from "./permissionResolver";
+import { quotationResolvers } from "./quotationResolver";
 import { userResolvers } from "./userResovler";
 
 export const resolvers = {
@@ -11,5 +12,6 @@ export const resolvers = {
     ...leadResolvers,
     ...userResolvers,
     ...companyResolvers,
-    ...permissionResolvers
+    ...permissionResolvers,
+    ...quotationResolvers
 }

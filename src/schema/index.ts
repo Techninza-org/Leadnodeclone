@@ -12,6 +12,24 @@ type jsonType {
   data: JSON
 }
 
+type QuotationResponse {
+    success: Boolean!
+    pdfUrl: String
+    fileName: String
+    error: String
+}
+
+input QuotationInput {
+    platform: String!
+    apiFramework: String!
+    backend: String!
+    app: String!
+    database: String!
+    budget: String!
+    timeline: String!
+    leadId: String!
+}
+
 type Query {
     getAllUsers: [User]
     getUser(id: ID!): User
@@ -55,6 +73,17 @@ type Query {
   }
 
   type Mutation {
+    generateQuotation(
+        leadId: String!
+        platform: String!
+        database: String!
+        apiFramework: String!
+        backend: String!
+        app: String!
+        budget: String!
+        timeline: String!
+    ): QuotationResponse!
+
     assignPermissionToRole(roleId: String!, permissionId: String!): Boolean!
     removePermissionFromRole(roleId: String!, permissionId: String!): Boolean!
     createPermission(input: CreatePermissionInput!): Permission!
