@@ -1,19 +1,9 @@
 import puppeteer from "puppeteer"
-import fs from "fs-extra"
 import path from "path"
-import {
-  Document,
-  Packer,
-  Paragraph,
-  TextRun,
-  HeadingLevel,
-  Table,
-  TableRow,
-  TableCell,
-  BorderStyle,
-  WidthType,
-  AlignmentType,
-} from "docx"
+import fs from "fs-extra"
+import PizZip from "pizzip"
+import Docxtemplater from "docxtemplater"
+import { htmlToText } from "html-to-text"
 
 export interface QuotationData {
   platformOs: string
@@ -24,23 +14,73 @@ export interface QuotationData {
   techApp: string
   budgetAmount: string
   timelineDays: string
+  projectRequirements?: string
 }
 
 export class DocumentService {
-  private readonly uploadDir: string
+  uploadDir: string
+
   constructor() {
-    this.uploadDir = path.join(process.cwd(), "uploads/documents")
-    try {
-      if (!fs.existsSync(this.uploadDir)) {
-        fs.mkdirSync(this.uploadDir, { recursive: true })
-      }
-    } catch (error: any) {
-      if (error.code === "ENOENT") {
-        fs.mkdirSync(this.uploadDir, { recursive: true })
-      } else {
-        throw error
+    this.uploadDir = path.join(process.cwd(), "public/uploads/quotations")
+    fs.ensureDirSync(this.uploadDir) // Ensure directory exists
+  }
+
+  // Replace placeholders in HTML with data
+  replacePlaceholders(html: string, data: QuotationData): string {
+    let result = html
+
+    // Basic replacements
+    result = result.replace(/\$\{data\.platformOs\}/g, data.platformOs || "")
+    result = result.replace(/\$\{data\.platformAdmin\}/g, data.platformAdmin || "")
+    result = result.replace(/\$\{data\.techDatabase\}/g, data.techDatabase || "")
+    result = result.replace(/\$\{data\.techApi\}/g, data.techApi || "")
+    result = result.replace(/\$\{data\.techBackend\}/g, data.techBackend || "")
+    result = result.replace(/\$\{data\.techApp\}/g, data.techApp || "")
+    result = result.replace(/\$\{data\.budgetAmount\}/g, data.budgetAmount || "")
+    result = result.replace(/\$\{data\.timelineDays\}/g, data.timelineDays || "")
+
+    // Insert project requirements if they exist
+    if (data.projectRequirements && data.projectRequirements.trim()) {
+      // Find the project requirements section
+      const requirementsSection =
+        '<div class="page">' +
+        '<div class="content-page">' +
+        '<div class="header">' +
+        '<img src="https://sooprs.com/images/sooprs_logo.png" alt="Sooprs Logo">' +
+        "<h1>VGI Sooprs Technology Pvt Ltd</h1>" +
+        "<p>www.sooprs.com | GST No: 06AAKCV5021D1ZM</p>" +
+        "</div>" +
+        '<div class="content">' +
+        "<h2>Project Requirements Details</h2>" +
+        '<div class="avoid-break">' +
+        data.projectRequirements +
+        "</div>" +
+        "</div>" +
+        '<div class="footer">' +
+        '<p>VGI Sooprs Technology Pvt Ltd | <a href="http://www.sooprs.com">www.sooprs.com</a></p>' +
+        '<p>Contact: 8178924823 | Email: <a href="mailto:contact@sooprs.com">contact@sooprs.com</a></p>' +
+        "</div>" +
+        "</div>" +
+        "</div>"
+
+      // Insert the requirements section before the budget page
+      const budgetPageIndex = result.indexOf("<h2>Budget & Timeline</h2>")
+      const budgetPageStart = result.lastIndexOf('<div class="page">', budgetPageIndex)
+
+      if (budgetPageStart !== -1) {
+        result = result.substring(0, budgetPageStart) + requirementsSection + result.substring(budgetPageStart)
       }
     }
+
+    return result
+  }
+
+  // Resolve relative image paths to absolute paths
+  resolveImagePaths(html: string): string {
+    const publicDir = path.join(process.cwd(), "public")
+    return html.replace(/src="(\/[^"]+)"/g, (match, imagePath) => {
+      return `src="${path.join(publicDir, imagePath)}"`
+    })
   }
 
   async generateQuotationPdf(
@@ -58,7 +98,7 @@ export class DocumentService {
     const filePath = path.join(this.uploadDir, fileName)
 
     const browser = await puppeteer.launch({
-        // @ts-ignore
+      // @ts-ignore
       headless: "new",
       args: ["--no-sandbox", "--disable-setuid-sandbox"],
     })
@@ -69,6 +109,7 @@ export class DocumentService {
         waitUntil: "networkidle0",
       })
 
+      // Set PDF options to avoid empty pages
       await page.pdf({
         path: filePath,
         format: "A4",
@@ -79,6 +120,8 @@ export class DocumentService {
           bottom: "20px",
           left: "20px",
         },
+        displayHeaderFooter: false,
+        scale: 1.0,
       })
 
       return {
@@ -91,225 +134,59 @@ export class DocumentService {
   }
 
   async generateQuotationDocx(data: QuotationData): Promise<{ filePath: string; fileName: string }> {
-    // Generate unique filename
+    // Path to template
+    const templatePath = path.join(process.cwd(), "templates/quotation_template.docx")
+
+    // Read the template
+    const templateContent = fs.readFileSync(templatePath, "binary")
+    const zip = new PizZip(templateContent)
+
+    // Process template
+    const doc = new Docxtemplater(zip, {
+      paragraphLoop: true,
+      linebreaks: true,
+    })
+
+    // Convert HTML requirements to plain text if needed
+    let plainRequirements = data.projectRequirements || ""
+    if (data.projectRequirements && data.projectRequirements.includes("<")) {
+      plainRequirements = htmlToText(data.projectRequirements, {
+        wordwrap: 130,
+        preserveNewlines: true,
+      })
+    }
+
+    // Set template data
+    doc.setData({
+      platformOs: data.platformOs,
+      platformAdmin: data.platformAdmin,
+      techDatabase: data.techDatabase,
+      techApi: data.techApi,
+      techBackend: data.techBackend,
+      techApp: data.techApp,
+      budgetAmount: data.budgetAmount,
+      timelineDays: data.timelineDays,
+      projectRequirements: plainRequirements,
+    })
+
+    // Render document
+    doc.render()
+
+    // Generate output
+    const buf = doc.getZip().generate({
+      type: "nodebuffer",
+      compression: "DEFLATE",
+    })
+
+    // Save document
     const fileName = `quotation_${Date.now()}.docx`
     const filePath = path.join(this.uploadDir, fileName)
 
-    // Create DOCX document
-    const doc = this.createDocxDocument(data)
-
-    // Save document
-    const buffer = await Packer.toBuffer(doc)
-    fs.writeFileSync(filePath, buffer)
+    fs.writeFileSync(filePath, buf)
 
     return {
       filePath,
       fileName,
     }
-  }
-
-  private createDocxDocument(data: QuotationData): Document {
-    return new Document({
-      sections: [
-        {
-          properties: {},
-          children: [
-            // Header
-            new Paragraph({
-              text: "VGI Sooprs Technology Pvt Ltd",
-              heading: HeadingLevel.HEADING_1,
-              alignment: AlignmentType.CENTER,
-            }),
-            new Paragraph({
-              text: "www.sooprs.com | GST No: 06AAKCV5021D1ZM",
-              alignment: AlignmentType.CENTER,
-            }),
-            new Paragraph({
-              text: "Project Requirement",
-              heading: HeadingLevel.HEADING_2,
-              spacing: {
-                before: 400,
-                after: 200,
-              },
-            }),
-
-            // Platform
-            new Paragraph({
-              text: "Platform:",
-              heading: HeadingLevel.HEADING_3,
-              spacing: { before: 200 },
-            }),
-            new Paragraph({
-              children: [new TextRun(`1. Mobile App (${data.platformOs})`)],
-              bullet: { level: 0 },
-            }),
-            new Paragraph({
-              children: [new TextRun(`2. ${data.platformAdmin}`)],
-              bullet: { level: 0 },
-            }),
-
-            // Technology
-            new Paragraph({
-              text: "Technology:",
-              heading: HeadingLevel.HEADING_3,
-              spacing: { before: 200 },
-            }),
-            new Paragraph({
-              children: [new TextRun(`Database: ${data.techDatabase}`)],
-              bullet: { level: 0 },
-            }),
-            new Paragraph({
-              children: [new TextRun(`API Framework: ${data.techApi}`)],
-              bullet: { level: 0 },
-            }),
-            new Paragraph({
-              children: [new TextRun(`Backend: ${data.techBackend}`)],
-              bullet: { level: 0 },
-            }),
-            new Paragraph({
-              children: [new TextRun(`App: ${data.techApp}`)],
-              bullet: { level: 0 },
-            }),
-
-            // Budget & Timeline
-            new Paragraph({
-              text: "Budget & Timeline",
-              heading: HeadingLevel.HEADING_2,
-              spacing: { before: 400, after: 200 },
-            }),
-            this.createBudgetTable(data),
-
-            // Footer
-            new Paragraph({
-              text: "",
-              spacing: { before: 400 },
-            }),
-            new Paragraph({
-              text: "VGI Sooprs Technology Pvt Ltd | www.sooprs.com",
-              alignment: AlignmentType.CENTER,
-            }),
-            new Paragraph({
-              text: "Contact: 8178924823 | Email: contact@sooprs.com",
-              alignment: AlignmentType.CENTER,
-            }),
-          ],
-        },
-      ],
-    })
-  }
-
-  private createBudgetTable(data: QuotationData): Table {
-    return new Table({
-      width: {
-        size: 100,
-        type: WidthType.PERCENTAGE,
-      },
-      borders: {
-        top: { style: BorderStyle.SINGLE, size: 1 },
-        bottom: { style: BorderStyle.SINGLE, size: 1 },
-        left: { style: BorderStyle.SINGLE, size: 1 },
-        right: { style: BorderStyle.SINGLE, size: 1 },
-        insideHorizontal: { style: BorderStyle.SINGLE, size: 1 },
-        insideVertical: { style: BorderStyle.SINGLE, size: 1 },
-      },
-      rows: [
-        new TableRow({
-          children: [
-            new TableCell({
-              children: [new Paragraph("Item")],
-              shading: {
-                fill: "007BFF",
-                color: "FFFFFF",
-              },
-            }),
-            new TableCell({
-              children: [new Paragraph("Details")],
-              shading: {
-                fill: "007BFF",
-                color: "FFFFFF",
-              },
-            }),
-          ],
-        }),
-        new TableRow({
-          children: [
-            new TableCell({
-              children: [new Paragraph("Budget")],
-            }),
-            new TableCell({
-              children: [new Paragraph(data.budgetAmount)],
-            }),
-          ],
-        }),
-        new TableRow({
-          children: [
-            new TableCell({
-              children: [new Paragraph("Timeline")],
-            }),
-            new TableCell({
-              children: [new Paragraph(data.timelineDays)],
-            }),
-          ],
-        }),
-      ],
-    })
-  }
-
-  private replacePlaceholders(html: string, data: QuotationData): string {
-    // Create a map of placeholders to their values
-    const placeholders = {
-      "platform-os": data.platformOs,
-      "platform-admin": data.platformAdmin,
-      "tech-database": data.techDatabase,
-      "tech-api": data.techApi,
-      "tech-backend": data.techBackend,
-      "tech-app": data.techApp,
-      "budget-amount": data.budgetAmount,
-      "timeline-days": data.timelineDays,
-    }
-
-    // Replace each placeholder in the HTML
-    let modifiedHtml = html
-
-    // First, remove the script tag that was previously used for injection
-    modifiedHtml = modifiedHtml.replace(/<script>[\s\S]*?<\/script>/, "")
-
-    // Then replace each placeholder with its value
-    Object.entries(placeholders).forEach(([id, value]) => {
-      const regex = new RegExp(`<([^>]+) id="${id}"[^>]*>([^<]*)<\/([^>]+)>`, "g")
-      modifiedHtml = modifiedHtml.replace(regex, `<$1 id="${id}">${value}</$3>`)
-    })
-
-    // Remove the editable class if present
-    modifiedHtml = modifiedHtml.replace(/class="editable"/g, "")
-
-    return modifiedHtml
-  }
-
-  // Add a method to handle image paths in the HTML
-  private resolveImagePaths(html: string): string {
-    // Get the absolute path to the public directory
-    const publicDir = path.join(process.cwd(), "public")
-
-    // Replace relative image paths with absolute paths
-    const modifiedHtml = html.replace(/src="\.\/([^"]+)"/g, (match, imagePath) => {
-      // Check if the image exists in the public directory
-      const absolutePath = path.join(publicDir, imagePath)
-      if (fs.existsSync(absolutePath)) {
-        return `src="file://${absolutePath}"`
-      }
-      // If not found, try to use an online fallback
-      return `src="https://sooprs.com/images/${imagePath}"`
-    })
-
-    return modifiedHtml
-  }
-
-  async getDocumentStream(fileName: string): Promise<fs.ReadStream> {
-    const filePath = path.join(this.uploadDir, fileName)
-    if (!(await fs.pathExists(filePath))) {
-      throw new Error("Document file not found")
-    }
-    return fs.createReadStream(filePath)
   }
 }

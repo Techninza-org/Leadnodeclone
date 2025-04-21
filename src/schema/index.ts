@@ -12,6 +12,12 @@ type jsonType {
   data: JSON
 }
 
+type RequirementsResponse {
+  success: Boolean!
+  content: String
+  error: String
+}
+
 type QuotationResponse {
     success: Boolean!
     pdfUrl: String
@@ -72,13 +78,20 @@ type Query {
     getPermissionsByRoleId: JSON
   }
 
-  type Mutation {
+type Mutation {
+
+    generateRequirements(
+      projectType: String!
+      userPrompt: String
+    ): RequirementsResponse
+
     generateQuotation(
         leadId: String!
         platform: String!
         database: String!
         apiFramework: String!
         backend: String!
+        projectRequirements: String
         app: String!
         budget: String!
         timeline: String!

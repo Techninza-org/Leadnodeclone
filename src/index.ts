@@ -10,6 +10,8 @@ import { schema } from './schema';
 import { resolvers } from './resolvers';
 import { broadcastMessage, handleCreateBulkLead, handleCreateBulkProspect, uploadImage } from './controller/image.controller';
 import prisma from './config/database';
+import { generateRequirementsController } from './resolvers/requirementResolver';
+import { generateQuotationController } from './resolvers/quotationResolver';
 
 const app = express();
 const PORT = config.envProvider.PORT;
@@ -27,6 +29,8 @@ app.post('/graphql/upload', upload.any(), uploadImage);
 app.post('/graphql/broadcastMessage', middleware.userAuthMiddleware, upload.any(), broadcastMessage);
 app.post('/graphql/bulk-upload-lead', middleware.userAuthMiddleware, handleCreateBulkLead);
 app.post('/graphql/bulk-upload-prospect', middleware.userAuthMiddleware, handleCreateBulkProspect);
+app.post('/graphql/generateQuotation', generateQuotationController);
+app.post('/graphql/generateRequirements', generateRequirementsController);
 
 app.use('/graphql', middleware.userAuthMiddleware, createHandler({
     schema: schema,

@@ -1394,7 +1394,7 @@ const updateProspectFollowUpDate = async (feedback: any, leadId: string, nextFol
             fieldType: (fb.fieldType as FieldType),
         }));
 
-        const updatedLead = await prisma.prospect.update({
+        const updatedLead = await prisma.lead.update({
             where: {
                 id: leadId,
             },
@@ -1414,6 +1414,7 @@ const updateProspectFollowUpDate = async (feedback: any, leadId: string, nextFol
 
         return updatedLead;
     } catch (error: any) {
+        console.log(error, "error")
         logger.error('Error updating Lead:', error);
         throw new Error(`Error updating Lead: ${error.message}`);
     }

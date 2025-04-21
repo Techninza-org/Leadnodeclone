@@ -5,6 +5,16 @@ import prisma from "../config/database"
 
 const documentService = new DocumentService()
 
+export const generateQuotationController = async (req: any, res: any) => {
+  try {
+    const response = await quotationResolvers.generateQuotation(req.body);
+    res.status(200).json(response);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to generate quotation.' });
+  }
+}
+
 export const quotationResolvers = {
   generateQuotation: async ({
     leadId,
@@ -15,6 +25,7 @@ export const quotationResolvers = {
     app,
     budget,
     timeline,
+    projectRequirements,
     format = "pdf",
   }: {
     leadId: string
@@ -25,19 +36,21 @@ export const quotationResolvers = {
     app: string
     budget: string
     timeline: string
+    projectRequirements?: string
     format?: "pdf" | "docx"
   }) => {
     try {
       // Prepare data for document generation
       const documentData: QuotationData = {
         platformOs: platform,
-        platformAdmin: "", // Default value
+        platformAdmin: "Web-based Admin Panel", // Default value
         techDatabase: database,
         techApi: apiFramework,
         techBackend: backend,
         techApp: app,
         budgetAmount: budget,
         timelineDays: timeline,
+        projectRequirements: projectRequirements || "", // Include generated requirements
       }
 
       let fileName: string
